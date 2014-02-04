@@ -1,0 +1,69 @@
+\documentclass[oneside]{report}
+
+\usepackage[margin=1cm,nohead]{geometry}
+\usepackage[pdftex]{graphicx}
+\usepackage{subfig}
+\usepackage{float}
+\usepackage{pdflscape}
+
+<%=cat("\\title{", gsub("_","\\_",runName, fixed=TRUE), "}", sep="") %>
+\date{\today}
+\raggedbottom
+\setcounter{tocdepth}{1}
+
+\begin{document}
+
+\maketitle
+\thispagestyle{empty}
+\pagestyle{empty}
+
+<% for(i in 1:nrow(summaryTable)) { -%>
+
+\pagebreak
+
+<% sampleName = summaryTable[i,]$sampleShort %>
+
+<%=cat("\\section*{Sample statistics - ", gsub("_","\\_",sampleName, fixed=TRUE), "}", sep="") %>
+
+\begin{figure}[H]
+  \centering
+  <%= subfloat_graph(0.5, paste("pdfFigures/",summaryTable[i,]$sample,"_insertSize.pdf", sep="")) %>
+  <%= subfloat_graph(0.5, paste("pdfFigures/",summaryTable[i,]$sample,"_cycleQuality.pdf", sep="")) %>
+\end{figure}
+\begin{figure}[H]
+  \centering
+  <%= subfloat_graph(0.5, paste("pdfFigures/",summaryTable[i,]$sample,"_qualityDistribution.pdf", sep="")) %>
+\end{figure}
+
+<% } -%>
+\pagebreak
+
+\section*{Hybrid selection specific metrics}
+
+Bait interval file = <%= cat(gsub("_","\\_",tail(strsplit(unique(summaryTable$baitIntervals),"/")[[1]],n=1), fixed=TRUE)) %> \\
+Target interval file = <%= cat(gsub("_","\\_",tail(strsplit(unique(summaryTable$targetIntervals),"/")[[1]],n=1), fixed=TRUE)) %>
+
+\begin{figure}[H]
+  \centering
+  <%= subfloat_graph(width = 0.85, paste("pdfFigures/",runName,"_pctOffBait.pdf", sep="")) %>
+\end{figure}
+\begin{figure}[H]
+  \centering
+  <%= subfloat_graph(width = 0.85, paste("pdfFigures/",runName,"_meanTargetCoverage.pdf", sep="")) %>
+\end{figure}
+\pagebreak
+
+\begin{landscape}
+  \begin{figure}[H]
+    \centering
+    <%= subfloat_graph(width = 1, paste("pdfFigures/",runName,"_pctTargetBases.pdf", sep="")) %>
+  \end{figure}
+\end{landscape}
+\pagebreak
+
+\begin{landscape}
+  \section*{Hybrid selection specific metrics summary table}
+  <%= include_tbl(tableName=summaryTableT[c(6:(nrow(summaryTableT)-3)), ,drop=FALSE]) %>
+\end{landscape}
+
+\end{document}
