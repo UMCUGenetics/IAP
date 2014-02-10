@@ -63,7 +63,7 @@ sub runPreStats {
 	    print PS "uname -n > logs/$preStatsJobId.host\n";
 	    print PS "echo \"FastQC\t\" `date` >> logs/$preStatsJobId.host\n";
 	    print PS "$opt{FASTQC_PATH}/fastqc $input -o fastqc\n";
-	    print PS "touch fastqc/$input.done\n";
+	    print PS "touch fastqc/$sampleName.done\n";
 	    close PS;
 	    
 	    print QSUB "qsub -pe threaded $opt{PRESTATS_THREADS} -q $opt{PRESTATS_QUEUE} -P $opt{PRESTATS_PROJECT} -o $opt{OUTPUT_DIR}/$sampleName/logs -e $opt{OUTPUT_DIR}/$sampleName/logs -N $preStatsJobId $opt{OUTPUT_DIR}/$sampleName/jobs/$preStatsJobId.sh\n";
@@ -73,7 +73,7 @@ sub runPreStats {
 
     close QSUB;
 
-    #system();
+    system("sh $mainJobID");
     
 }
 

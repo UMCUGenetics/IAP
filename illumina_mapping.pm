@@ -128,7 +128,7 @@ sub runMapping {
     
 	open BWA_SH,">$opt{OUTPUT_DIR}/$sampleName/jobs/$jobId.sh" or die "Couldn't create $opt{OUTPUT_DIR}/$sampleName/jobs/$jobId.sh\n";
 	print BWA_SH "\#!/bin/sh\n\#\$ -S /bin/sh\n\n";
-	print BWA_SH "mkdir $opt{CLUSTER_TMP}/$jobId/";
+	print BWA_SH "mkdir $opt{CLUSTER_TMP}/$jobId/\n";
 	print BWA_SH "cd $opt{CLUSTER_TMP}/$jobId/ \n\n";
 	print BWA_SH "uname -n > $opt{OUTPUT_DIR}/$sampleName/logs/$jobId.host\n";
 	print BWA_SH "echo \"Mapping pair\t\" `date` >> logs/$jobId.host\n";
@@ -158,7 +158,7 @@ sub runMapping {
 
 	print BWA_SH "mv -f $opt{CLUSTER_TMP}/$jobId/* $opt{OUTPUT_DIR}/$sampleName/mapping/\n";
 	print BWA_SH "if [ -f $opt{OUTPUT_DIR}/$sampleName/mapping/$coreName\_sorted_dedup.bam ];then\n";
-	print BWA_SH "\trm -r /tmp/$jobId/\n";
+	print BWA_SH "\trm -r $opt{CLUSTER_TMP}/$jobId/\n";
 	print BWA_SH "fi\n";
 
 	close BWA_SH;
@@ -200,7 +200,7 @@ sub runMapping {
     close QSUB;
     
 
-    #system();
+    system("sh $mainJobID");
     
     return $mergeJobs;
 }

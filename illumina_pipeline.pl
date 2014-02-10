@@ -21,7 +21,7 @@ use Getopt::Long;
 use illumina_prestats;
 use illumina_mapping;
 use illumina_poststats;
-
+use illumina_realign;
 
 my %opt;
 my $configurationFile;
@@ -149,13 +149,17 @@ if($opt{MAPPING} eq "yes"){
 if($opt{POSTSTATS} eq "yes"){
     print "\n###SCHEDULING POSTSTATS###\n";
 
-    illumina_poststats::runPostStats(\%opt);
+    #illumina_poststats::runPostStats(\%opt);
 
 }
 
 
 if($opt{INDELREALIGNMENT} eq "yes"){
-
+    
+    my $realignJobs = illumina_realign::runRealignment(\%opt);
+    foreach my $sample (keys %{$realignJobs}){
+	push (@{$opt{RUNNING_JOBS}->{$sample}} , $realignJobs->{$sample});
+    }
 
 }
 
