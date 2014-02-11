@@ -7,7 +7,7 @@ use strict;
 ###
 ###
 ###Author: S.W.Boymans
-###Latest change: Created first version
+###Latest change: Usage sub (Robert)
 ###
 ###TODO: Add poststats, indelrealignment, baserecalibration, variantcalling
 ##################################################################################################################################################
@@ -80,8 +80,9 @@ my $configurationFile;
     'RUNNING_JOBS'		=> {} #do not use in .conf
 );
 
+die usage() if @ARGV == 0;
 
-###########READ MAIN SETTINGS FROM .ini FILE####################
+########### READ MAIN SETTINGS FROM .ini FILE ####################
 my $iniFile = $0; $iniFile =~ s/pl$/ini/;
 open (INI, "<$iniFile") or die "Couldn't open .ini file $iniFile\n";
 
@@ -95,8 +96,7 @@ while(<INI>){
 
 close INI;
     
-    
-############READ RUN SPECIFIC SETTINGS FORM .conf FILE############
+############ READ RUN SPECIFIC SETTINGS FORM .conf FILE ############
 $configurationFile = $ARGV[0];
     
 open (CONFIGURATION, "<$configurationFile") or die "Couldn't open .conf file: $configurationFile\n";
@@ -116,7 +116,7 @@ while(<CONFIGURATION>){
 }
 close CONFIGURATION;
 
-
+############ START PIPELINE  ############
 if(! $opt{OUTPUT_DIR}){ die "ERROR: No OUTPUT_DIR found in .conf file\n" }
 if(! $opt{FASTQ}){ die "ERROR: No FASTQ or BAM files specified\n" }
     
@@ -174,7 +174,14 @@ if($opt{VARIANT_CALLING} eq "yes"){
 
 }
 
-
+############ USAGE - HELP  ############
+### Add more information?
+sub usage{
+    warn <<END;
+    Usage: perl illumina_pipeline.pl configurationFile.conf
+END
+    exit;
+}
 
 
 =cut
