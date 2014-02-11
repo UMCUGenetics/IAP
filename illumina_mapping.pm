@@ -131,7 +131,7 @@ sub runMapping {
 	print BWA_SH "mkdir $opt{CLUSTER_TMP}/$jobId/\n";
 	print BWA_SH "cd $opt{CLUSTER_TMP}/$jobId/ \n\n";
 	print BWA_SH "uname -n > $opt{OUTPUT_DIR}/$sampleName/logs/$jobId.host\n";
-	print BWA_SH "echo \"Mapping pair\t\" `date` >> logs/$jobId.host\n";
+	print BWA_SH "echo \"Mapping pair\t\" `date` >> $opt{OUTPUT_DIR}/$sampleName/logs/$jobId.host\n";
     
 	if($R2){
 	    print "\t$R1\n\t$R2\n";
@@ -142,9 +142,9 @@ sub runMapping {
 	}
     
 	print BWA_SH "$opt{SAMBAMBA_PATH}/sambamba sort -m $opt{MAPPING_MEM} -t $opt{MAPPING_THREADS} -o $coreName\_sorted.bam $coreName.bam 1>>$opt{OUTPUT_DIR}/$sampleName/logs/$coreName\_sort.log 2>>$opt{OUTPUT_DIR}/$sampleName/logs/$coreName\_sort.err\n\n";
-	print BWA_SH "echo \"sortbam finished\t\" `date` >> $opt{OUTPUT_DIR}/$sampleName/logs/$coreName.host\n";
+	print BWA_SH "echo \"sortbam finished\t\" `date` >> $opt{OUTPUT_DIR}/$sampleName/logs/$jobId.host\n";
 	print BWA_SH "$opt{SAMBAMBA_PATH}/sambamba index -t $opt{MAPPING_MEM} $coreName\_sorted.bam $coreName\_sorted.bai 1>>$opt{OUTPUT_DIR}/$sampleName/logs/$coreName\_index.log 2>>$opt{OUTPUT_DIR}/$sampleName/logs/$coreName\_index.err\n\n";
-	print BWA_SH "echo \"indexing finished\t\" `date` >> $opt{OUTPUT_DIR}/$sampleName/logs/$coreName.host\n";
+	print BWA_SH "echo \"indexing finished\t\" `date` >> $opt{OUTPUT_DIR}/$sampleName/logs/$jobId.host\n";
 	print BWA_SH "if [ -f $coreName\_sorted.bai ];then\n";
 	print BWA_SH "\trm $coreName.bam\n";
 	print BWA_SH "fi\n";
