@@ -51,6 +51,8 @@ my $configurationFile;
     'POSTSTATS_PROJECT'		=> undef,
     'POSTSTATS_THREADS'		=> undef,
     'POSTSTATS_MEM'		=> undef,
+    'POSTSTATS_TARGETS'		=> undef,
+    'POSTSTATS_BAITS'		=> undef,
     'REALIGNMENT_QUEUE'		=> undef,
     'REALIGNMENT_PROJECT'	=> undef,
     'REALIGNMENT_THREADS'	=> undef,
@@ -127,10 +129,7 @@ if(! -e $opt{OUTPUT_DIR}){
 
 if($opt{PRESTATS} eq "yes"){
     print "###SCHEDULING PRESTATS###\n";
-    
-    
     illumina_prestats::runPreStats(\%opt);
-    
 }
 
 
@@ -148,9 +147,7 @@ if($opt{MAPPING} eq "yes"){
 
 if($opt{POSTSTATS} eq "yes"){
     print "\n###SCHEDULING POSTSTATS###\n";
-
-    #illumina_poststats::runPostStats(\%opt);
-
+    illumina_poststats::runPostStats(\%opt);
 }
 
 
