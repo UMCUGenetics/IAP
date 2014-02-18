@@ -141,8 +141,6 @@ sub bashAndSubmit {
     } else {
 	system "qsub -q $opt{POSTSTATS_QUEUE} -pe threaded $opt{POSTSTATS_THREADS} -o $logDir -e $logDir -N PICARD_$jobID $bashFile"; #require two slots for memory reasons
     }
-    print "\n\n";
-
     return "PICARD_$jobID";
 }
 
