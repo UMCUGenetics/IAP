@@ -19,7 +19,7 @@ use FindBin;
 sub runPostStats {
     my $configuration = shift;
     my %opt = %{readConfiguration($configuration)};
-    my $picard = "java -Xmx16G -jar $opt{PICARD_PATH}";
+    my $picard = "java -Xmx16G -jar $opt{PICARD_PATH}"; ## Edit memory here!! threads x maxMem?????
 
     ### Parse fastq input to get sample names.
     my %samples;
@@ -55,7 +55,7 @@ sub runPostStats {
 	}
     }
     ### Run plotilluminametrics
-    my $command = "perl $FindBin::Bin/modules/plotilluminametrics/plotIlluminaMetrics.pl ".join(" ",keys(%samples) );
+    my $command = "perl $FindBin::Bin/modules/plotIlluminaMetrics/plotIlluminaMetrics.pl ".join(" ",keys(%samples) );
     
     my $jobID = get_job_id();
     my $bashFile = $opt{OUTPUT_DIR}."/jobs/PICARD_".$jobID.".sh";
@@ -81,16 +81,11 @@ sub readConfiguration{
     
     my %opt = (
 	
-	'QUALIMAP_PATH'		=> undef,
-	'SAMBAMBA_PATH'		=> undef,
-	'CLUSTER_PATH'  	=> undef,
+	'PICARD_PATH'		=> undef,
 	'POSTSTATS_THREADS'	=> undef,
-	'POSTSTATS_MEM'		=> undef,
-	'POSTSTATS_QUEUE'	=> undef,
-	'POSTSTATS_PROJECT'	=> undef,
+	'POSTSTATS_QUEUE'	=> undef,,
 	'POSTSTATS_TARGETS'	=> undef,
 	'POSTSTATS_BAITS'	=> undef,
-	'CLUSTER_TMP'		=> undef,
 	'GENOME'		=> undef,
 	'OUTPUT_DIR'		=> undef,
 	'RUNNING_JOBS'		=> {} #do not use in .conf file
@@ -100,16 +95,11 @@ sub readConfiguration{
 	$opt{$key} = $configuration->{$key};
     }
 
-    if(! $opt{QUALIMAP_PATH}){ die "ERROR: No QUALIMAP_PATH found in .counf file\n" }
-    if(! $opt{SAMBAMBA_PATH}){ die "ERROR: No SAMBAMBA_PATH found in .conf file\n" }
-    if(! $opt{POSTSTATS_PROJECT}){ die "ERROR: No POSTSTATS_PROJECT found in .ini file\n" }
+    if(! $opt{PICARD_PATH}){ die "ERROR: No PICARD_PATH found in .conf file\n" }
     if(! $opt{POSTSTATS_THREADS}){ die "ERROR: No POSTSTATS_THREADS found in .ini file\n" }
-    if(! $opt{POSTSTATS_MEM}){ die "ERROR: No POSTSTATS_MEM found in .ini file\n" }
-    if(! $opt{CLUSTER_PATH}){ die "ERROR: No CLUSTER_PATH found in .conf file\n" }
-    if(! $opt{CLUSTER_TMP}){ die "ERROR: No CLUSTER_TMP found in .conf file\n" }
+    if(! $opt{POSTSTATS_QUEUE}){ die "ERROR: No POSTSTATS_THREADS found in .ini file\n" }
     if(! $opt{GENOME}){ die "ERROR: No GENOME found in .conf file\n" }
     if(! $opt{OUTPUT_DIR}){ die "ERROR: No OUTPUT_DIR found in .conf file\n" }
-    if(! $opt{RUNNING_JOBS}){ die "ERROR: No RUNNING_JOBS found in .conf file\n" }
 
     return \%opt;
 }
