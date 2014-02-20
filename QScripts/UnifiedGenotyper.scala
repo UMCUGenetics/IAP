@@ -28,6 +28,8 @@ package org.broadinstitute.sting.queue.qscripts
 import org.broadinstitute.sting.queue.QScript
 import org.broadinstitute.sting.queue.extensions.gatk._
 
+import org.broadinstitute.sting.gatk.walkers.genotyper.GenotypeLikelihoodsCalculationModel
+
 class VariantCaller extends QScript {
     // Create an alias 'qscript' to be able to access variables in the VariantCaller.
     // 'qscript' is now the same as 'VariantCaller.this'
