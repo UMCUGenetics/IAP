@@ -45,26 +45,26 @@ class Realigner extends QScript {
   var bamFiles: List[File] = Nil
 
   @Argument(doc="Scattercount.", shortName="SC")
-  var scatter: String = _
+  var scatter: Int = _
   
   @Argument(doc="Maxmem.", shortName="MEM")
-  var maxmem: String = _
+  var maxmem: Double = _
   
   @Argument(doc="Number of threads.", shortName="TH")
-  var threads: String = _
+  var threads: Int = _
   
 
   // This trait allows us set the variables below in one place,
   // and then reuse this trait on each CommandLineGATK function below.
   trait TC_Arguments extends CommandLineGATK {
     this.reference_sequence = qscript.referenceFile
-    this.memoryLimit = maxmem
-    this.num_threads = threads
+    this.memoryLimit = qscript.maxmem
+    this.num_threads = qscript.threads
   }
 
   trait IR_Arguments extends CommandLineGATK {
     this.reference_sequence = qscript.referenceFile
-    this.memoryLimit = maxmem
+    this.memoryLimit = qscript.maxmem
   }
 
   def script() {
@@ -72,12 +72,12 @@ class Realigner extends QScript {
     val indelRealigner = new IndelRealigner with IR_Arguments
     
 
-    targetCreator.scatterCount = scatter
-    targetCreator.input_file = bamFiles
+    targetCreator.scatterCount = qscript.scatter
+    targetCreator.input_file = qscript.bamFiles
     targetCreator.out = new File("target_intervals.list")
     
-    indelRealigner.scatterCount = scatter
-    indelRealigner.input_file = bamFiles
+    indelRealigner.scatterCount = qscript.scatter
+    indelRealigner.input_file = qscript.bamFiles
     indelRealigner.targetIntervals = targetCreator.out
     indelRealigner.nWayOut = "_realigned.bam"
     

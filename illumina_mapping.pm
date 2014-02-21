@@ -98,10 +98,13 @@ sub runMapping {
 	print "Creating $opt{OUTPUT_DIR}/$sampleName/mapping/$coreName\_dedup.bam with:\n";
 		
     
-	if (-e "$opt{OUTPUT_DIR}/$sampleName/mapping/$coreName\_dedup.bam"){
-	    warn "WARNING: $opt{OUTPUT_DIR}/$sampleName/mapping/$coreName\_dedup.bam already exists, skipping\n";
-	    next;
-        }
+	#if (-e "$opt{OUTPUT_DIR}/$sampleName/mapping/$coreName\_dedup.bam"){
+	#    warn "WARNING: $opt{OUTPUT_DIR}/$sampleName/mapping/$coreName\_dedup.bam already exists, skipping\n";
+	#    next;
+        #}
+        
+        
+        
     
     
 	if(! -e "$opt{OUTPUT_DIR}/$sampleName"){
@@ -188,7 +191,7 @@ sub runMapping {
 	print MERGE_SH "\tthen\n";
         print MERGE_SH "\t\tfor i in \$( find \$PWD/mapping -name '*sorted_dedup.bam')\n";
         print MERGE_SH "\t\tdo\n";
-        print MERGE_SH "\t\t\trm \$i\n";
+    	print MERGE_SH "\t\t\trm \$i\n";
         print MERGE_SH "\t\tdone\n";
 	print MERGE_SH "\telse\n";
         print MERGE_SH "\t\techo \"ERROR: read counts from *sorted_dedup.flagstat files and mapping/$sample\_dedup.flagstat do not match\" >> logs/$sample\_cleanup.err\n";
@@ -231,6 +234,7 @@ sub submitBatchJobs{
     print BWA_SH "cd $opt{CLUSTER_TMP}/$jobId/ \n";
     print BWA_SH "uname -n > $opt{OUTPUT_DIR}/$sampleName/logs/$jobId.host\n\n";
     print BWA_SH "echo \"Mapping pair\t\" `date` >> $opt{OUTPUT_DIR}/$sampleName/logs/$jobId.host\n";
+    
     
     if($R2){
         print "\t$R1\n\t$R2\n";
