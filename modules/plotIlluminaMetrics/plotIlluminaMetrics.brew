@@ -6,6 +6,9 @@
 \usepackage{float}
 \usepackage{pdflscape}
 
+\usepackage{longtable}
+\usepackage{ltxtable}
+
 <%=cat("\\title{", gsub("_","\\_",runName, fixed=TRUE), "}", sep="") %>
 \date{\today}
 \raggedbottom

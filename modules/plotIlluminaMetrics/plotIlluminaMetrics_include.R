@@ -13,7 +13,7 @@ suppressMessages(library(brew))
 # Plotting functions
 
 #Custom colorscale used for plotting
-cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7", "#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
 
 plot_insert_size_metrics <- function(){
   ggplot(insert_size_metrics.table, aes(x=insert_size, y=All_Reads.fr_count)) + 
@@ -55,7 +55,8 @@ plot_pctOffBait <- function(){
     scale_fill_manual(name="", values=cbPalette)+
     ggtitle("Percentage off bait") +
     theme(axis.title = element_text(face="bold", size=15),
-          axis.text = element_text(size=15),
+          axis.text.y = element_text(size=15),
+          axis.text.x = element_blank(),
           legend.text = element_text(size=15),
           plot.title = element_text(size=15, face ="bold"))
 }
@@ -67,8 +68,8 @@ plot_meanTargetCov <- function(){
     scale_fill_manual(name="", values=cbPalette) +
     ggtitle("Mean target coverage") +
     theme(axis.title = element_text(face="bold", size=15),
-          axis.text = element_text(size=15),
-          legend.text = element_text(size=15),
+          axis.text.y = element_text(size=15),
+          axis.text.x = element_blank(),
           plot.title = element_text(size=15, face ="bold"))
 }
 
@@ -89,7 +90,15 @@ include_graph <- function(width = 1, filename) {
   paste("\\includegraphics[width=", width, "\\linewidth]{", filename, "}", sep = "") 
 }
 include_tbl <- function(tableName) {
-  print(xtable(tableName), type="latex",table.placement = "H", print.results=FALSE)
+  colNumber = ncol(tableName)
+  colNameMean = mean(nchar(colnames(tableName)))
+  splitTableN = floor(100/colNameMean)  
+  splitTable = split(1:colNumber, rep(1:colNumber,each=splitTableN,length=colNumber))
+  for (i in 1:length(splitTable)){
+    tempTable = as.matrix(tableName[, unlist(splitTable[i],use.names=F)])
+    colnames(tempTable) = colnames(tableName)[unlist(splitTable[i],use.names=F)]
+    print(xtable(tempTable), type="latex",table.placement = "H")
+  }
 }
 subfloat_graph <- function(width, filename) { 
   paste("\\subfloat{", "\\begin{minipage}[h]{", width, "\\linewidth}\\centering", include_graph(width = 1, filename), "\\end{minipage}}", sep = "")
