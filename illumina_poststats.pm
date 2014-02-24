@@ -20,7 +20,8 @@ sub runPostStats {
     my $configuration = shift;
     my %opt = %{readConfiguration($configuration)};
     my $picard = "java -Xmx16G -jar $opt{PICARD_PATH}"; ## Edit memory here!! threads x maxMem?????
-
+    my @runningJobs; #internal job array
+    
     ### Parse fastq input to get sample names.
     my %samples;
     foreach my $input (keys %{$opt{FASTQ}}){
@@ -40,18 +41,18 @@ sub runPostStats {
 	### Multiple metrics
 	my $command = $picard."/CollectMultipleMetrics.jar VALIDATION_STRINGENCY=LENIENT R=$opt{GENOME} ASSUME_SORTED=TRUE OUTPUT=".$picardOut.$sample."_MultipleMetrics.txt INPUT=$bam PROGRAM=CollectAlignmentSummaryMetrics PROGRAM=CollectInsertSizeMetrics PROGRAM=QualityScoreDistribution PROGRAM=QualityScoreDistribution\n";
 	$jobID = bashAndSubmit($command,$sample,\%opt);
-	push(@{$opt{RUNNING_JOBS}->{'all'} }, $jobID);
+	push(@runningJobs, $jobID);
 	
 	### Library Complexity
 	$command = $picard."/EstimateLibraryComplexity.jar VALIDATION_STRINGENCY=LENIENT OUTPUT=".$picardOut.$sample."_LibComplexity.txt INPUT=$bam";
 	$jobID = bashAndSubmit($command,$sample,\%opt);
-	push(@{$opt{RUNNING_JOBS}->{'all'} }, $jobID);
+	push(@runningJobs, $jobID);
 	
 	### Calculate HSMetrics -> only if target/bait file are present.
 	if ( ($opt{POSTSTATS_TARGETS}) && ($opt{POSTSTATS_BAITS}) ) {
 	    $command = $picard."/CalculateHsMetrics.jar VALIDATION_STRINGENCY=LENIENT R=$opt{GENOME} OUTPUT=".$picardOut.$sample."_HSMetrics.txt INPUT=$bam BAIT_INTERVALS=$opt{POSTSTATS_BAITS} TARGET_INTERVALS=$opt{POSTSTATS_TARGETS} METRIC_ACCUMULATION_LEVEL=SAMPLE";
 	    $jobID = bashAndSubmit($command,$sample,\%opt);
-	    push(@{$opt{RUNNING_JOBS}->{'all'} }, $jobID);
+	    push(@runningJobs, $jobID);
 	}
     }
     ### Run plotilluminametrics
@@ -72,7 +73,7 @@ sub runPostStats {
     print OUT "#!/bin/bash\n\n";
     print OUT "cd $opt{OUTPUT_DIR}\n";
     print OUT "$command\n";
-    system "qsub -q $opt{POSTSTATS_QUEUE} -pe threaded $opt{POSTSTATS_THREADS} -o $logDir -e $logDir -N PICARD_$jobID -hold_jid ".join(",",@{$opt{RUNNING_JOBS}->{'all'} })." $bashFile"; #require two slots for memory reasons
+    system "qsub -q $opt{POSTSTATS_QUEUE} -pe threaded $opt{POSTSTATS_THREADS} -o $logDir -e $logDir -N PICARD_$jobID -hold_jid ".join(",",@runningJobs)." $bashFile"; #require two slots for memory reasons
 
 }
 
@@ -127,9 +128,9 @@ sub bashAndSubmit {
     print OUT "$command\n";
     
     if ( $opt{RUNNING_JOBS}->{$sample} ){
-	system "qsub -q $opt{POSTSTATS_QUEUE} -pe threaded $opt{POSTSTATS_THREADS} -o $logDir -e $logDir -N PICARD_$jobID -hold_jid ".join(",",@{$opt{RUNNING_JOBS}->{$sample} })." $bashFile"; #require two slots for memory reasons
+	system "qsub -q $opt{POSTSTATS_QUEUE} -pe threaded $opt{POSTSTATS_THREADS} -o $logDir -e $logDir -N PICARD_$jobID -hold_jid ".join(",",@{$opt{RUNNING_JOBS}->{$sample} })." $bashFile";
     } else {
-	system "qsub -q $opt{POSTSTATS_QUEUE} -pe threaded $opt{POSTSTATS_THREADS} -o $logDir -e $logDir -N PICARD_$jobID $bashFile"; #require two slots for memory reasons
+	system "qsub -q $opt{POSTSTATS_QUEUE} -pe threaded $opt{POSTSTATS_THREADS} -o $logDir -e $logDir -N PICARD_$jobID $bashFile";
     }
     return "PICARD_$jobID";
 }
