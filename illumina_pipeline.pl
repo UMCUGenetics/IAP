@@ -126,6 +126,9 @@ if(! -e $opt{OUTPUT_DIR}){
     mkdir($opt{OUTPUT_DIR});
 }
 
+###Read samples from FASTQ's
+getSamples();
+
 
 if($opt{PRESTATS} eq "yes"){
     print "###SCHEDULING PRESTATS###\n";
@@ -140,8 +143,6 @@ if($opt{MAPPING} eq "yes"){
     foreach my $sample (keys %{$mappingJobs}){
 	push (@{$opt{RUNNING_JOBS}->{$sample}} , $mappingJobs->{$sample});
     }
-    
-    
 
 }
 
@@ -170,6 +171,17 @@ if($opt{VARIANT_CALLING} eq "yes"){
 
 
 }
+
+sub getSamples{
+    foreach my $input (keys %{$opt{FASTQ}}){
+	my $fastqFile = (split("/", $input))[-1];
+	my $sampleName =  (split("_", $fastqFile))[0];
+	$opt{RUNNING_JOBS}->{$sample} = ();
+    }
+
+}
+
+
 
 ############ USAGE - HELP  ############
 ### Add more information?

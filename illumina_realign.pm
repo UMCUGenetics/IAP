@@ -55,7 +55,7 @@ sub runRealignment {
 	print REALIGN_SH "cd $opt{OUTPUT_DIR}/tmp\n";
 	print REALIGN_SH "uname -n > ../logs/$jobId.host\n";
 	print REALIGN_SH "echo \"Starting indel realignment\t\" `date` >> ../logs/$jobId.host\n"; 
-	print REALIGN_SH "java -Djava.io.tmpdir=$opt{OUTPUT_DIR}/tmp/ -jar $opt{QUEUE_PATH}/Queue.jar -R $opt{GENOME} -S $opt{REALIGNMENT_SCALA} -nt $opt{REALIGNMENT_THREADS} -mem $opt{REALIGNMENT_MEM} -nsc $opt{REALIGNMENT_SCATTER} -mode $opt{REALIGNMENT_MODE} -jobNative \"-pe threaded $opt{REALIGNMENT_THREADS}\" -run ";
+	print REALIGN_SH "java -Djava.io.tmpdir=$opt{OUTPUT_DIR}/tmp/ -Xmx2G -jar $opt{QUEUE_PATH}/Queue.jar -R $opt{GENOME} -S $opt{REALIGNMENT_SCALA} -nt $opt{REALIGNMENT_THREADS} -mem $opt{REALIGNMENT_MEM} -nsc $opt{REALIGNMENT_SCATTER} -mode $opt{REALIGNMENT_MODE} -jobNative \"-pe threaded $opt{REALIGNMENT_THREADS}\" -run ";
 	
 	
 	open CLEAN_SH, ">$opt{OUTPUT_DIR}/jobs/$cleanupJobId.sh" or die "Couldn't create $opt{OUTPUT_DIR}/jobs/$cleanupJobId.sh\n";
@@ -148,7 +148,7 @@ sub runRealignment {
 	    print REALIGN_SH "cd $opt{OUTPUT_DIR}/$sample/tmp \n\n";
 	    print REALIGN_SH "uname -n > ../logs/$jobId.host\n";
 	    print REALIGN_SH "echo \"Starting indel realignment\t\" `date` >> ../logs/$jobId.host\n"; 
-	    print REALIGN_SH "java -Djava.io.tmpdir=$opt{OUTPUT_DIR}/$sample/tmp -jar $opt{QUEUE_PATH}/Queue.jar -R $opt{GENOME} -S $opt{REALIGNMENT_SCALA} -nt $opt{REALIGNMENT_THREADS} -mem $opt{REALIGNMENT_MEM} -nsc $opt{REALIGNMENT_SCATTER} -mode $opt{REALIGNMENT_MODE} -jobNative \"-pe threaded $opt{REALIGNMENT_THREADS}\" -run -I $opt{OUTPUT_DIR}/$sample/mapping/$sample\_dedup.bam -jobRunner GridEngine 1>>../logs/realign.log 2>>../logs/realign.err\n";
+	    print REALIGN_SH "java -Djava.io.tmpdir=$opt{OUTPUT_DIR}/$sample/tmp -Xmx2G -jar $opt{QUEUE_PATH}/Queue.jar -R $opt{GENOME} -S $opt{REALIGNMENT_SCALA} -nt $opt{REALIGNMENT_THREADS} -mem $opt{REALIGNMENT_MEM} -nsc $opt{REALIGNMENT_SCATTER} -mode $opt{REALIGNMENT_MODE} -jobNative \"-pe threaded $opt{REALIGNMENT_THREADS}\" -run -I $opt{OUTPUT_DIR}/$sample/mapping/$sample\_dedup.bam -jobRunner GridEngine 1>>../logs/realign.log 2>>../logs/realign.err\n";
 	    print REALIGN_SH "if [ -f $opt{OUTPUT_DIR}/$sample/tmp/$sample\_dedup.realigned.bam ]\n";
 	    print REALIGN_SH "then\n";
 	    print REALIGN_SH "\t$opt{SAMBAMBA_PATH}/sambamba flagstat -t $opt{REALIGNMENT_MERGETHREADS} $opt{OUTPUT_DIR}/$sample/tmp/$sample\_dedup.realigned.bam > $opt{OUTPUT_DIR}/$sample/mapping/$sample\_dedup_realigned.flagstat\n";
