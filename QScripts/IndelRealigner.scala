@@ -23,7 +23,7 @@
 * THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-package org.broadinstitute.sting.queue.qscripts.examples
+package org.broadinstitute.sting.queue.qscripts
 
 import org.broadinstitute.sting.queue.QScript
 import org.broadinstitute.sting.queue.extensions.gatk._
