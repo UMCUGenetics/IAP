@@ -22,16 +22,8 @@ sub runPostStats {
     my $picard = "java -Xmx16G -jar $opt{PICARD_PATH}"; ## Edit memory here!! threads x maxMem?????
     my @runningJobs; #internal job array
     
-    ### Parse fastq input to get sample names.
-    my %samples;
-    foreach my $input (keys %{$opt{FASTQ}}){
-	my $fastqFile = (split("/", $input))[-1];
-	my $sampleName =  (split("_", $fastqFile))[0];
-	$samples{$sampleName} ++;
-    }
-    
     ### Run Picard for each sample
-    foreach my $sample (keys(%samples)){
+    foreach my $sample (@{$opt{SAMPLES}}){
 	my $jobID;
 	my $bam = $opt{OUTPUT_DIR}."/".$sample."/mapping/".$sample."_dedup.bam";
 
@@ -56,7 +48,7 @@ sub runPostStats {
 	}
     }
     ### Run plotilluminametrics
-    my $command = "perl $FindBin::Bin/modules/plotIlluminaMetrics/plotIlluminaMetrics.pl ".join(" ",keys(%samples) );
+    my $command = "perl $FindBin::Bin/modules/plotIlluminaMetrics/plotIlluminaMetrics.pl ".join(" ",@{$opt{SAMPLES}});
     
     my $jobID = get_job_id();
     my $bashFile = $opt{OUTPUT_DIR}."/jobs/PICARD_".$jobID.".sh";
@@ -89,7 +81,8 @@ sub readConfiguration{
 	'POSTSTATS_BAITS'	=> undef,
 	'GENOME'		=> undef,
 	'OUTPUT_DIR'		=> undef,
-	'RUNNING_JOBS'		=> {} #do not use in .conf file
+	'RUNNING_JOBS'		=> {}, #do not use in .conf file
+	'SAMPLES'		=> undef #do not use in .conf file
     );
 
     foreach my $key (keys %{$configuration}){
@@ -101,7 +94,7 @@ sub readConfiguration{
     if(! $opt{POSTSTATS_QUEUE}){ die "ERROR: No POSTSTATS_THREADS found in .ini file\n" }
     if(! $opt{GENOME}){ die "ERROR: No GENOME found in .conf file\n" }
     if(! $opt{OUTPUT_DIR}){ die "ERROR: No OUTPUT_DIR found in .conf file\n" }
-
+    if(! $opt{SAMPLES}){ die "ERROR: No SAMPLES found\n" }
     return \%opt;
 }
 
