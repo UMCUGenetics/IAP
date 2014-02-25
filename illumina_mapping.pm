@@ -98,15 +98,11 @@ sub runMapping {
 	print "Creating $opt{OUTPUT_DIR}/$sampleName/mapping/$coreName\_dedup.bam with:\n";
 		
     
-	#if (-e "$opt{OUTPUT_DIR}/$sampleName/mapping/$coreName\_dedup.bam"){
-	#    warn "WARNING: $opt{OUTPUT_DIR}/$sampleName/mapping/$coreName\_dedup.bam already exists, skipping\n";
-	#    next;
-        #}
-        
-        
-        
-    
-    
+	if (-e "$opt{OUTPUT_DIR}/$sampleName/mapping/$sampleName\_dedup.bam"){
+	    warn "WARNING: $opt{OUTPUT_DIR}/$sampleName/mapping/$sampleName\_dedup.bam already exists, skipping\n";
+	    next;
+        }
+
 	if(! -e "$opt{OUTPUT_DIR}/$sampleName"){
     	    mkdir("$opt{OUTPUT_DIR}/$sampleName") or die "Couldn't create directory: $opt{OUTPUT_DIR}/$sampleName\n";
 	}
