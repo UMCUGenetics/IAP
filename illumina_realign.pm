@@ -7,7 +7,7 @@
 ###Author: S.W.Boymans
 ###Latest change: Created skeleton
 ###
-###TODO: A lot
+###TODO: Add known snp files!!!
 ##################################################################################################################################################
 
 
@@ -55,7 +55,7 @@ sub runRealignment {
 	print REALIGN_SH "cd $opt{OUTPUT_DIR}/tmp\n";
 	print REALIGN_SH "uname -n > ../logs/$jobId.host\n";
 	print REALIGN_SH "echo \"Starting indel realignment\t\" `date` >> ../logs/$jobId.host\n"; 
-	print REALIGN_SH "java -Djava.io.tmpdir=$opt{OUTPUT_DIR}/tmp/ -Xmx2G -jar $opt{QUEUE_PATH}/Queue.jar -R $opt{GENOME} -S $opt{REALIGNMENT_SCALA} -nt $opt{REALIGNMENT_THREADS} -mem $opt{REALIGNMENT_MEM} -nsc $opt{REALIGNMENT_SCATTER} -mode $opt{REALIGNMENT_MODE} -jobNative \"-pe threaded $opt{REALIGNMENT_THREADS}\" -run ";
+	print REALIGN_SH "java -Djava.io.tmpdir=$opt{OUTPUT_DIR}/tmp/ -Xmx2G -jar $opt{QUEUE_PATH}/Queue.jar -R $opt{GENOME} -S $opt{REALIGNMENT_SCALA} -jobQueue $opt{REALIGNMENT_QUEUE} -nt $opt{REALIGNMENT_THREADS} -mem $opt{REALIGNMENT_MEM} -nsc $opt{REALIGNMENT_SCATTER} -mode $opt{REALIGNMENT_MODE} -jobNative \"-pe threaded $opt{REALIGNMENT_THREADS}\" -run ";
 	
 	
 	open CLEAN_SH, ">$opt{OUTPUT_DIR}/jobs/$cleanupJobId.sh" or die "Couldn't create $opt{OUTPUT_DIR}/jobs/$cleanupJobId.sh\n";
@@ -64,8 +64,14 @@ sub runRealignment {
 	print CLEAN_SH "uname -n > $opt{OUTPUT_DIR}/logs/$cleanupJobId.host\n";
 	print CLEAN_SH "PASS=0\n";
 	
-	foreach my $sample (keys %{$opt{RUNNING_JOBS}}){
-	    print "\t$opt{OUTPUT_DIR}/mapping/$sample\_dedup.bam\n";
+	foreach my $sample (@{$opt{SAMPLES}}){
+	    print "\t$opt{OUTPUT_DIR}/$sample/mapping/$sample\_dedup.bam\n";
+	    
+	    ## Check for realigned bam file, skip sample if realigned bam file already exist. MAYBE NOT SKIP SAMPLE BUT SKIP WHOLE STEP HERE???
+	    if (-e "$opt{OUTPUT_DIR}/$sample/mapping/$sample\_dedup_realigned.bam"){
+		warn "WARNING: $opt{OUTPUT_DIR}/$sample/mapping/$sample\_dedup_realigned.bam already exists, skipping\n";
+		next;
+	    }
 	    
 	    push(@waitFor, join(",",@{$opt{RUNNING_JOBS}->{$sample}}));
 	    print REALIGN_SH "-I $opt{OUTPUT_DIR}/$sample/mapping/$sample\_dedup.bam ";
@@ -130,8 +136,14 @@ sub runRealignment {
     
     #SINGLE SAMPLE - MULTI OUPUT
     elsif($opt{REALIGNMENT_MODE} eq 'single'){
-	foreach my $sample (keys %{$opt{RUNNING_JOBS}}){
-	    print "\t$opt{OUTPUT_DIR}/mapping/$sample\_dedup.bam\n";
+	foreach my $sample (@{$opt{SAMPLES}}){
+	    print "\t$opt{OUTPUT_DIR}/$sample/mapping/$sample\_dedup.bam\n";
+	    
+	    ## Check for realigned bam file, skip sample if realigned bam file already exist.
+	    if (-e "$opt{OUTPUT_DIR}/$sample/mapping/$sample\_dedup_realigned.bam"){
+		warn "WARNING: $opt{OUTPUT_DIR}/$sample/mapping/$sample\_dedup_realigned.bam already exists, skipping\n";
+		next;
+	    }
 	    my $jobId = "REALIGN_$sample\_".get_job_id();
 	    
 	    if(! -e "$opt{OUTPUT_DIR}/$sample/tmp"){
@@ -142,13 +154,13 @@ sub runRealignment {
 	    	
 	    open REALIGN_SH,">$opt{OUTPUT_DIR}/$sample/jobs/$jobId.sh" or die "Couldn't create $opt{OUTPUT_DIR}/$sample/jobs/$jobId.sh\n";
 	    
-	    print REALIGN_SH "\#!/bin/sh\n\n";
-	    print REALIGN_SH "#\$ -S /bin/sh\n";
+	    print REALIGN_SH "\#!/bin/bash\n\n";
+	    #print REALIGN_SH "#\$ -S /bin/sh\n";
 	    print REALIGN_SH ". $opt{CLUSTER_PATH}/settings.sh\n\n";
 	    print REALIGN_SH "cd $opt{OUTPUT_DIR}/$sample/tmp \n\n";
 	    print REALIGN_SH "uname -n > ../logs/$jobId.host\n";
 	    print REALIGN_SH "echo \"Starting indel realignment\t\" `date` >> ../logs/$jobId.host\n"; 
-	    print REALIGN_SH "java -Djava.io.tmpdir=$opt{OUTPUT_DIR}/$sample/tmp -Xmx2G -jar $opt{QUEUE_PATH}/Queue.jar -R $opt{GENOME} -S $opt{REALIGNMENT_SCALA} -nt $opt{REALIGNMENT_THREADS} -mem $opt{REALIGNMENT_MEM} -nsc $opt{REALIGNMENT_SCATTER} -mode $opt{REALIGNMENT_MODE} -jobNative \"-pe threaded $opt{REALIGNMENT_THREADS}\" -run -I $opt{OUTPUT_DIR}/$sample/mapping/$sample\_dedup.bam -jobRunner GridEngine 1>>../logs/realign.log 2>>../logs/realign.err\n";
+	    print REALIGN_SH "java -Djava.io.tmpdir=$opt{OUTPUT_DIR}/$sample/tmp -Xmx2G -jar $opt{QUEUE_PATH}/Queue.jar -R $opt{GENOME} -S $opt{REALIGNMENT_SCALA} -jobQueue $opt{REALIGNMENT_QUEUE} -nt $opt{REALIGNMENT_THREADS} -mem $opt{REALIGNMENT_MEM} -nsc $opt{REALIGNMENT_SCATTER} -mode $opt{REALIGNMENT_MODE} -jobNative \"-pe threaded $opt{REALIGNMENT_THREADS}\" -run -I $opt{OUTPUT_DIR}/$sample/mapping/$sample\_dedup.bam -jobRunner GridEngine 1>>../logs/realign.log 2>>../logs/realign.err\n";
 	    print REALIGN_SH "if [ -f $opt{OUTPUT_DIR}/$sample/tmp/$sample\_dedup.realigned.bam ]\n";
 	    print REALIGN_SH "then\n";
 	    print REALIGN_SH "\t$opt{SAMBAMBA_PATH}/sambamba flagstat -t $opt{REALIGNMENT_MERGETHREADS} $opt{OUTPUT_DIR}/$sample/tmp/$sample\_dedup.realigned.bam > $opt{OUTPUT_DIR}/$sample/mapping/$sample\_dedup_realigned.flagstat\n";
@@ -181,9 +193,11 @@ sub runRealignment {
 	    #print REALIGN_SH "$opt{SAMBAMBA_PATH}/sambamba index -t $opt{REALIGNMENT_THREADS} $opt{OUTPUT_DIR}/$sample/mapping/$sample\_dedup_realigned.bam\n";
 	    #print REALIGN_SH "rm -r $opt{CLUSTER_TMP}/$jobId/\n";
 	    
-	    
-	    print QSUB "qsub -q $opt{REALIGNMENT_QUEUE} -P $opt{REALIGNMENT_PROJECT} -pe threaded $opt{REALIGNMENT_THREADS} -o $opt{OUTPUT_DIR}/$sample/logs -e $opt{OUTPUT_DIR}/$sample/logs -N $jobId -hold_jid ".join(",",@{$opt{RUNNING_JOBS}->{$sample}})." $opt{OUTPUT_DIR}/$sample/jobs/$jobId.sh\n";
-	    
+	    if ( $opt{RUNNING_JOBS}->{$sample} ){
+		print QSUB "qsub -q $opt{REALIGNMENT_QUEUE} -P $opt{REALIGNMENT_PROJECT} -pe threaded $opt{REALIGNMENT_THREADS} -o $opt{OUTPUT_DIR}/$sample/logs -e $opt{OUTPUT_DIR}/$sample/logs -N $jobId -hold_jid ".join(",",@{$opt{RUNNING_JOBS}->{$sample}})." $opt{OUTPUT_DIR}/$sample/jobs/$jobId.sh\n";
+	    } else {
+		print QSUB "qsub -q $opt{REALIGNMENT_QUEUE} -P $opt{REALIGNMENT_PROJECT} -pe threaded $opt{REALIGNMENT_THREADS} -o $opt{OUTPUT_DIR}/$sample/logs -e $opt{OUTPUT_DIR}/$sample/logs -N $jobId $opt{OUTPUT_DIR}/$sample/jobs/$jobId.sh";
+	    }
 	    $realignJobs->{$sample} = $jobId;
 	}
 	
@@ -215,7 +229,8 @@ sub readConfiguration{
 	'CLUSTER_TMP'		=> undef,
 	'GENOME'		=> undef,
 	'OUTPUT_DIR'		=> undef,
-	'RUNNING_JOBS'		=> {} #do not use in .conf file
+	'RUNNING_JOBS'		=> {}, #do not use in .conf file
+	'SAMPLES'		=> undef #do not use in .conf file
     );
 
     foreach my $key (keys %{$configuration}){
@@ -235,7 +250,7 @@ sub readConfiguration{
     if(! $opt{CLUSTER_TMP}){ die "ERROR: No CLUSTER_TMP found in .conf file\n" }
     if(! $opt{GENOME}){ die "ERROR: No GENOME found in .conf file\n" }
     if(! $opt{OUTPUT_DIR}){ die "ERROR: No OUTPUT_DIR found in .conf file\n" }
-    if(! $opt{RUNNING_JOBS}){ die "ERROR: No RUNNING_JOBS found in .conf file\n" }
+    if(! $opt{SAMPLES}){ die "ERROR: No SAMPLES found\n" }
 
     return \%opt;
 }

@@ -97,7 +97,7 @@ sub runMapping {
 	
 	print "Creating $opt{OUTPUT_DIR}/$sampleName/mapping/$coreName\_dedup.bam with:\n";
 		
-    
+	###Skip mapping if merged dedup.bam file already exist
 	if (-e "$opt{OUTPUT_DIR}/$sampleName/mapping/$sampleName\_dedup.bam"){
 	    warn "WARNING: $opt{OUTPUT_DIR}/$sampleName/mapping/$sampleName\_dedup.bam already exists, skipping\n";
 	    next;
