@@ -7,9 +7,9 @@ use strict;
 ###
 ###
 ###Author: S.W.Boymans
-###Latest change: Usage sub (Robert)
+###Latest change: VariantCalling (Robert)
 ###
-###TODO: Add poststats, indelrealignment, baserecalibration, variantcalling
+###TODO: baserecalibration, variantfilter, createDirs function -> see comments in subroutine section
 ##################################################################################################################################################
 
 
@@ -22,6 +22,7 @@ use illumina_prestats;
 use illumina_mapping;
 use illumina_poststats;
 use illumina_realign;
+use illumina_calling;
 
 my %opt;
 my $configurationFile;
@@ -79,7 +80,8 @@ my $configurationFile;
     'OUTPUT_DIR'		=> undef,
     'FASTQ'			=> {},
     'KNOWN_SITES'		=> [],
-    'RUNNING_JOBS'		=> {} #do not use in .conf
+    'RUNNING_JOBS'		=> {}, #do not use in .conf
+    'SAMPLES'			=> undef #do not use in .conf
 );
 
 die usage() if @ARGV == 0;
@@ -120,7 +122,7 @@ close CONFIGURATION;
 
 ############ START PIPELINE  ############
 if(! $opt{OUTPUT_DIR}){ die "ERROR: No OUTPUT_DIR found in .conf file\n" }
-if(! $opt{FASTQ}){ die "ERROR: No FASTQ or BAM files specified\n" }
+if(! $opt{FASTQ}){ die "ERROR: No FASTQ files specified\n" }
     
 if(! -e $opt{OUTPUT_DIR}){
     mkdir($opt{OUTPUT_DIR});
@@ -128,7 +130,6 @@ if(! -e $opt{OUTPUT_DIR}){
 
 ###Read samples from FASTQ's
 getSamples();
-
 
 if($opt{PRESTATS} eq "yes"){
     print "###SCHEDULING PRESTATS###\n";
@@ -138,8 +139,8 @@ if($opt{PRESTATS} eq "yes"){
 
 if($opt{MAPPING} eq "yes"){
     print "\n###SCHEDULING MAPPING###\n";
-    
     my $mappingJobs = illumina_mapping::runMapping(\%opt);
+    
     foreach my $sample (keys %{$mappingJobs}){
 	push (@{$opt{RUNNING_JOBS}->{$sample}} , $mappingJobs->{$sample});
     }
@@ -153,38 +154,45 @@ if($opt{POSTSTATS} eq "yes"){
 
 
 if($opt{INDELREALIGNMENT} eq "yes"){
-    
+    print "\n###SCHEDULING INDELREALIGNMENT###\n";
     my $realignJobs = illumina_realign::runRealignment(\%opt);
+    
     foreach my $sample (keys %{$realignJobs}){
 	push (@{$opt{RUNNING_JOBS}->{$sample}} , $realignJobs->{$sample});
     }
-
 }
 
 if($opt{BASEQUALITYRECAL} eq "yes"){
-
-
 }
 
 if($opt{VARIANT_CALLING} eq "yes"){
-
-
-
+    print "\n###SCHEDULING VARIANT CALLING####\n";
+    my $VCJob = illumina_calling::runVariantCalling(\%opt);
+    
+    foreach my $sample (@{$opt{SAMPLES}}){
+	push (@{$opt{RUNNING_JOBS}->{$sample}} , $VCJob);
+    }
 }
 
+############ SUBROUTINES  ############
 sub getSamples{
+    my %samples;
     foreach my $input (keys %{$opt{FASTQ}}){
 	my $fastqFile = (split("/", $input))[-1];
 	my $sampleName =  (split("_", $fastqFile))[0];
-	$opt{RUNNING_JOBS}->{$sample} = ();
+	$samples{$sampleName} ++;
     }
-
+    @{$opt{SAMPLES}} = keys(%samples);
 }
 
+# Add createDirs function? Instead of creating all dirs in different perl scripts.
+# OutputDir
+#	-sample1, sample2, etc
+#		-jobs, logs, tmp, mapping and QCStats (merge Fastqc and Picardstats)
+#	-jobs, logs, tmp
 
-
-############ USAGE - HELP  ############
-### Add more information?
+#### USAGE - HELP ####
+# Add more information?
 sub usage{
     warn <<END;
     Usage: perl illumina_pipeline.pl configurationFile.conf
