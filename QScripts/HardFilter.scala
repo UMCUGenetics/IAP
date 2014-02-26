@@ -42,25 +42,28 @@ class HardFilter extends QScript {
 
     @Input(doc="Output core filename.", shortName="O", required=true)
     var out: File = _
-    
+
     @Argument(doc="Maximum amount of memory", shortName="mem", required=true)
     var maxMem: Int = _
 
     @Argument(doc="Number of scatters", shortName="nsc", required=true)
     var numScatters: Int = _
 
-    // filteroptions -> default: best-practices value
+    // filteroptions
+    @Argument(doc="Filter mode: BOTH, SNP or INDEL", shortName="mode", required=true)
+    var filterMode: String = _
+    
     @Argument(doc="A optional list of SNPfilter names.", shortName="snpFilter", required=false)
-    var snpFilterNames: List[String] = List("LowQualityDepth","MappingQuality","StrandBias","HaplotypeScoreHigh","MQRankSumLow","ReadPosRankSumLow" )
+    var snpFilterNames: List[String] = _
   
     @Argument(doc="An optional list of filter expressions.", shortName="snpFilterExpression", required=false)
-    var SNPfilterExp: List[String] = List ("QD < 2.0", "MQ < 40.0", "FS > 60.0", "HaplotypeScore > 13.0", "MQRankSum < -12.5", "ReadPosRankSum < -8.0")
+    var SNPfilterExp: List[String] = _
     
-    @Argument(doc="A optional list of INDEL filter names.", shortName="indelFilter", required=false)
-    var indelFilterNames: List[String] = List("LowQualityDepth","StrandBias","ReadPosRankSumLow" ) 
+    @Argument(doc="An optional list of INDEL filter names.", shortName="indelFilter", required=false)
+    var indelFilterNames: List[String] = _
       
     @Argument(doc="An optional list of INDEL filter expressions.", shortName="indelFilterExpression", required=false)
-    var INDELfilterExp: List[String] = List ("QD < 2.0", "FS > 200.0", "ReadPosRankSum < -20.0") 
+    var INDELfilterExp: List[String] = _
 
     // This trait allows us set the variables below in one place and then reuse this trait on each CommandLineGATK function below.
     trait HF_Arguments extends CommandLineGATK {
@@ -74,18 +77,18 @@ class HardFilter extends QScript {
 	selectSNP.selectType :+= org.broadinstitute.variant.variantcontext.VariantContext.Type.SNP
 	selectSNP.selectType :+= org.broadinstitute.variant.variantcontext.VariantContext.Type.NO_VARIATION
 	selectSNP.out = qscript.out + ".raw_SNPS.vcf"
-    
-	val selectINDEL = new SelectVariants with HF_Arguments
-        selectINDEL.V = rawVCF
-	selectINDEL.selectType :+= org.broadinstitute.variant.variantcontext.VariantContext.Type.INDEL
-	selectINDEL.out = qscript.out + ".raw_INDELS.vcf"
 
-        val SNPfilter = new VariantFiltration with HF_Arguments
+	val SNPfilter = new VariantFiltration with HF_Arguments
 	SNPfilter.scatterCount = numScatters
 	SNPfilter.V = rawVCF
 	SNPfilter.out = qscript.out + ".filtered_SNPS.vcf"
 	SNPfilter.filterExpression = SNPfilterExp 
 	SNPfilter.filterName = snpFilterNames
+
+	val selectINDEL = new SelectVariants with HF_Arguments
+	selectINDEL.V = rawVCF
+	selectINDEL.selectType :+= org.broadinstitute.variant.variantcontext.VariantContext.Type.INDEL
+	selectINDEL.out = qscript.out + ".raw_INDELS.vcf"
 
 	val INDELfilter = new VariantFiltration with HF_Arguments
 	INDELfilter.scatterCount = numScatters
@@ -93,12 +96,14 @@ class HardFilter extends QScript {
 	INDELfilter.out = qscript.out + ".filtered_INDELS.vcf"
 	INDELfilter.filterExpression = INDELfilterExp
 	INDELfilter.filterName = indelFilterNames
-	
+
 	val CombineVars = new CombineVariants with HF_Arguments
 	CombineVars.V :+= SNPfilter.out
 	CombineVars.V :+= INDELfilter.out
 	CombineVars.out = qscript.out + ".filtered_VARIANTS.vcf"
 
-	add(selectSNP, selectINDEL, SNPfilter, INDELfilter, CombineVars)
+	if (filterMode == "SNP" || filterMode == "BOTH") { add(selectSNP, SNPfilter) }
+	if (filterMode == "INDEL" || filterMode == "BOTH") { add(selectINDEL, INDELfilter) }
+	if (filterMode == "BOTH") { add(CombineVars) }
      }
 }
