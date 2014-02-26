@@ -52,13 +52,13 @@ class VariantCaller extends QScript {
     @Argument(doc="Number of scatters", shortName="nsc", required=true)
     var numScatters: Int = _
 
+    @Argument(doc="Minimum phred-scaled confidence to call variants", shortName="stand_call_conf", required=true)
+    var standCallConf: Int = _ //30 //default: best-practices value
+
+    @Argument(doc="Minimum phred-scaled confidence to emit variants", shortName="stand_emit_conf", required=true)
+    var standEmitConf: Int = _ //10 //default: best-practices value
+
     // The following arguments are all optional.
-    @Argument(doc="Minimum phred-scaled confidence to call variants", shortName="stand_call_conf", required=false)
-    var standCallConf: Int = 30 //default: best-practices value
-
-    @Argument(doc="Minimum phred-scaled confidence to emit variants", shortName="stand_emit_conf", required=false)
-    var standEmitConf: Int = 10 //default: best-practices value
-
     @Input(doc="An optional file with known SNP sites.", shortName="D", required=false)
     var dbsnpFile: File = _
 
@@ -77,14 +77,14 @@ class VariantCaller extends QScript {
 	haplotypeCaller.memoryLimit = maxMem
 	haplotypeCaller.num_cpu_threads_per_data_thread = numCPUThreads
 
-	// Optional input
 	haplotypeCaller.stand_emit_conf = standEmitConf
 	haplotypeCaller.stand_call_conf = standCallConf
 
-	if(dbsnpFile != null) {
+	// Optional input
+	if (dbsnpFile != null) {
 	    haplotypeCaller.D = dbsnpFile
 	}
-	if(targetFile != null) {
+	if (targetFile != null) {
 	    haplotypeCaller.L :+= targetFile
 	}
 

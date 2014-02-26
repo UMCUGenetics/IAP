@@ -27,7 +27,6 @@ package org.broadinstitute.sting.queue.qscripts
 
 import org.broadinstitute.sting.queue.QScript
 import org.broadinstitute.sting.queue.extensions.gatk._
-
 import org.broadinstitute.sting.gatk.walkers.genotyper.GenotypeLikelihoodsCalculationModel
 
 class VariantCaller extends QScript {
@@ -53,17 +52,17 @@ class VariantCaller extends QScript {
 
     @Argument(doc="Number of scatters", shortName="nsc", required=true)
     var numScatters: Int = _
-    
+
     @Argument(doc="Genotype likelihoods calculation model to employ (SNP, INDEL or BOTH)", shortName="glm", required=true)
     var glm: String = _
 
+    @Argument(doc="Minimum phred-scaled confidence to call variants", shortName="stand_call_conf", required=true)
+    var standCallConf: Int = _ //30 //default: best-practices value
+
+    @Argument(doc="Minimum phred-scaled confidence to emit variants", shortName="stand_emit_conf", required=true)
+    var standEmitConf: Int = _ //10 //default: best-practices value
+    
     // The following arguments are all optional.
-    @Argument(doc="Minimum phred-scaled confidence to call variants", shortName="stand_call_conf", required=false)
-    var standCallConf: Int = 30 //default: best-practices value
-
-    @Argument(doc="Minimum phred-scaled confidence to emit variants", shortName="stand_emit_conf", required=false)
-    var standEmitConf: Int = 10 //default: best-practices value
-
     @Input(doc="An optional file with known SNP sites.", shortName="D", required=false)
     var dbsnpFile: File = _
 
@@ -80,26 +79,26 @@ class VariantCaller extends QScript {
 	unifiedGenotyper.scatterCount = numScatters
 	unifiedGenotyper.memoryLimit = maxMem
 	unifiedGenotyper.num_cpu_threads_per_data_thread = numCPUThreads
-	
-	//SNP INDEL or BOTH
-	if(glm == "SNP"){
-	    unifiedGenotyper.genotype_likelihoods_model = GenotypeLikelihoodsCalculationModel.Model.SNP
-	    unifiedGenotyper.out = qscript.out + ".UG.raw_SNP.vcf"
-	} else if(glm == "INDEL"){
-	    unifiedGenotyper.genotype_likelihoods_model = GenotypeLikelihoodsCalculationModel.Model.INDEL
-	    unifiedGenotyper.out = qscript.out + ".UG.raw_INDEL.vcf"
-	} else if(glm == "BOTH"){
-	    unifiedGenotyper.genotype_likelihoods_model = GenotypeLikelihoodsCalculationModel.Model.BOTH
-	    unifiedGenotyper.out = qscript.out + ".UG.raw_variants.vcf"
-	}
-	// Optional input
+
 	unifiedGenotyper.stand_emit_conf = standEmitConf
 	unifiedGenotyper.stand_call_conf = standCallConf
 
-	if(dbsnpFile != null) {
+	unifiedGenotyper.out = qscript.out + ".raw_variants.vcf"
+
+	//SNP INDEL or BOTH
+	if (glm == "SNP") {
+	    unifiedGenotyper.genotype_likelihoods_model = GenotypeLikelihoodsCalculationModel.Model.SNP
+	} else if (glm == "INDEL") {
+	    unifiedGenotyper.genotype_likelihoods_model = GenotypeLikelihoodsCalculationModel.Model.INDEL
+	} else if (glm == "BOTH") {
+	    unifiedGenotyper.genotype_likelihoods_model = GenotypeLikelihoodsCalculationModel.Model.BOTH
+	}
+
+	// Optional input
+	if (dbsnpFile != null) {
 	    unifiedGenotyper.D = dbsnpFile
 	}
-	if(targetFile != null) {
+	if (targetFile != null) {
 	    unifiedGenotyper.L :+= targetFile
 	}
 

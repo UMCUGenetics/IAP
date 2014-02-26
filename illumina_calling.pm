@@ -1,0 +1,146 @@
+#!/usr/bin/perl -w
+
+##################################################################################################################################################
+###This script is designed to run GATK HC and UG variant callers using GATK Queue
+###
+###
+###Author: R.F.Ernst
+###Latest change: Added UG
+###TODO:
+##################################################################################################################################################
+
+package illumina_calling;
+
+use strict;
+use POSIX qw(tmpnam);
+use Cwd qw( abs_path );
+use File::Basename qw( dirname );
+
+sub runVariantCalling {
+    my $configuration = shift;
+    my %opt = %{readConfiguration($configuration)};
+    my $runName = (split("/", $opt{OUTPUT_DIR}))[-1];
+    my $rootDir = dirname(abs_path($0));
+    my @runningJobs;
+    
+    ### Build Queue command
+    my $command = "java -Xmx22G -Xms2G -jar $opt{QUEUE_PATH}/Queue.jar "; ### Change memory allocation here!!!!!
+    $command .= "-jobQueue $opt{CALLING_QUEUE} -jobEnv \"threaded $opt{CALLING_THREADS}\" -jobRunner GridEngine -jobReport $opt{OUTPUT_DIR}/logs/variantCaller.jobReport.txt "; #Queue options
+
+    ### Add caller and UG specific settings
+    $command .= "-S $opt{CALLING_SCALA} ";
+    if ($opt{CALLING_UGMODE}) {
+	$command .= " -glm $opt{CALLING_UGMODE} ";
+    }
+
+    ### Common settings
+    $command .= "-R $opt{GENOME} -O $runName -mem $opt{CALLING_MEM} -nct $opt{CALLING_THREADS} -nsc $opt{CALLING_SCATTER} -stand_call_conf $opt{CALLING_STANDCALLCONF} -stand_emit_conf $opt{CALLING_STANDEMITCONF} ";
+
+    ### Add all bams
+    foreach my $sample (@{$opt{SAMPLES}}){
+	my $sampleBam;
+        if ($opt{INDELREALIGNMENT} eq "yes" and $opt{BASEQUALITYRECAL} eq "yes") {
+	    $sampleBam = "$sample/mapping/".$sample."_dedup_realigned_recalibrated.bam";
+	} elsif ($opt{INDELREALIGNMENT} eq "yes" and $opt{BASEQUALITYRECAL} eq "no") {
+	    $sampleBam = "$sample/mapping/".$sample."_dedup_realigned.bam";
+	} elsif ($opt{INDELREALIGNMENT} eq "no" and $opt{BASEQUALITYRECAL} eq "yes") {
+	    $sampleBam = "$sample/mapping/".$sample."_dedup_recalibrated.bam";
+	} elsif ($opt{INDELREALIGNMENT} eq "no" and $opt{BASEQUALITYRECAL} eq "no") {
+	    $sampleBam = "$sample/mapping/".$sample."_dedup.bam";
+	}
+	$command .= "-I $opt{OUTPUT_DIR}/$sampleBam ";
+	## Running jobs
+	if ( $opt{RUNNING_JOBS}->{$sample} ){
+	    push( @runningJobs, @{$opt{RUNNING_JOBS}->{$sample}} );
+	}
+    }
+
+    ### Optional settings
+    if ( $opt{CALLING_DBSNP} ) {
+	$command .= "-D $opt{CALLING_DBSNP} ";
+    }
+    if ( $opt{CALLING_TARGETS} ) {
+	$command .= "-L $opt{CALLING_TARGETS} ";
+    }
+    
+    $command .= "-run";
+    
+    #Create main bash script
+    my $jobID = "VC_".get_job_id();
+    my $bashFile = $opt{OUTPUT_DIR}."/jobs/VariantCalling_".$jobID.".sh";
+    my $logDir = $opt{OUTPUT_DIR}."/logs";
+
+    open CALLING_SH, ">$bashFile" or die "cannot open file $bashFile \n";
+    print CALLING_SH "#!/bin/bash\n\n";
+    print CALLING_SH "bash $opt{CLUSTER_PATH}/settings.sh\n\n";
+    print CALLING_SH "cd $opt{OUTPUT_DIR}/tmp/\n";
+    print CALLING_SH "$command\n\n";
+    
+    print CALLING_SH "if [ -f $opt{OUTPUT_DIR}/tmp/.$runName\.raw_variants.vcf.done ]\n";
+    print CALLING_SH "then\n";
+    print CALLING_SH "\tmv $opt{OUTPUT_DIR}/tmp/$runName\.raw_variants.vcf $opt{OUTPUT_DIR}/\n";
+    print CALLING_SH "\tmv $opt{OUTPUT_DIR}/tmp/$runName\.raw_variants.vcf.idx $opt{OUTPUT_DIR}/\n";
+    print CALLING_SH "fi\n";
+
+    #Start main bash script
+    if (@runningJobs){
+	system "qsub -q $opt{CALLING_LONGQUEUE} -pe threaded $opt{CALLING_THREADS} -o $logDir -e $logDir -N $jobID -hold_jid ".join(",",@runningJobs)." $bashFile";
+    } else {
+	system "qsub -q $opt{CALLING_LONGQUEUE} -pe threaded $opt{CALLING_THREADS} -o $logDir -e $logDir -N $jobID $bashFile";
+    }
+    print "\n";
+    
+    return $jobID;
+}
+
+sub readConfiguration{
+    my $configuration = shift;
+
+    my %opt = (
+	'QUEUE_PATH'		=> undef,
+	'CALLING_QUEUE'		=> undef,
+	'CALLING_LONGQUEUE'	=> undef,
+	'CALLING_THREADS'	=> undef,
+	'CALLING_MEM'		=> undef,
+	'CALLING_SCATTER'	=> undef,
+	'CALLING_SCALA'		=> undef,
+	'CALLING_DBSNP'		=> undef,
+	'CALLING_TARGETS'	=> undef,
+	'CALLING_STANDCALLCONF'	=> undef,
+	'CALLING_STANDEMITCONF'	=> undef,
+	'GENOME'		=> undef,
+	'OUTPUT_DIR'		=> undef,
+	'RUNNING_JOBS'		=> {} #do not use in .conf file
+    );
+
+    foreach my $key (keys %{$configuration}){
+	$opt{$key} = $configuration->{$key};
+    }
+
+    if(! $opt{QUEUE_PATH}){ die "ERROR: No PICARD_PATH found in .conf file\n" }
+    if(! $opt{CALLING_QUEUE}){ die "ERROR: No CALLING_QUEUE found in .ini file\n" }
+    if(! $opt{CALLING_LONGQUEUE}){ die "ERROR: No CALLING_LONGQUEUE found in .ini file\n" }
+    if(! $opt{CALLING_THREADS}){ die "ERROR: No CALLING_THREADS found in .ini file\n" }
+    if(! $opt{CALLING_MEM}){ die "ERROR: No CALLING_QUEUE found in .ini file\n" }
+    if(! $opt{CALLING_SCATTER}){ die "ERROR: No CALLING_SCATTER found in .ini file\n" }
+    if(! $opt{CALLING_SCALA}){ die "ERROR: No CALLING_SCALA found in .ini file\n" }
+    if($opt{CALLING_UGMODE}){ 
+	if($opt{CALLING_UGMODE} ne "SNP" and $opt{CALLING_UGMODE} ne "INDEL" and $opt{CALLING_UGMODE} ne "BOTH"){ die "ERROR: UGMODE: $opt{CALLING_UGMODE} does not exist use SNP, INDEL or BOTH\n"}
+    }
+    if(! $opt{CALLING_STANDCALLCONF}){ die "ERROR: No CALLING_STANDCALLCONF found in .ini file\n" }
+    if(! $opt{CALLING_STANDEMITCONF}){ die "ERROR: No CALLING_STANDEMITCONF found in .ini file\n" }
+    if(! $opt{GENOME}){ die "ERROR: No GENOME found in .conf file\n" }
+    if(! $opt{OUTPUT_DIR}){ die "ERROR: No OUTPUT_DIR found in .conf file\n" }
+
+    return \%opt;
+}
+
+############
+sub get_job_id {
+    my $id = tmpnam();
+    $id=~s/\/tmp\/file//;
+    return $id;
+}
+############
+
+1;
