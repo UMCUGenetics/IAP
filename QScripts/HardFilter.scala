@@ -53,17 +53,17 @@ class HardFilter extends QScript {
     @Argument(doc="Filter mode: BOTH, SNP or INDEL", shortName="mode", required=true)
     var filterMode: String = _
     
-    @Argument(doc="A optional list of SNPfilter names.", shortName="snpFilter", required=false)
+    @Argument(doc="A optional list of SNPfilter names.", shortName="snpFilterName", required=false)
     var snpFilterNames: List[String] = _
   
     @Argument(doc="An optional list of filter expressions.", shortName="snpFilterExpression", required=false)
-    var SNPfilterExp: List[String] = _
+    var snpFilterExp: List[String] = _
     
-    @Argument(doc="An optional list of INDEL filter names.", shortName="indelFilter", required=false)
+    @Argument(doc="An optional list of INDEL filter names.", shortName="indelFilterName", required=false)
     var indelFilterNames: List[String] = _
       
     @Argument(doc="An optional list of INDEL filter expressions.", shortName="indelFilterExpression", required=false)
-    var INDELfilterExp: List[String] = _
+    var indelFilterExp: List[String] = _
 
     // This trait allows us set the variables below in one place and then reuse this trait on each CommandLineGATK function below.
     trait HF_Arguments extends CommandLineGATK {
@@ -76,31 +76,31 @@ class HardFilter extends QScript {
 	selectSNP.V = rawVCF
 	selectSNP.selectType :+= org.broadinstitute.variant.variantcontext.VariantContext.Type.SNP
 	selectSNP.selectType :+= org.broadinstitute.variant.variantcontext.VariantContext.Type.NO_VARIATION
-	selectSNP.out = qscript.out + ".raw_SNPS.vcf"
+	selectSNP.out = qscript.out + ".raw_snps.vcf"
 
 	val SNPfilter = new VariantFiltration with HF_Arguments
 	SNPfilter.scatterCount = numScatters
 	SNPfilter.V = rawVCF
-	SNPfilter.out = qscript.out + ".filtered_SNPS.vcf"
-	SNPfilter.filterExpression = SNPfilterExp 
+	SNPfilter.out = qscript.out + ".filtered_snps.vcf"
+	SNPfilter.filterExpression = snpFilterExp 
 	SNPfilter.filterName = snpFilterNames
 
 	val selectINDEL = new SelectVariants with HF_Arguments
 	selectINDEL.V = rawVCF
 	selectINDEL.selectType :+= org.broadinstitute.variant.variantcontext.VariantContext.Type.INDEL
-	selectINDEL.out = qscript.out + ".raw_INDELS.vcf"
+	selectINDEL.out = qscript.out + ".raw_indels.vcf"
 
 	val INDELfilter = new VariantFiltration with HF_Arguments
 	INDELfilter.scatterCount = numScatters
 	INDELfilter.V = rawVCF
-	INDELfilter.out = qscript.out + ".filtered_INDELS.vcf"
-	INDELfilter.filterExpression = INDELfilterExp
+	INDELfilter.out = qscript.out + ".filtered_indels.vcf"
+	INDELfilter.filterExpression = indelFilterExp
 	INDELfilter.filterName = indelFilterNames
 
 	val CombineVars = new CombineVariants with HF_Arguments
 	CombineVars.V :+= SNPfilter.out
 	CombineVars.V :+= INDELfilter.out
-	CombineVars.out = qscript.out + ".filtered_VARIANTS.vcf"
+	CombineVars.out = qscript.out + ".filtered_variants.vcf"
 
 	if (filterMode == "SNP" || filterMode == "BOTH") { add(selectSNP, SNPfilter) }
 	if (filterMode == "INDEL" || filterMode == "BOTH") { add(selectINDEL, INDELfilter) }

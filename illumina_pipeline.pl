@@ -23,6 +23,7 @@ use illumina_mapping;
 use illumina_poststats;
 use illumina_realign;
 use illumina_calling;
+use illumina_filterVariants;
 
 my %opt;
 my $configurationFile;
@@ -77,6 +78,7 @@ my $configurationFile;
     'INDELREALIGNMENT'		=> "no",
     'BASEQUALITYRECAL'		=> "no",
     'VARIANT_CALLING'		=> "no",
+    'FILTER_VARIANTS'		=> "no",
     'OUTPUT_DIR'		=> undef,
     'FASTQ'			=> {},
     'KNOWN_SITES'		=> [],
@@ -93,7 +95,7 @@ open (INI, "<$iniFile") or die "Couldn't open .ini file $iniFile\n";
 while(<INI>){
     chomp;
     next if m/^#/ or ! $_;
-    my ($key, $val) = split("\t");
+    my ($key, $val) = split("\t",$_,2);
     $opt{$key} = $val;
     
 }
@@ -107,7 +109,7 @@ open (CONFIGURATION, "<$configurationFile") or die "Couldn't open .conf file: $c
 while(<CONFIGURATION>){
     chomp;
     next if m/^#/ or ! $_;
-    my ($key, $val) = split("\t");
+    my ($key, $val) = split("\t",$_,2);
 
     if($key eq 'FASTQ'){
         $opt{$key}->{$val} = 1;
@@ -172,6 +174,11 @@ if($opt{VARIANT_CALLING} eq "yes"){
     foreach my $sample (@{$opt{SAMPLES}}){
 	push (@{$opt{RUNNING_JOBS}->{$sample}} , $VCJob);
     }
+}
+
+if($opt{FILTER_VARIANTS} eq "yes"){
+    print "\n###SCHEDULING VARIANT FILTRATION####\n";
+    illumina_filterVariants::runFilterVariants(\%opt);
 }
 
 ############ SUBROUTINES  ############

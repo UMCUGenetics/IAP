@@ -13,14 +13,12 @@ package illumina_calling;
 
 use strict;
 use POSIX qw(tmpnam);
-use Cwd qw( abs_path );
-use File::Basename qw( dirname );
+
 
 sub runVariantCalling {
     my $configuration = shift;
     my %opt = %{readConfiguration($configuration)};
     my $runName = (split("/", $opt{OUTPUT_DIR}))[-1];
-    my $rootDir = dirname(abs_path($0));
     my @runningJobs;
     
     ### Build Queue command
