@@ -27,7 +27,7 @@ sub runMapping {
     die "fai file $FAI does not exists!!\n" if !-e $FAI;
 
 
-    my $mainJobID = "$opt{OUTPUT_DIR}/".get_job_id()."_mapping_qsub.sh";
+    my $mainJobID = "$opt{OUTPUT_DIR}/jobs/MappingMainJob_".get_job_id().".sh";
 
     open (my $QSUB,">$mainJobID") or die "ERROR: Couldn't create $mainJobID\n";
     print $QSUB "\#!/bin/sh\n\n. $opt{CLUSTER_PATH}/settings.sh\n\n";

@@ -85,6 +85,8 @@ sub runAnnotateVariants {
 	system "qsub -q $opt{ANNOTATE_QUEUE} -pe threaded $opt{ANNOTATE_THREADS} -o $logDir -e $logDir -N $jobID $bashFile";
     }
     print "\n";
+    
+    return $jobID;
 }
 
 sub readConfiguration{

@@ -24,7 +24,7 @@ sub runRealignment {
 
     print "Running $opt{REALIGNMENT_MODE} sample indel realignment for the following BAM-files:\n";
     
-    my $mainJobID = "$opt{OUTPUT_DIR}/".get_job_id()."_realign_qsub.sh";
+    my $mainJobID = "$opt{OUTPUT_DIR}/jobs/RealignMainJob_".get_job_id().".sh";
     
     if(! -e "$opt{OUTPUT_DIR}/tmp"){
 	mkdir("$opt{OUTPUT_DIR}/tmp") or die "Couldn't create directory: $opt{OUTPUT_DIR}/tmp\n";

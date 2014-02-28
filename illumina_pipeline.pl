@@ -191,7 +191,11 @@ if($opt{FILTER_VARIANTS} eq "yes"){
 
 if($opt{ANNOTATE_VARIANTS} eq "yes"){
     print "\n###SCHEDULING VARIANT ANNOTATION####\n";
-    illumina_annotateVariants::runAnnotateVariants(\%opt);
+    my $AVJob = illumina_annotateVariants::runAnnotateVariants(\%opt);
+    
+    foreach my $sample (@{$opt{SAMPLES}}){
+	push (@{$opt{RUNNING_JOBS}->{$sample}} , $AVJob);
+    }
 }
 
 ############ SUBROUTINES  ############
