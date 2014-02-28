@@ -68,7 +68,7 @@ sub runAnnotateVariants {
 	$outvcf =~ s/.vcf/_GoNL.vcf/;
 	$command = "$opt{VCFTOOLS_PATH}/vcf-annotate -a $opt{ANNOTATE_FREQ} -c $opt{ANNOTATE_COLUMNS} -d $opt{ANNOTATE_DESCR} $invcf > $outvcf";
 	print ANNOTATE_SH "$command\n";
-	if($opt{ANNOTATE_SNPSIFT} eq "yes"){
+	if($opt{ANNOTATE_SNPSIFT} eq "yes" || $opt{ANNOTATE_SNPEFF} eq "yes"){
 	    print ANNOTATE_SH "if [ -f $outvcf ]\nthen\n rm $invcf\nfi\n\n";
 	}
     }
