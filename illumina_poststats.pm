@@ -53,14 +53,7 @@ sub runPostStats {
     my $jobID = get_job_id();
     my $bashFile = $opt{OUTPUT_DIR}."/jobs/PICARD_".$jobID.".sh";
     my $logDir = $opt{OUTPUT_DIR}."/logs";
-    
-    if(! -e "$opt{OUTPUT_DIR}/jobs"){
-	mkdir("$opt{OUTPUT_DIR}/jobs") or die "Couldn't create directory: $opt{OUTPUT_DIR}/jobs\n";
-    }
-    if(! -e "$opt{OUTPUT_DIR}/logs"){
-	mkdir("$opt{OUTPUT_DIR}/logs") or die "Couldn't create directory: $opt{OUTPUT_DIR}/logs\n";
-    }
-    
+        
     open OUT, ">$bashFile" or die "cannot open file $bashFile\n";
     print OUT "#!/bin/bash\n\n";
     print OUT "cd $opt{OUTPUT_DIR}\n";

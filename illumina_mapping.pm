@@ -25,8 +25,15 @@ sub runMapping {
     my $FAI = "$opt{GENOME}\.fai";
     die "genome $opt{GENOME} does not exists!!\t$!\n" if !-e "$opt{GENOME}.bwt";
     die "fai file $FAI does not exists!!\n" if !-e $FAI;
-
-
+    
+    ## Create main job and logs directory
+    if(! -e "$opt{OUTPUT_DIR}/jobs"){
+	mkdir("$opt{OUTPUT_DIR}/jobs") or die "Couldn't create directory: $opt{OUTPUT_DIR}/jobs\n";
+    }
+    if(! -e "$opt{OUTPUT_DIR}/logs"){
+	mkdir("$opt{OUTPUT_DIR}/logs") or die "Couldn't create directory: $opt{OUTPUT_DIR}/logs\n";
+    }
+    
     my $mainJobID = "$opt{OUTPUT_DIR}/jobs/MappingMainJob_".get_job_id().".sh";
 
     open (my $QSUB,">$mainJobID") or die "ERROR: Couldn't create $mainJobID\n";
