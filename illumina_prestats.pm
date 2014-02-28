@@ -26,7 +26,14 @@ sub runPreStats {
     my %opt = %{readConfiguration($configuration)};
     my $jobIds = {};
     
-    my $mainJobID = "$opt{OUTPUT_DIR}/".get_job_id()."_prestats_qsub.sh";
+    if(! -e "$opt{OUTPUT_DIR}/jobs"){
+	mkdir("$opt{OUTPUT_DIR}/jobs") or die "Couldn't create directory: $opt{OUTPUT_DIR}/jobs\n";
+    }
+    if(! -e "$opt{OUTPUT_DIR}/logs"){
+	mkdir("$opt{OUTPUT_DIR}/logs") or die "Couldn't create directory: $opt{OUTPUT_DIR}/logs\n";
+    }
+    
+    my $mainJobID = "$opt{OUTPUT_DIR}/jobs/PreStatsMainJob_".get_job_id().".sh";
 
     open (QSUB,">$mainJobID") or die "ERROR: Couldn't create $mainJobID\n";
     print QSUB "\#!/bin/sh\n\n. $opt{CLUSTER_PATH}/settings.sh\n\n";
@@ -38,7 +45,6 @@ sub runPreStats {
 	$coreName =~ s/\.fastq.gz//;
 	my ($sampleName) =  split("_", $coreName);
 	print "\t$input\n";
-    
 
 	if(! -e "$opt{OUTPUT_DIR}/$sampleName"){
     	    mkdir("$opt{OUTPUT_DIR}/$sampleName") or die "ERROR: Couldn't create directory: $opt{OUTPUT_DIR}/$sampleName\n";
