@@ -20,6 +20,13 @@ sub runVariantCalling {
     my %opt = %{readConfiguration($configuration)};
     my $runName = (split("/", $opt{OUTPUT_DIR}))[-1];
     my @runningJobs;
+    my $jobID = "VC_".get_job_id();
+    
+    ### Skip variant calling if .raw_variants.vcf already exists
+    if (-e "$opt{OUTPUT_DIR}/$runName.raw_variants.vcf"){
+	warn "WARNING: $opt{OUTPUT_DIR}/$runName.raw_variants.vcf already exists, skipping \n";
+	return $jobID;
+    }
     
     ### Build Queue command
     my $command = "java -Xmx22G -Xms2G -jar $opt{QUEUE_PATH}/Queue.jar "; ### Change memory allocation here!!!!!
@@ -64,7 +71,6 @@ sub runVariantCalling {
     $command .= "-run";
     
     #Create main bash script
-    my $jobID = "VC_".get_job_id();
     my $bashFile = $opt{OUTPUT_DIR}."/jobs/VariantCalling_".$jobID.".sh";
     my $logDir = $opt{OUTPUT_DIR}."/logs";
 

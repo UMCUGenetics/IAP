@@ -20,6 +20,19 @@ sub runFilterVariants {
     my %opt = %{readConfiguration($configuration)};
     my $runName = (split("/", $opt{OUTPUT_DIR}))[-1];
     my @runningJobs;
+    my $jobID = "FV_".get_job_id();
+
+    ### Skip variant calling if .raw_variants.vcf already exists
+    if ($opt{FILTER_MODE} eq "SNP" && -e "$opt{OUTPUT_DIR}/$runName.filtered_snps.vcf"){
+	warn "WARNING: $opt{OUTPUT_DIR}/$runName.filtered_snps.vcf already exists, skipping \n";
+	return $jobID;
+    } elsif ($opt{FILTER_MODE} eq "INDEL" && -e "$opt{OUTPUT_DIR}/$runName.filtered_indels.vcf"){
+	warn "WARNING: $opt{OUTPUT_DIR}/$runName.filtered_indels.vcf already exists, skipping \n";
+	return $jobID;
+    } elsif ($opt{FILTER_MODE} eq "BOTH" && -e "$opt{OUTPUT_DIR}/$runName.filtered_variants.vcf"){
+	warn "WARNING: $opt{OUTPUT_DIR}/$runName.filtered_variants.vcf already exists, skipping \n";
+	return $jobID;
+    }
 
     ### Build Queue command
     my $command = "java -Xmx5G -Xms2G -jar $opt{QUEUE_PATH}/Queue.jar "; ### Change memory allocation here!!!!!
@@ -57,7 +70,6 @@ sub runFilterVariants {
     $command .= "-run";
 
     ### Create main bash script
-    my $jobID = "FV_".get_job_id();
     my $bashFile = $opt{OUTPUT_DIR}."/jobs/FilterVariants_".$jobID.".sh";
     my $logDir = $opt{OUTPUT_DIR}."/logs";
 
@@ -99,6 +111,9 @@ sub runFilterVariants {
 	system "qsub -q $opt{FILTER_QUEUE} -pe threaded $opt{FILTER_THREADS} -o $logDir -e $logDir -N $jobID $bashFile";
     }
     print "\n";
+    
+    return $jobID;
+    
 }
 
 sub readConfiguration{

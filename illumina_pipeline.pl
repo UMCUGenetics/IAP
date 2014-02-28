@@ -24,6 +24,7 @@ use illumina_poststats;
 use illumina_realign;
 use illumina_calling;
 use illumina_filterVariants;
+use illumina_annotateVariants;
 
 my %opt;
 my $configurationFile;
@@ -37,6 +38,8 @@ my $configurationFile;
     'QUALIMAP_PATH' 		=> undef,
     'QUEUE_PATH' 		=> undef,
     'GATK_PATH'			=> undef,
+    'SNPEFF_PATH'		=> undef,
+    'VCFTOOLS_PATH'		=> undef,
     'CLUSTER_PATH'  		=> undef,
     'CLUSTER_THREADS'		=> undef,
     'CLUSTER_MEM'		=> undef,
@@ -79,6 +82,7 @@ my $configurationFile;
     'BASEQUALITYRECAL'		=> "no",
     'VARIANT_CALLING'		=> "no",
     'FILTER_VARIANTS'		=> "no",
+    'ANNOTATE_VARIANTS'		=> "no",
     'OUTPUT_DIR'		=> undef,
     'FASTQ'			=> {},
     'KNOWN_SITES'		=> [],
@@ -178,7 +182,16 @@ if($opt{VARIANT_CALLING} eq "yes"){
 
 if($opt{FILTER_VARIANTS} eq "yes"){
     print "\n###SCHEDULING VARIANT FILTRATION####\n";
-    illumina_filterVariants::runFilterVariants(\%opt);
+    my $FVJob = illumina_filterVariants::runFilterVariants(\%opt);
+    
+    foreach my $sample (@{$opt{SAMPLES}}){
+	push (@{$opt{RUNNING_JOBS}->{$sample}} , $FVJob);
+    }
+}
+
+if($opt{ANNOTATE_VARIANTS} eq "yes"){
+    print "\n###SCHEDULING VARIANT ANNOTATION####\n";
+    illumina_annotateVariants::runAnnotateVariants(\%opt);
 }
 
 ############ SUBROUTINES  ############
