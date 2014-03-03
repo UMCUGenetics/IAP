@@ -26,13 +26,6 @@ sub runPreStats {
     my %opt = %{readConfiguration($configuration)};
     my $jobIds = {};
     
-    if(! -e "$opt{OUTPUT_DIR}/jobs"){
-	mkdir("$opt{OUTPUT_DIR}/jobs") or die "Couldn't create directory: $opt{OUTPUT_DIR}/jobs\n";
-    }
-    if(! -e "$opt{OUTPUT_DIR}/logs"){
-	mkdir("$opt{OUTPUT_DIR}/logs") or die "Couldn't create directory: $opt{OUTPUT_DIR}/logs\n";
-    }
-    
     my $mainJobID = "$opt{OUTPUT_DIR}/jobs/PreStatsMainJob_".get_job_id().".sh";
 
     open (QSUB,">$mainJobID") or die "ERROR: Couldn't create $mainJobID\n";
@@ -45,20 +38,7 @@ sub runPreStats {
 	$coreName =~ s/\.fastq.gz//;
 	my ($sampleName) =  split("_", $coreName);
 
-	if(! -e "$opt{OUTPUT_DIR}/$sampleName"){
-    	    mkdir("$opt{OUTPUT_DIR}/$sampleName") or die "ERROR: Couldn't create directory: $opt{OUTPUT_DIR}/$sampleName\n";
-	}
-	if(! -e "$opt{OUTPUT_DIR}/$sampleName/fastqc"){
-    	    mkdir("$opt{OUTPUT_DIR}/$sampleName/fastqc") or die "ERROR: Couldn't create directory: $opt{OUTPUT_DIR}/$sampleName/fastqc\n";
-	}
-	if(! -e "$opt{OUTPUT_DIR}/$sampleName/jobs"){
-    	    mkdir("$opt{OUTPUT_DIR}/$sampleName/jobs") or die "Couldn't create directory: $opt{OUTPUT_DIR}/$sampleName/jobs\n";
-	}
-	if(! -e "$opt{OUTPUT_DIR}/$sampleName/logs"){
-    	    mkdir("$opt{OUTPUT_DIR}/$sampleName/logs") or die "Couldn't create directory: $opt{OUTPUT_DIR}/$sampleName/logs\n";
-	}	
-    
-	if(! -e "$opt{OUTPUT_DIR}/$sampleName/fastqc/$sampleName.done"){
+	if(! -e "$opt{OUTPUT_DIR}/$sampleName/QCStats/$sampleName.done"){
 	    print "\t$input\n"; #print fastq filename
 	    
 	    my $preStatsJobId = "PRESTATS_$coreName\_".get_job_id();
@@ -68,8 +48,8 @@ sub runPreStats {
 	    print PS "cd $opt{OUTPUT_DIR}/$sampleName\n\n";
 	    print PS "uname -n > logs/$preStatsJobId.host\n";
 	    print PS "echo \"FastQC\t\" `date` >> logs/$preStatsJobId.host\n";
-	    print PS "$opt{FASTQC_PATH}/fastqc $input -o fastqc\n";
-	    print PS "touch fastqc/$sampleName.done\n";
+	    print PS "$opt{FASTQC_PATH}/fastqc $input -o QCStats\n";
+	    print PS "touch QCStats/$sampleName.done\n";
 	    close PS;
 	    
 	    print QSUB "qsub -pe threaded $opt{PRESTATS_THREADS} -q $opt{PRESTATS_QUEUE} -P $opt{PRESTATS_PROJECT} -o $opt{OUTPUT_DIR}/$sampleName/logs -e $opt{OUTPUT_DIR}/$sampleName/logs -N $preStatsJobId $opt{OUTPUT_DIR}/$sampleName/jobs/$preStatsJobId.sh\n";
@@ -102,8 +82,7 @@ sub readConfiguration {
 	    $opt{$key} = $configuration->{$key}; 
     }
 
-    if(! $opt{FASTQC_PATH}){ die "ERROR: No BWA_PATH found in .conf file\n" }
-    
+    if(! $opt{FASTQC_PATH}){ die "ERROR: No FASTQC_PATH found in .conf file\n" }
     if(! $opt{PRESTATS_THREADS}){ die "ERROR: No PRESTATS_THREADS found in .ini file\n" }
     if(! $opt{PRESTATS_MEM}){ die "ERROR: No PRESTATS_MEM found in .ini file\n" }
     if(! $opt{PRESTATS_QUEUE}){ die "ERROR: No PRESTATS_QUEUE found in .ini file\n" }
@@ -112,7 +91,6 @@ sub readConfiguration {
     if(! $opt{CLUSTER_TMP}){ die "ERROR: No CLUSTER_TMP found in .conf file\n" }
     if(! $opt{OUTPUT_DIR}){ die "ERROR: No OUTPUT_DIR found in .conf file\n" }
     if(! $opt{FASTQ}){ die "ERROR: No FASTQ files specified\n" }
-
 
     return \%opt;
 }

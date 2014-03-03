@@ -130,13 +130,10 @@ close CONFIGURATION;
 ############ START PIPELINE  ############
 if(! $opt{OUTPUT_DIR}){ die "ERROR: No OUTPUT_DIR found in .conf file\n" }
 if(! $opt{FASTQ}){ die "ERROR: No FASTQ files specified\n" }
-    
-if(! -e $opt{OUTPUT_DIR}){
-    mkdir($opt{OUTPUT_DIR});
-}
 
 ###Read samples from FASTQ's
 getSamples();
+createOutputDirs();
 
 if($opt{PRESTATS} eq "yes"){
     print "###SCHEDULING PRESTATS###\n";
@@ -208,6 +205,43 @@ sub getSamples{
 	$samples{$sampleName} ++;
     }
     @{$opt{SAMPLES}} = keys(%samples);
+}
+
+sub createOutputDirs{
+    ### Create main output directories
+    if(! -e $opt{OUTPUT_DIR}){
+	mkdir($opt{OUTPUT_DIR}) or die "Couldn't create directory: $opt{OUTPUT_DIR}\n";
+    }
+    if(! -e "$opt{OUTPUT_DIR}/jobs"){
+	mkdir("$opt{OUTPUT_DIR}/jobs") or die "Couldn't create directory: $opt{OUTPUT_DIR}/jobs\n";
+    }
+    if(! -e "$opt{OUTPUT_DIR}/logs"){
+	mkdir("$opt{OUTPUT_DIR}/logs") or die "Couldn't create directory: $opt{OUTPUT_DIR}/logs\n";
+    }    
+    if(! -e "$opt{OUTPUT_DIR}/tmp"){
+	mkdir("$opt{OUTPUT_DIR}/tmp") or die "Couldn't create directory: $opt{OUTPUT_DIR}/tmp\n";
+    }
+    ### Create sample specific output directories
+    foreach my $sample (@{$opt{SAMPLES}}){
+	if(! -e "$opt{OUTPUT_DIR}/$sample"){
+    	    mkdir("$opt{OUTPUT_DIR}/$sample") or die "Couldn't create directory: $opt{OUTPUT_DIR}/$sample\n";
+	}
+	if(! -e "$opt{OUTPUT_DIR}/$sample/mapping"){
+    	    mkdir("$opt{OUTPUT_DIR}/$sample/mapping") or die "Couldn't create directory: $opt{OUTPUT_DIR}/$sample/mapping\n";
+	}
+	if(! -e "$opt{OUTPUT_DIR}/$sample/QCStats"){
+    	    mkdir("$opt{OUTPUT_DIR}/$sample/QCStats") or die "Couldn't create directory: $opt{OUTPUT_DIR}/$sample/QCStats\n";
+	}
+	if(! -e "$opt{OUTPUT_DIR}/$sample/jobs"){
+    	    mkdir("$opt{OUTPUT_DIR}/$sample/jobs") or die "Couldn't create directory: $opt{OUTPUT_DIR}/$sample/jobs\n";
+	}
+	if(! -e "$opt{OUTPUT_DIR}/$sample/logs"){
+    	    mkdir("$opt{OUTPUT_DIR}/$sample/logs") or die "Couldn't create directory: $opt{OUTPUT_DIR}/$sample/logs\n";
+	}
+	if(! -e "$opt{OUTPUT_DIR}/$sample/tmp"){
+    	    mkdir("$opt{OUTPUT_DIR}/$sample/tmp") or die "Couldn't create directory: $opt{OUTPUT_DIR}/$sample/tmp\n";
+	}
+    }
 }
 
 # Add createDirs function? Instead of creating all dirs in different perl scripts.

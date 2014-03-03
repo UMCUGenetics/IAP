@@ -17,7 +17,7 @@ my $runDir = abs_path();
 my $runName = (split("/", $runDir))[-1];
 
 ### Setup variables
-my @files = grep -f, <*/picardStats/*HSMetrics\.txt>;
+my @files = grep -f, <*/QCStats/*HSMetrics\.txt>;
 
 if ( scalar(@files) != 0 ) {
     my $fileName = $runName.".HSMetric_summary.txt";

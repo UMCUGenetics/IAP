@@ -102,19 +102,6 @@ sub runMapping {
 	    next;
         }
 
-	if(! -e "$opt{OUTPUT_DIR}/$sampleName"){
-    	    mkdir("$opt{OUTPUT_DIR}/$sampleName") or die "Couldn't create directory: $opt{OUTPUT_DIR}/$sampleName\n";
-	}
-	if(! -e "$opt{OUTPUT_DIR}/$sampleName/mapping"){
-    	    mkdir("$opt{OUTPUT_DIR}/$sampleName/mapping") or die "Couldn't create directory: $opt{OUTPUT_DIR}/$sampleName/mapping\n";
-	}
-	if(! -e "$opt{OUTPUT_DIR}/$sampleName/jobs"){
-    	    mkdir("$opt{OUTPUT_DIR}/$sampleName/jobs") or die "Couldn't create directory: $opt{OUTPUT_DIR}/$sampleName/jobs\n";
-	}
-	if(! -e "$opt{OUTPUT_DIR}/$sampleName/logs"){
-    	    mkdir("$opt{OUTPUT_DIR}/$sampleName/logs") or die "Couldn't create directory: $opt{OUTPUT_DIR}/$sampleName/logs\n";
-	}
-
 	if($opt{MAPPING_MODE} eq 'batch'){
 	
 	    submitBatchJobs(\%opt,$QSUB,$samples, $sampleName, $coreName, $R1, $R2);

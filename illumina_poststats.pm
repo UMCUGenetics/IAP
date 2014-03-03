@@ -27,8 +27,7 @@ sub runPostStats {
 	my $jobID;
 	my $bam = $opt{OUTPUT_DIR}."/".$sample."/mapping/".$sample."_dedup.bam";
 
-	my $picardOut = $opt{OUTPUT_DIR}."/".$sample."/picardStats/";
-	unless(-e $picardOut or mkdir $picardOut) { die "Unable to create $picardOut \n"; }
+	my $picardOut = $opt{OUTPUT_DIR}."/".$sample."/QCStats/";
 	
 	### Multiple metrics
 	my $command = $picard."/CollectMultipleMetrics.jar R=$opt{GENOME} ASSUME_SORTED=TRUE OUTPUT=".$picardOut.$sample."_MultipleMetrics.txt INPUT=$bam PROGRAM=CollectAlignmentSummaryMetrics PROGRAM=CollectInsertSizeMetrics PROGRAM=QualityScoreDistribution PROGRAM=QualityScoreDistribution\n";

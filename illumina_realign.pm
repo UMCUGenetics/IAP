@@ -26,18 +26,6 @@ sub runRealignment {
     
     my $mainJobID = "$opt{OUTPUT_DIR}/jobs/RealignMainJob_".get_job_id().".sh";
     
-    if(! -e "$opt{OUTPUT_DIR}/tmp"){
-	mkdir("$opt{OUTPUT_DIR}/tmp") or die "Couldn't create directory: $opt{OUTPUT_DIR}/tmp\n";
-    }
-    if(! -e "$opt{OUTPUT_DIR}/jobs"){
-	mkdir("$opt{OUTPUT_DIR}/jobs") or die "Couldn't create directory: $opt{OUTPUT_DIR}/jobs\n";
-    }
-    if(! -e "$opt{OUTPUT_DIR}/logs"){
-	mkdir("$opt{OUTPUT_DIR}/logs") or die "Couldn't create directory: $opt{OUTPUT_DIR}/logs\n";
-    }
-
-
-
     open (QSUB,">$mainJobID") or die "ERROR: Couldn't create $mainJobID\n";
     print QSUB "\#!/bin/sh\n\n. $opt{CLUSTER_PATH}/settings.sh\n\n";
     
@@ -122,7 +110,7 @@ sub runRealignment {
 	print CLEAN_SH "if [ \$PASS -eq 0 ]\n";
 	print CLEAN_SH "then\n";
 	print CLEAN_SH "\tmv $opt{OUTPUT_DIR}/tmp/IndelRealigner.jobreport.txt $opt{OUTPUT_DIR}/logs/IndelRealigner.jobreport.txt\n";
-	print CLEAN_SH "\trm -r $opt{OUTPUT_DIR}/tmp/\n";
+	#print CLEAN_SH "\trm -r $opt{OUTPUT_DIR}/tmp/\n";
 	print CLEAN_SH "fi\n";
 	close CLEAN_SH;
 	
@@ -145,13 +133,7 @@ sub runRealignment {
 		next;
 	    }
 	    my $jobId = "REALIGN_$sample\_".get_job_id();
-	    
-	    if(! -e "$opt{OUTPUT_DIR}/$sample/tmp"){
-    		mkdir("$opt{OUTPUT_DIR}/$sample/tmp") or die "Couldn't create directory: $opt{OUTPUT_DIR}/$sample/tmp\n";
-	    }
-	    
-	    
-	    	
+
 	    open REALIGN_SH,">$opt{OUTPUT_DIR}/$sample/jobs/$jobId.sh" or die "Couldn't create $opt{OUTPUT_DIR}/$sample/jobs/$jobId.sh\n";
 	    
 	    print REALIGN_SH "\#!/bin/bash\n\n";
@@ -176,7 +158,7 @@ sub runRealignment {
 	    print REALIGN_SH "\tthen\n";
 	    print REALIGN_SH "\t\ttouch $opt{OUTPUT_DIR}/$sample/mapping/$sample\_dedup_realigned.done\n";
 	    print REALIGN_SH "\t\tmv $opt{OUTPUT_DIR}/$sample/tmp/IndelRealigner.jobreport.txt $opt{OUTPUT_DIR}/$sample/logs/IndelRealigner.jobreport.txt\n";
-	    print REALIGN_SH "\trm -r $opt{OUTPUT_DIR}/$sample/tmp/\n";
+	    #print REALIGN_SH "\trm -r $opt{OUTPUT_DIR}/$sample/tmp/\n";
 	    print REALIGN_SH "\telse\n";
 	    print REALIGN_SH "\t\techo \"ERROR: $opt{OUTPUT_DIR}/$sample/mapping/$sample\_dedup.flagstat and $opt{OUTPUT_DIR}/$sample/mapping/$sample\_dedup_realigned.flagstat do not have the same read counts\" >>../logs/realign.err\n";
 	    print REALIGN_SH "\tfi\n";

@@ -3,7 +3,7 @@ Sample statistics
 
 ```{r echo=FALSE, fig.width=7, fig.height=7}
 for(i in 1:length(samples)) {
-  samplePath = paste(samples[i],"picardStats",samples[i],sep="/")
+  samplePath = paste(samples[i],"QCStats",samples[i],sep="/")
   wd_sample = paste(workingDir, samplePath, sep="/")
   insert_size_metrics = paste(wd_sample,"_MultipleMetrics.txt.insert_size_metrics", sep="")
   quality_by_cycle_metrics = paste(wd_sample,"_MultipleMetrics.txt.quality_by_cycle_metrics", sep="")

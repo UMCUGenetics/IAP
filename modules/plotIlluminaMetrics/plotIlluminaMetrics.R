@@ -39,7 +39,7 @@ if (file.exists(fileName)){
 
 #Plot metrics to pdf files.
 for(i in 1:length(samples)) {
-  samplePath = paste(samples[i],"picardStats",samples[i],sep="/")
+  samplePath = paste(samples[i],"QCStats",samples[i],sep="/")
   
   pdfOut =  paste("pdfFigures", samples[i], sep="/")
   insert_size_metrics = paste(samplePath,"_MultipleMetrics.txt.insert_size_metrics", sep="")
