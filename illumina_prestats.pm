@@ -44,7 +44,6 @@ sub runPreStats {
 	$coreName = (split("/", $input))[-1];
 	$coreName =~ s/\.fastq.gz//;
 	my ($sampleName) =  split("_", $coreName);
-	print "\t$input\n";
 
 	if(! -e "$opt{OUTPUT_DIR}/$sampleName"){
     	    mkdir("$opt{OUTPUT_DIR}/$sampleName") or die "ERROR: Couldn't create directory: $opt{OUTPUT_DIR}/$sampleName\n";
@@ -59,8 +58,9 @@ sub runPreStats {
     	    mkdir("$opt{OUTPUT_DIR}/$sampleName/logs") or die "Couldn't create directory: $opt{OUTPUT_DIR}/$sampleName/logs\n";
 	}	
     
-	if(! -e "$opt{OUTPUT_DIR}/$sampleName/fastqc/$input.done"){
-
+	if(! -e "$opt{OUTPUT_DIR}/$sampleName/fastqc/$sampleName.done"){
+	    print "\t$input\n"; #print fastq filename
+	    
 	    my $preStatsJobId = "PRESTATS_$coreName\_".get_job_id();
 	    push(@{$jobIds->{$sampleName}}, $preStatsJobId);
 	    open PS,">$opt{OUTPUT_DIR}/$sampleName/jobs/$preStatsJobId.sh";
