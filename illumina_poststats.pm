@@ -31,18 +31,18 @@ sub runPostStats {
 	unless(-e $picardOut or mkdir $picardOut) { die "Unable to create $picardOut \n"; }
 	
 	### Multiple metrics
-	my $command = $picard."/CollectMultipleMetrics.jar VALIDATION_STRINGENCY=LENIENT R=$opt{GENOME} ASSUME_SORTED=TRUE OUTPUT=".$picardOut.$sample."_MultipleMetrics.txt INPUT=$bam PROGRAM=CollectAlignmentSummaryMetrics PROGRAM=CollectInsertSizeMetrics PROGRAM=QualityScoreDistribution PROGRAM=QualityScoreDistribution\n";
+	my $command = $picard."/CollectMultipleMetrics.jar R=$opt{GENOME} ASSUME_SORTED=TRUE OUTPUT=".$picardOut.$sample."_MultipleMetrics.txt INPUT=$bam PROGRAM=CollectAlignmentSummaryMetrics PROGRAM=CollectInsertSizeMetrics PROGRAM=QualityScoreDistribution PROGRAM=QualityScoreDistribution\n";
 	$jobID = bashAndSubmit($command,$sample,\%opt);
 	push(@runningJobs, $jobID);
 	
 	### Library Complexity
-	$command = $picard."/EstimateLibraryComplexity.jar VALIDATION_STRINGENCY=LENIENT OUTPUT=".$picardOut.$sample."_LibComplexity.txt INPUT=$bam";
+	$command = $picard."/EstimateLibraryComplexity.jar OUTPUT=".$picardOut.$sample."_LibComplexity.txt INPUT=$bam";
 	$jobID = bashAndSubmit($command,$sample,\%opt);
 	push(@runningJobs, $jobID);
 	
 	### Calculate HSMetrics -> only if target/bait file are present.
 	if ( ($opt{POSTSTATS_TARGETS}) && ($opt{POSTSTATS_BAITS}) ) {
-	    $command = $picard."/CalculateHsMetrics.jar VALIDATION_STRINGENCY=LENIENT R=$opt{GENOME} OUTPUT=".$picardOut.$sample."_HSMetrics.txt INPUT=$bam BAIT_INTERVALS=$opt{POSTSTATS_BAITS} TARGET_INTERVALS=$opt{POSTSTATS_TARGETS} METRIC_ACCUMULATION_LEVEL=SAMPLE";
+	    $command = $picard."/CalculateHsMetrics.jar R=$opt{GENOME} OUTPUT=".$picardOut.$sample."_HSMetrics.txt INPUT=$bam BAIT_INTERVALS=$opt{POSTSTATS_BAITS} TARGET_INTERVALS=$opt{POSTSTATS_TARGETS} METRIC_ACCUMULATION_LEVEL=SAMPLE";
 	    $jobID = bashAndSubmit($command,$sample,\%opt);
 	    push(@runningJobs, $jobID);
 	}

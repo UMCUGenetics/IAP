@@ -34,6 +34,7 @@ my $configurationFile;
     'BWA_PATH'      		=> undef,
     'PICARD_PATH'   		=> undef,
     'SAMBAMBA_PATH'		=> undef,
+    'SAMTOOLS_PATH'		=> undef,
     'FASTQC_PATH' 		=> undef,
     'QUALIMAP_PATH' 		=> undef,
     'QUEUE_PATH' 		=> undef,

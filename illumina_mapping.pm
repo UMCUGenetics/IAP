@@ -6,7 +6,7 @@
 ###using sambamba merge. Aside from mapping the script also runs sambamba flagstat on each *dedup.bam file.
 ###
 ###Author: S.W.Boymans
-###Latest change: Created first version
+###Latest change: temporary replacement of sambamba view with samtools view because of picard errors.
 ###
 ###
 ##################################################################################################################################################
@@ -233,10 +233,14 @@ sub submitBatchJobs{
     
     if($R2){
         print "\t$R1\n\t$R2\n";
-        print BWA_SH "$opt{BWA_PATH}/bwa mem -t $opt{MAPPING_THREADS} -c 100 -M -R \"\@RG\tID:$RG_ID\tSM:$RG_SM\tPL:$RG_PL\tLB:$RG_LB\" $opt{GENOME} $R1 $R2 2>>$opt{OUTPUT_DIR}/$sampleName/logs/$coreName\_bwa_log | $opt{SAMBAMBA_PATH}/sambamba view -t $opt{MAPPING_THREADS} --format=bam -S -o $coreName.bam /dev/stdin\n";
+        #temporary replacement of sambamba view with samtools view because of picard errors.
+        #print BWA_SH "$opt{BWA_PATH}/bwa mem -t $opt{MAPPING_THREADS} -c 100 -M -R \"\@RG\tID:$RG_ID\tSM:$RG_SM\tPL:$RG_PL\tLB:$RG_LB\" $opt{GENOME} $R1 $R2 2>>$opt{OUTPUT_DIR}/$sampleName/logs/$coreName\_bwa_log | $opt{SAMBAMBA_PATH}/sambamba view -t $opt{MAPPING_THREADS} --format=bam -S -o $coreName.bam /dev/stdin\n";
+	print BWA_SH "$opt{BWA_PATH}/bwa mem -t $opt{MAPPING_THREADS} -c 100 -M -R \"\@RG\tID:$RG_ID\tSM:$RG_SM\tPL:$RG_PL\tLB:$RG_LB\" $opt{GENOME} $R1 $R2 2>>$opt{OUTPUT_DIR}/$sampleName/logs/$coreName\_bwa_log | $opt{SAMTOOLS_PATH}/samtools view -b -S -o $coreName.bam -\n";
     }else{
         print "\t$R1\n";
-        print BWA_SH "$opt{BWA_PATH}/bwa mem -t $opt{MAPPING_THREADS} -c 100 -M -R \"\@RG\tID:$RG_ID\tSM:$RG_SM\tPL:$RG_PL\tLB:$RG_LB\" $opt{GENOME} $R1 2>>$opt{OUTPUT_DIR}/$sampleName/logs/$coreName\_bwa_log | $opt{SAMBAMBA_PATH}/sambamba view -t $opt{MAPPING_THREADS} --format=bam -S -o $coreName.bam /dev/stdin\n";
+        #temporary replacement of sambamba view with samtools view because of picard errors.
+        #print BWA_SH "$opt{BWA_PATH}/bwa mem -t $opt{MAPPING_THREADS} -c 100 -M -R \"\@RG\tID:$RG_ID\tSM:$RG_SM\tPL:$RG_PL\tLB:$RG_LB\" $opt{GENOME} $R1 2>>$opt{OUTPUT_DIR}/$sampleName/logs/$coreName\_bwa_log | $opt{SAMBAMBA_PATH}/sambamba view -t $opt{MAPPING_THREADS} --format=bam -S -o $coreName.bam /dev/stdin\n";
+	print BWA_SH "$opt{BWA_PATH}/bwa mem -t $opt{MAPPING_THREADS} -c 100 -M -R \"\@RG\tID:$RG_ID\tSM:$RG_SM\tPL:$RG_PL\tLB:$RG_LB\" $opt{GENOME} $R1 2>>$opt{OUTPUT_DIR}/$sampleName/logs/$coreName\_bwa_log | $opt{SAMTOOLS_PATH}/samtools view -b -S -o $coreName.bam -\n";
     }
 
     print BWA_SH "echo \"mapping finished\t\" `date` >> $opt{OUTPUT_DIR}/$sampleName/logs/$jobId.host\n";
@@ -327,10 +331,14 @@ sub submitSingleJobs{
     
     if($R2){
         print "\t$R1\n\t$R2\n";
-        print BWA_SH "$opt{BWA_PATH}/bwa mem -t $opt{MAPPING_THREADS} -c 100 -M -R \"\@RG\tID:$RG_ID\tSM:$RG_SM\tPL:$RG_PL\tLB:$RG_LB\" $opt{GENOME} $R1 $R2 2>>$opt{OUTPUT_DIR}/$sampleName/logs/$coreName\_bwa_log | $opt{SAMBAMBA_PATH}/sambamba view -t $opt{MAPPING_THREADS} --format=bam -S -o $coreName.bam /dev/stdin\n";
+        #temporary replacement of sambamba view with samtools view because of picard errors.
+        #print BWA_SH "$opt{BWA_PATH}/bwa mem -t $opt{MAPPING_THREADS} -c 100 -M -R \"\@RG\tID:$RG_ID\tSM:$RG_SM\tPL:$RG_PL\tLB:$RG_LB\" $opt{GENOME} $R1 $R2 2>>$opt{OUTPUT_DIR}/$sampleName/logs/$coreName\_bwa_log | $opt{SAMBAMBA_PATH}/sambamba view -t $opt{MAPPING_THREADS} --format=bam -S -o $coreName.bam /dev/stdin\n";
+	print BWA_SH "$opt{BWA_PATH}/bwa mem -t $opt{MAPPING_THREADS} -c 100 -M -R \"\@RG\tID:$RG_ID\tSM:$RG_SM\tPL:$RG_PL\tLB:$RG_LB\" $opt{GENOME} $R1 $R2 2>>$opt{OUTPUT_DIR}/$sampleName/logs/$coreName\_bwa_log | $opt{SAMTOOLS_PATH}/samtools view -b -S -o $coreName.bam -\n";
     }else{
         print "\t$R1\n";
-        print BWA_SH "$opt{BWA_PATH}/bwa mem -t $opt{MAPPING_THREADS} -c 100 -M -R \"\@RG\tID:$RG_ID\tSM:$RG_SM\tPL:$RG_PL\tLB:$RG_LB\" $opt{GENOME} $R1 2>>$opt{OUTPUT_DIR}/$sampleName/logs/$coreName\_bwa_log | $opt{SAMBAMBA_PATH}/sambamba view -t $opt{MAPPING_THREADS} --format=bam -S -o $coreName.bam /dev/stdin\n";
+	#temporary replacement of sambamba view with samtools view because of picard errors.
+        #print BWA_SH "$opt{BWA_PATH}/bwa mem -t $opt{MAPPING_THREADS} -c 100 -M -R \"\@RG\tID:$RG_ID\tSM:$RG_SM\tPL:$RG_PL\tLB:$RG_LB\" $opt{GENOME} $R1 2>>$opt{OUTPUT_DIR}/$sampleName/logs/$coreName\_bwa_log | $opt{SAMBAMBA_PATH}/sambamba view -t $opt{MAPPING_THREADS} --format=bam -S -o $coreName.bam /dev/stdin\n";
+	print BWA_SH "$opt{BWA_PATH}/bwa mem -t $opt{MAPPING_THREADS} -c 100 -M -R \"\@RG\tID:$RG_ID\tSM:$RG_SM\tPL:$RG_PL\tLB:$RG_LB\" $opt{GENOME} $R1 2>>$opt{OUTPUT_DIR}/$sampleName/logs/$coreName\_bwa_log | $opt{SAMTOOLS_PATH}/samtools view -b -S -o $coreName.bam -\n";
     }
 
     print BWA_SH "echo \"mapping finished\t\" `date` >> $opt{OUTPUT_DIR}/$sampleName/logs/$mappingJobId.host\n\n";
@@ -483,6 +491,7 @@ sub readConfiguration {
 	
 	'BWA_PATH'      	=> undef,
 	'SAMBAMBA_PATH'		=> undef,
+	'SAMTOOLS_PATH'		=> undef,
 	'CLUSTER_PATH'  	=> undef,
 	'CLUSTER_THREADS'	=> undef,
 	'CLUSTER_MEM'		=> undef,
@@ -498,6 +507,7 @@ sub readConfiguration {
     
     if(! $opt{BWA_PATH}){ die "ERROR: No BWA_PATH found in .conf file\n" }
     if(! $opt{SAMBAMBA_PATH}){ die "ERROR: No SAMBAMBA_PATH found in .conf file\n" }
+    if(! $opt{SAMTOOLS_PATH}){ die "ERROR: No SAMTOOLS_PATH found in .conf file\n" }
     if(! $opt{MAPPING_THREADS}){ die "ERROR: No MAPPING_THREADS found in .ini file\n" }
     if(! $opt{MAPPING_MEM}){ die "ERROR: No MAPPING_MEM found in .ini file\n" }
     if(! $opt{MAPPING_QUEUE}){ die "ERROR: No MAPPING_QUEUE found in .ini file\n" }
