@@ -44,7 +44,7 @@ class Realigner extends QScript {
     @Argument(doc="Maxmem.", shortName="mem", required=true)
     var maxMem: Int = _
 
-    @Argument(doc="Number of cpu threads per data thread", shortName="nt", required=true)
+    @Argument(doc="Number of data threads", shortName="nt", required=true)
     var numDataThreads: Int = _
 
     @Argument(doc="Number of scatters", shortName="nsc", required=true)
