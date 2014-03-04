@@ -35,7 +35,8 @@ sub runFilterVariants {
     }
 
     ### Build Queue command
-    my $command = "java -Xmx5G -Xms2G -jar $opt{QUEUE_PATH}/Queue.jar "; ### Change memory allocation here!!!!!
+    my $javaMem = $opt{FILTER_THREADS} * $opt{FILTER_MEM};
+    my $command = "java -Xmx".$javaMem."G -Xms".$opt{FILTER_MEM}."G -jar $opt{QUEUE_PATH}/Queue.jar "; ### Change memory allocation here!!!!!
     $command .= "-jobQueue $opt{FILTER_QUEUE} -jobEnv \"threaded $opt{FILTER_THREADS}\" -jobRunner GridEngine -jobReport $opt{OUTPUT_DIR}/logs/filterVariants.jobReport.txt "; #Queue options
 
     ### Common settings

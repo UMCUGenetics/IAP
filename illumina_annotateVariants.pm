@@ -45,7 +45,7 @@ sub runAnnotateVariants {
     if($opt{ANNOTATE_SNPEFF} eq "yes"){
 	$outvcf = $invcf;
 	$outvcf =~ s/.vcf/_snpEff.vcf/;
-	$command = "java -Xmx5g -jar $opt{SNPEFF_PATH}/snpEff.jar -c $opt{SNPEFF_PATH}/snpEff.config $opt{ANNOTATE_DB} -v $invcf -o gatk $opt{ANNOTATE_FLAGS} > $outvcf";
+	$command = "java -Xmx".$opt{ANNOTATE_MEM}."g -jar $opt{SNPEFF_PATH}/snpEff.jar -c $opt{SNPEFF_PATH}/snpEff.config $opt{ANNOTATE_DB} -v $invcf -o gatk $opt{ANNOTATE_FLAGS} > $outvcf";
 	print ANNOTATE_SH "$command\n\n";
 	$invcf = $outvcf;
     }
@@ -54,7 +54,7 @@ sub runAnnotateVariants {
     if($opt{ANNOTATE_SNPSIFT} eq "yes"){
 	$outvcf = $invcf;
 	$outvcf =~ s/.vcf/_snpSift.vcf/;
-	$command = "java -Xmx5g -jar $opt{SNPEFF_PATH}/SnpSift.jar dbnsfp -f $opt{ANNOTATE_FIELDS} -v $opt{ANNOTATE_DBNSFP} $invcf > $outvcf";
+	$command = "java -Xmx".$opt{ANNOTATE_MEM}."g -jar $opt{SNPEFF_PATH}/SnpSift.jar dbnsfp -f $opt{ANNOTATE_FIELDS} -v $opt{ANNOTATE_DBNSFP} $invcf > $outvcf";
 	print ANNOTATE_SH "$command\n";
 	if($opt{ANNOTATE_SNPEFF} eq "yes"){
 	    print ANNOTATE_SH "if [ -f $outvcf ]\nthen\n rm $invcf\nfi\n\n";
@@ -85,7 +85,7 @@ sub runAnnotateVariants {
 	system "qsub -q $opt{ANNOTATE_QUEUE} -pe threaded $opt{ANNOTATE_THREADS} -o $logDir -e $logDir -N $jobID $bashFile";
     }
     print "\n";
-    
+
     return $jobID;
 }
 
@@ -95,6 +95,7 @@ sub readConfiguration{
     my %opt = (
 	'ANNOTATE_QUEUE'	=> undef,
 	'ANNOTATE_THREADS'	=> undef,
+	'ANNOTATE_MEM'		=> undef,
 	'ANNOTATE_SNPEFF'	=> undef,
 	'ANNOTATE_DB'		=> undef,
 	'ANNOTATE_FLAGS'	=> undef,
@@ -115,6 +116,7 @@ sub readConfiguration{
     if(! $opt{SNPEFF_PATH}){ die "ERROR: No SNPEFF_PATH found in .ini file\n" }
     if(! $opt{ANNOTATE_QUEUE}){ die "ERROR: No ANNOTATE_QUEUE found in .conf file\n" }
     if(! $opt{ANNOTATE_THREADS}){ die "ERROR: No ANNOTATE_THREADS found in .conf file\n" }
+    if(! $opt{ANNOTATE_MEM}){ die "ERROR: No ANNOTATE_MEM found in .conf file\n" }
     if(! $opt{ANNOTATE_SNPEFF}){ die "ERROR: No ANNOTATE_SNPEFF found in .conf file\n" }
     if($opt{ANNOTATE_SNPEFF} eq "yes"){
 	if(! $opt{ANNOTATE_DB}){ die "ERROR: No ANNOTATE_DB found in .conf file\n" }

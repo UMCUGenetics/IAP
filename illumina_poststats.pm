@@ -19,7 +19,8 @@ use FindBin;
 sub runPostStats {
     my $configuration = shift;
     my %opt = %{readConfiguration($configuration)};
-    my $picard = "java -Xmx16G -jar $opt{PICARD_PATH}"; ## Edit memory here!! threads x maxMem?????
+    my $javaMem = $opt{POSTSTATS_THREADS} * $opt{POSTSTATS_MEM};
+    my $picard = "java -Xmx".$javaMem."G -jar $opt{PICARD_PATH}"; ## Edit memory here!! threads x maxMem?????
     my @runningJobs; #internal job array
     
     ### Run Picard for each sample
@@ -68,6 +69,7 @@ sub readConfiguration{
 	
 	'PICARD_PATH'		=> undef,
 	'POSTSTATS_THREADS'	=> undef,
+	'POSTSTATS_MEM'		=> undef,
 	'POSTSTATS_QUEUE'	=> undef,,
 	'POSTSTATS_TARGETS'	=> undef,
 	'POSTSTATS_BAITS'	=> undef,
@@ -82,8 +84,9 @@ sub readConfiguration{
     }
 
     if(! $opt{PICARD_PATH}){ die "ERROR: No PICARD_PATH found in .conf file\n" }
-    if(! $opt{POSTSTATS_THREADS}){ die "ERROR: No POSTSTATS_THREADS found in .ini file\n" }
-    if(! $opt{POSTSTATS_QUEUE}){ die "ERROR: No POSTSTATS_THREADS found in .ini file\n" }
+    if(! $opt{POSTSTATS_THREADS}){ die "ERROR: No POSTSTATS_THREADS found in .conf file\n" }
+    if(! $opt{POSTSTATS_MEM}){ die "ERROR: No POSTSTATS_MEM found in .conf file\n" }
+    if(! $opt{POSTSTATS_QUEUE}){ die "ERROR: No POSTSTATS_THREADS found in .conf file\n" }
     if(! $opt{GENOME}){ die "ERROR: No GENOME found in .conf file\n" }
     if(! $opt{OUTPUT_DIR}){ die "ERROR: No OUTPUT_DIR found in .conf file\n" }
     if(! $opt{SAMPLES}){ die "ERROR: No SAMPLES found\n" }

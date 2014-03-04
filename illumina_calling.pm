@@ -29,7 +29,8 @@ sub runVariantCalling {
     }
     
     ### Build Queue command
-    my $command = "java -Xmx22G -Xms2G -jar $opt{QUEUE_PATH}/Queue.jar "; ### Change memory allocation here!!!!!
+    my $javaMem = $opt{CALLING_THREADS} * $opt{CALLING_MEM};
+    my $command = "java -Xmx".$javaMem."G -Xms".$opt{CALLING_MEM}."G -jar $opt{QUEUE_PATH}/Queue.jar "; ### Change memory allocation here!!!!!
     $command .= "-jobQueue $opt{CALLING_QUEUE} -jobEnv \"threaded $opt{CALLING_THREADS}\" -jobRunner GridEngine -jobReport $opt{OUTPUT_DIR}/logs/variantCaller.jobReport.txt "; #Queue options
 
     ### Add caller and UG specific settings
