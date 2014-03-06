@@ -64,6 +64,12 @@ class HardFilter extends QScript {
       
     @Argument(doc="An optional list of INDEL filter expressions.", shortName="indelFilterExpression", required=false)
     var indelFilterExp: List[String] = _
+    
+    @Argument(doc="The number of SNPs which make up a cluster.", shortName="cluster", required=false)
+    var clusterSize: Int = 0
+    
+    @Argument(doc="The window size (in bases) in which to evaluate clustered SNPs.", shortName="window", required=false)
+    var clusterWindowSize: Int = 0
 
     // This trait allows us set the variables below in one place and then reuse this trait on each CommandLineGATK function below.
     trait HF_Arguments extends CommandLineGATK {
@@ -84,6 +90,11 @@ class HardFilter extends QScript {
 	SNPfilter.out = qscript.out + ".filtered_snps.vcf"
 	SNPfilter.filterExpression = snpFilterExp 
 	SNPfilter.filterName = snpFilterNames
+	
+	if( clusterSize != 0 && clusterWindowSize != 0 ){
+	    SNPfilter.clusterSize = clusterSize
+	    SNPfilter.clusterWindowSize = clusterWindowSize
+	}
 
 	val selectINDEL = new SelectVariants with HF_Arguments
 	selectINDEL.V = rawVCF
