@@ -53,6 +53,9 @@ sub runFilterVariants {
 	foreach my $i (0 .. scalar(@SNPFilterNames)-1 ){
 	    $command .= "-snpFilterName $SNPFilterNames[$i] -snpFilterExpression \"$SNPFilterExprs[$i]\" ";
 	}
+	if ($opt{FILTER_CLUSTERSIZE} and $opt{FILTER_CLUSTERWINDOWSIZE}){
+	    $command .= "-cluster $opt{FILTER_CLUSTERSIZE} -window $opt{FILTER_CLUSTERWINDOWSIZE} ";
+	}
     }
 
     if ($opt{FILTER_MODE} eq "INDEL" || $opt{FILTER_MODE} eq "BOTH") {
@@ -121,20 +124,22 @@ sub readConfiguration{
     my $configuration = shift;
 
     my %opt = (
-	'QUEUE_PATH'		=> undef,
-	'FILTER_QUEUE'		=> undef,
-	'FILTER_THREADS'	=> undef,
-	'FILTER_MEM'		=> undef,
-	'FILTER_SCATTER'	=> undef,
-	'FILTER_SCALA'		=> undef,
-	'FILTER_MODE'		=> undef,
-	'FILTER_SNPNAME'	=> undef,
-	'FILTER_SNPEXPR'	=> undef,
-	'FILTER_INDELNAME'	=> undef,
-	'FILTER_INDELEXPR'	=> undef,
-	'GENOME'		=> undef,
-	'OUTPUT_DIR'		=> undef,
-	'RUNNING_JOBS'		=> {} #do not use in .conf file
+	'QUEUE_PATH'			=> undef,
+	'FILTER_QUEUE'			=> undef,
+	'FILTER_THREADS'		=> undef,
+	'FILTER_MEM'			=> undef,
+	'FILTER_SCATTER'		=> undef,
+	'FILTER_SCALA'			=> undef,
+	'FILTER_MODE'			=> undef,
+	'FILTER_SNPNAME'		=> undef,
+	'FILTER_SNPEXPR'		=> undef,
+	'FILTER_INDELNAME'		=> undef,
+	'FILTER_INDELEXPR'		=> undef,
+	'FILTER_CLUSTERSIZE'		=> undef,
+	'FILTER_CLUSTERWINDOWSIZE'	=> undef,
+	'GENOME'			=> undef,
+	'OUTPUT_DIR'			=> undef,
+	'RUNNING_JOBS'			=> {} #do not use in .conf file
     );
 
     foreach my $key (keys %{$configuration}){
