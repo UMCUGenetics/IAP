@@ -50,8 +50,8 @@ class Realigner extends QScript {
     var numScatters: Int = _
 
     // Optional arguments
-    @Input(doc ="Input VCF file with known snps", shortName="knownSites", required=false)
-    var knownSNPFiles: List[File] = Nil
+    @Input(doc ="Database of known polymorphic sites to skip over in the recalibration algorithm", shortName="knownSites", required=false)
+    var knownFiles: List[File] = Nil
     
     // This trait allows us set the variables below in one place,
     // and then reuse this trait on each CommandLineGATK function below.
@@ -68,8 +68,8 @@ class Realigner extends QScript {
 
 	// Analyze patterns of covariation in the sequence dataset
 	baseRecalibrator.input_file :+= bamFile
-	if(knownSNPFiles != Nil){
-	    baseRecalibrator.knownSites = knownSNPFiles
+	if(knownFiles != Nil){
+	    baseRecalibrator.knownSites = knownFiles
 	}
 	baseRecalibrator.out = swapExt(bamFile, ".bam", "_recal_data.table")
 	
@@ -78,8 +78,8 @@ class Realigner extends QScript {
 	
 	// Do a second pass to analyze covariation remaining after recalibration
 	baseRecalibratorSecond.input_file :+= bamFile
-	if(knownSNPFiles != Nil){
-	    baseRecalibratorSecond.knownSites = knownSNPFiles
+	if(knownFiles != Nil){
+	    baseRecalibratorSecond.knownSites = knownFiles
 	}
 	baseRecalibratorSecond.BQSR = baseRecalibrator.out
 	baseRecalibratorSecond.out = swapExt(bamFile, ".bam", "_post_recal_data.table")

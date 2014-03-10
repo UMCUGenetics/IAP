@@ -22,6 +22,7 @@ use illumina_prestats;
 use illumina_mapping;
 use illumina_poststats;
 use illumina_realign;
+use illumina_baseRecal;
 use illumina_calling;
 use illumina_filterVariants;
 use illumina_annotateVariants;
@@ -167,6 +168,13 @@ if($opt{INDELREALIGNMENT} eq "yes"){
 }
 
 if($opt{BASEQUALITYRECAL} eq "yes"){
+    print "\n###SCHEDULING BASERECALIBRATION###\n";
+    my %baseRecalJobs = illumina_baseRecal::runBaseRecalibration(\%opt);
+    
+    foreach my $sample (keys %baseRecalJobs){
+	push (@{$opt{RUNNING_JOBS}->{$sample}} , $baseRecalJobs{$sample});
+    }
+    
 }
 
 if($opt{VARIANT_CALLING} eq "yes"){
@@ -243,12 +251,6 @@ sub createOutputDirs{
 	}
     }
 }
-
-# Add createDirs function? Instead of creating all dirs in different perl scripts.
-# OutputDir
-#	-sample1, sample2, etc
-#		-jobs, logs, tmp, mapping and QCStats (merge Fastqc and Picardstats)
-#	-jobs, logs, tmp
 
 #### USAGE - HELP ####
 # Add more information?
