@@ -20,31 +20,37 @@ sub runPostStats {
     my $configuration = shift;
     my %opt = %{readConfiguration($configuration)};
     my $javaMem = $opt{POSTSTATS_THREADS} * $opt{POSTSTATS_MEM};
-    my $picard = "java -Xmx".$javaMem."G -jar $opt{PICARD_PATH}"; ## Edit memory here!! threads x maxMem?????
+    my $picard = "java -Xmx".$javaMem."G -jar $opt{PICARD_PATH}";
     my @runningJobs; #internal job array
     
     ### Run Picard for each sample
     foreach my $sample (@{$opt{SAMPLES}}){
 	my $jobID;
 	my $bam = $opt{OUTPUT_DIR}."/".$sample."/mapping/".$sample."_dedup.bam";
-
 	my $picardOut = $opt{OUTPUT_DIR}."/".$sample."/QCStats/";
+	my $command;
 	
 	### Multiple metrics
-	my $command = $picard."/CollectMultipleMetrics.jar R=$opt{GENOME} ASSUME_SORTED=TRUE OUTPUT=".$picardOut.$sample."_MultipleMetrics.txt INPUT=$bam PROGRAM=CollectAlignmentSummaryMetrics PROGRAM=CollectInsertSizeMetrics PROGRAM=QualityScoreDistribution PROGRAM=QualityScoreDistribution\n";
-	$jobID = bashAndSubmit($command,$sample,\%opt);
-	push(@runningJobs, $jobID);
-	
-	### Library Complexity
-	$command = $picard."/EstimateLibraryComplexity.jar OUTPUT=".$picardOut.$sample."_LibComplexity.txt INPUT=$bam";
-	$jobID = bashAndSubmit($command,$sample,\%opt);
-	push(@runningJobs, $jobID);
-	
-	### Calculate HSMetrics -> only if target/bait file are present.
-	if ( ($opt{POSTSTATS_TARGETS}) && ($opt{POSTSTATS_BAITS}) ) {
-	    $command = $picard."/CalculateHsMetrics.jar R=$opt{GENOME} OUTPUT=".$picardOut.$sample."_HSMetrics.txt INPUT=$bam BAIT_INTERVALS=$opt{POSTSTATS_BAITS} TARGET_INTERVALS=$opt{POSTSTATS_TARGETS} METRIC_ACCUMULATION_LEVEL=SAMPLE";
+	unless (-e $picardOut.$sample."_MultipleMetrics.txt.alignment_summary_metrics" && -e $picardOut.$sample."_MultipleMetrics.txt.insert_size_metrics" && -e $picardOut.$sample."_MultipleMetrics.txt.quality_by_cycle_metrics" && -e $picardOut.$sample."_MultipleMetrics.txt.quality_distribution_metrics"){
+	    $command = $picard."/CollectMultipleMetrics.jar R=$opt{GENOME} ASSUME_SORTED=TRUE OUTPUT=".$picardOut.$sample."_MultipleMetrics.txt INPUT=$bam PROGRAM=CollectAlignmentSummaryMetrics PROGRAM=CollectInsertSizeMetrics PROGRAM=QualityScoreDistribution PROGRAM=QualityScoreDistribution\n";
 	    $jobID = bashAndSubmit($command,$sample,\%opt);
 	    push(@runningJobs, $jobID);
+	}
+	
+	### Library Complexity
+	unless (-e $picardOut.$sample."_LibComplexity.txt"){
+	    $command = $picard."/EstimateLibraryComplexity.jar OUTPUT=".$picardOut.$sample."_LibComplexity.txt INPUT=$bam";
+	    $jobID = bashAndSubmit($command,$sample,\%opt);
+	    push(@runningJobs, $jobID);
+	}
+
+	### Calculate HSMetrics -> only if target/bait file are present.
+	if ( ($opt{POSTSTATS_TARGETS}) && ($opt{POSTSTATS_BAITS}) ) {
+	    unless (-e $picardOut.$sample."_HSMetrics.txt"){
+		$command = $picard."/CalculateHsMetrics.jar R=$opt{GENOME} OUTPUT=".$picardOut.$sample."_HSMetrics.txt INPUT=$bam BAIT_INTERVALS=$opt{POSTSTATS_BAITS} TARGET_INTERVALS=$opt{POSTSTATS_TARGETS} METRIC_ACCUMULATION_LEVEL=SAMPLE";
+		$jobID = bashAndSubmit($command,$sample,\%opt);
+		push(@runningJobs, $jobID);
+	    }
 	}
     }
     ### Run plotilluminametrics
@@ -58,7 +64,11 @@ sub runPostStats {
     print OUT "#!/bin/bash\n\n";
     print OUT "cd $opt{OUTPUT_DIR}\n";
     print OUT "$command\n";
-    system "qsub -q $opt{POSTSTATS_QUEUE} -pe threaded $opt{POSTSTATS_THREADS} -o $logDir -e $logDir -N PICARD_$jobID -hold_jid ".join(",",@runningJobs)." $bashFile"; #require two slots for memory reasons
+    if (@runningJobs){
+	system "qsub -q $opt{POSTSTATS_QUEUE} -pe threaded $opt{POSTSTATS_THREADS} -o $logDir -e $logDir -N PICARD_$jobID -hold_jid ".join(",",@runningJobs)." $bashFile";
+    } else {
+	system "qsub -q $opt{POSTSTATS_QUEUE} -pe threaded $opt{POSTSTATS_THREADS} -o $logDir -e $logDir -N PICARD_$jobID $bashFile";
+    }
 
 }
 
