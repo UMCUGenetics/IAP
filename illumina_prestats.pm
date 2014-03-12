@@ -37,9 +37,9 @@ sub runPreStats {
 	$coreName = (split("/", $input))[-1];
 	$coreName =~ s/\.fastq.gz//;
 	my ($sampleName) =  split("_", $coreName);
-
+	print "\t$input\n"; #print fastq filename
+	
 	if(! -e "$opt{OUTPUT_DIR}/$sampleName/QCStats/$sampleName.done"){
-	    print "\t$input\n"; #print fastq filename
 	    
 	    my $preStatsJobId = "PRESTATS_$coreName\_".get_job_id();
 	    push(@{$jobIds->{$sampleName}}, $preStatsJobId);
@@ -53,6 +53,8 @@ sub runPreStats {
 	    close PS;
 	    
 	    print QSUB "qsub -pe threaded $opt{PRESTATS_THREADS} -q $opt{PRESTATS_QUEUE} -P $opt{PRESTATS_PROJECT} -o $opt{OUTPUT_DIR}/$sampleName/logs -e $opt{OUTPUT_DIR}/$sampleName/logs -N $preStatsJobId $opt{OUTPUT_DIR}/$sampleName/jobs/$preStatsJobId.sh\n";
+	} else {
+	    warn "\t WARNING: FASTQC report for $input already exists, skipping.\n";
 	}
 
     }
