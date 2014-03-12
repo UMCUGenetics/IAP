@@ -61,13 +61,16 @@ class VariantCaller extends QScript {
 
     @Argument(doc="Minimum phred-scaled confidence to emit variants", shortName="stand_emit_conf", required=true)
     var standEmitConf: Int = _ //10 //default: best-practices value
-    
+
     // The following arguments are all optional.
     @Input(doc="An optional file with known SNP sites.", shortName="D", required=false)
     var dbsnpFile: File = _
 
     @Input(doc="An optional file with targets intervals.", shortName="L", required=false)
     var targetFile: File = _
+
+    @Argument(doc="Amount of padding (in bp) to add to each interval", shortName="ip", required=false)
+    var intervalPadding: Int = 0
 
     def script() {
 	val unifiedGenotyper = new UnifiedGenotyper
@@ -100,6 +103,7 @@ class VariantCaller extends QScript {
 	}
 	if (targetFile != null) {
 	    unifiedGenotyper.L :+= targetFile
+	    unifiedGenotyper.ip = intervalPadding
 	}
 
 	//add function to queue

@@ -67,6 +67,9 @@ sub runVariantCalling {
     }
     if ( $opt{CALLING_TARGETS} ) {
 	$command .= "-L $opt{CALLING_TARGETS} ";
+	if ( $opt{CALLING_INTPADDING} ) {
+	    $command .= "-ip $opt{CALLING_INTPADDING} ";
+	}
     }
     
     $command .= "-run";
@@ -111,6 +114,7 @@ sub readConfiguration{
 	'CALLING_SCALA'		=> undef,
 	'CALLING_DBSNP'		=> undef,
 	'CALLING_TARGETS'	=> undef,
+	'CALLING_INTPADDING'	=> undef,
 	'CALLING_STANDCALLCONF'	=> undef,
 	'CALLING_STANDEMITCONF'	=> undef,
 	'GENOME'		=> undef,

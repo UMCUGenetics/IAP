@@ -65,6 +65,9 @@ class VariantCaller extends QScript {
     @Input(doc="An optional file with targets intervals.", shortName="L", required=false)
     var targetFile: File = _
 
+    @Argument(doc="Amount of padding (in bp) to add to each interval", shortName="ip", required=false)
+    var intervalPadding: Int = 0
+
     def script() {
 	val haplotypeCaller = new HaplotypeCaller
 
@@ -86,6 +89,7 @@ class VariantCaller extends QScript {
 	}
 	if (targetFile != null) {
 	    haplotypeCaller.L :+= targetFile
+	    haplotypeCaller.ip = intervalPadding
 	}
 
 	//add function to queue
