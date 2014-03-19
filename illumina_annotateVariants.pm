@@ -92,23 +92,7 @@ sub runAnnotateVariants {
 sub readConfiguration{
     my $configuration = shift;
 
-    my %opt = (
-	'ANNOTATE_QUEUE'	=> undef,
-	'ANNOTATE_THREADS'	=> undef,
-	'ANNOTATE_MEM'		=> undef,
-	'ANNOTATE_SNPEFF'	=> undef,
-	'ANNOTATE_DB'		=> undef,
-	'ANNOTATE_FLAGS'	=> undef,
-	'ANNOTATE_SNPSIFT'	=> undef,
-	'ANNOTATE_DBNSFP'	=> undef,
-	'ANNOTATE_FIELDS'	=> undef,
-	'ANNOTATE_VCFTOOLS'	=> undef,
-	'ANNOTATE_FREQ'		=> undef,
-	'ANNOTATE_DESCR'	=> undef,
-	'ANNOTATE_COLUMNS'	=> undef,
-	'OUTPUT_DIR'		=> undef,
-	'RUNNING_JOBS'		=> {} #do not use in .conf file
-    );
+    my %opt;
 
     foreach my $key (keys %{$configuration}){
 	$opt{$key} = $configuration->{$key};

@@ -1,6 +1,5 @@
 #!/usr/bin/perl -w
 
-
 ##################################################################################################################################################
 ###This script is designed to run BWA mapping, followed my sambamba markdup. Where possible a per-sample merged BAM file will be generated
 ###using sambamba merge. Aside from mapping the script also runs sambamba flagstat on each *dedup.bam file.
@@ -10,7 +9,6 @@
 ###
 ###
 ##################################################################################################################################################
-
 
 package illumina_mapping;
 
@@ -134,7 +132,7 @@ sub runMapping {
 	$mergeJobs->{$sample} = $jobId;
 	
 	open MERGE_SH,">$opt{OUTPUT_DIR}/$sample/jobs/$jobId.sh" or die "Couldn't create $opt{OUTPUT_DIR}/$sample/jobs/$jobId.sh\n";
-	print MERGE_SH "\#!/bin/sh\n\#\$ -S /bin/sh\n\n";
+	print MERGE_SH "\#!/bin/sh\n\n";
 	print MERGE_SH "cd $opt{OUTPUT_DIR}/$sample\n";
 	print MERGE_SH "uname -n > logs/$jobId.host\n";
 	
@@ -211,7 +209,7 @@ sub submitBatchJobs{
     
 
     open BWA_SH,">$opt{OUTPUT_DIR}/$sampleName/jobs/$jobId.sh" or die "Couldn't create $opt{OUTPUT_DIR}/$sampleName/jobs/$jobId.sh\n";
-    print BWA_SH "\#!/bin/sh\n\#\$ -S /bin/sh\n\n";
+    print BWA_SH "\#!/bin/sh\n\n";
     print BWA_SH "mkdir $opt{CLUSTER_TMP}/$jobId/\n";
     print BWA_SH "cd $opt{CLUSTER_TMP}/$jobId/ \n";
     print BWA_SH "uname -n > $opt{OUTPUT_DIR}/$sampleName/logs/$jobId.host\n\n";
@@ -311,7 +309,7 @@ sub submitSingleJobs{
     
     ###############BWA JOB###############
     open BWA_SH,">$opt{OUTPUT_DIR}/$sampleName/jobs/$mappingJobId.sh" or die "Couldn't create $opt{OUTPUT_DIR}/$sampleName/jobs/$mappingJobId.sh\n";
-    print BWA_SH "\#!/bin/sh\n\#\$ -S /bin/sh\n\n";
+    print BWA_SH "\#!/bin/sh\n\n";
     print BWA_SH "cd $opt{OUTPUT_DIR}/$sampleName/mapping \n";
     print BWA_SH "uname -n > $opt{OUTPUT_DIR}/$sampleName/logs/$mappingJobId.host\n";
     print BWA_SH "echo \"Mapping pair\t\" `date` >> $opt{OUTPUT_DIR}/$sampleName/logs/$mappingJobId.host\n\n";
@@ -336,7 +334,7 @@ sub submitSingleJobs{
     
     ###############FLAGSTAT AFTER MAPPING JOB###############
     open FS1_SH,">$opt{OUTPUT_DIR}/$sampleName/jobs/$mappingFSJobId.sh" or die "Couldn't create $opt{OUTPUT_DIR}/$sampleName/jobs/$mappingFSJobId.sh\n";
-    print FS1_SH "\#!/bin/sh\n\#\$ -S /bin/sh\n\n";
+    print FS1_SH "\#!/bin/sh\n\n";
     print FS1_SH "cd $opt{OUTPUT_DIR}/$sampleName/mapping \n";
     print FS1_SH "uname -n > $opt{OUTPUT_DIR}/$sampleName/logs/$mappingFSJobId.host\n";
     print FS1_SH "echo \"starting flagstat $coreName.bam\t\" `date` >> $opt{OUTPUT_DIR}/$sampleName/logs/$mappingFSJobId.host\n";
@@ -350,7 +348,7 @@ sub submitSingleJobs{
     ###############SORT JOB###############
     
     open SORT_SH,">$opt{OUTPUT_DIR}/$sampleName/jobs/$sortJobId.sh" or die "Couldn't create $opt{OUTPUT_DIR}/$sampleName/jobs/$sortJobId.sh\n";
-    print SORT_SH "\#!/bin/sh\n\#\$ -S /bin/sh\n\n";
+    print SORT_SH "\#!/bin/sh\n\n";
     print SORT_SH "cd $opt{OUTPUT_DIR}/$sampleName/mapping \n";
     print SORT_SH "uname -n > $opt{OUTPUT_DIR}/$sampleName/logs/$sortJobId.host\n";
     print SORT_SH "echo \"starting sorting $coreName.bam\t\" `date` >> $opt{OUTPUT_DIR}/$sampleName/logs/$sortJobId.host\n";
@@ -364,7 +362,7 @@ sub submitSingleJobs{
     ###############FLAGSTAT AFTER SORT JOB###############
     
     open FS2_SH,">$opt{OUTPUT_DIR}/$sampleName/jobs/$sortFSJobId.sh" or die "Couldn't create $opt{OUTPUT_DIR}/$sampleName/jobs/$sortFSJobId.sh\n";
-    print FS2_SH "\#!/bin/sh\n\#\$ -S /bin/sh\n\n";
+    print FS2_SH "\#!/bin/sh\n\n";
     print FS2_SH "cd $opt{OUTPUT_DIR}/$sampleName/mapping \n";
     print FS2_SH "uname -n > $opt{OUTPUT_DIR}/$sampleName/logs/$sortJobId.host\n";
     print FS2_SH "echo \"starting flagstat $coreName\_sorted.bam\t\" `date` >> $opt{OUTPUT_DIR}/$sampleName/logs/$sortFSJobId.host\n";
@@ -378,7 +376,7 @@ sub submitSingleJobs{
     ###############INDEX JOB###############
     
     open INDEX_SH,">$opt{OUTPUT_DIR}/$sampleName/jobs/$indexJobId.sh" or die "Couldn't create $opt{OUTPUT_DIR}/$sampleName/jobs/$indexJobId.sh\n";
-    print INDEX_SH "\#!/bin/sh\n\#\$ -S /bin/sh\n\n";
+    print INDEX_SH "\#!/bin/sh\n\n";
     print INDEX_SH "cd $opt{OUTPUT_DIR}/$sampleName/mapping \n";
     print INDEX_SH "uname -n > $opt{OUTPUT_DIR}/$sampleName/logs/$indexJobId.host\n";
     print INDEX_SH "echo \"starting indexing $coreName\_sorted.bam\t\" `date` >> $opt{OUTPUT_DIR}/$sampleName/logs/$indexJobId.host\n";
@@ -391,7 +389,7 @@ sub submitSingleJobs{
 
     ###############MARKDUP JOB###############
     open MARKDUP_SH,">$opt{OUTPUT_DIR}/$sampleName/jobs/$markdupJobId.sh" or die "Couldn't create $opt{OUTPUT_DIR}/$sampleName/jobs/$markdupJobId.sh\n";
-    print MARKDUP_SH "\#!/bin/sh\n\#\$ -S /bin/sh\n\n";
+    print MARKDUP_SH "\#!/bin/sh\n\n";
     print MARKDUP_SH "cd $opt{OUTPUT_DIR}/$sampleName/mapping \n";
     print MARKDUP_SH "uname -n > $opt{OUTPUT_DIR}/$sampleName/logs/$markdupJobId.host\n";
     print MARKDUP_SH "echo \"starting markdup $coreName\_sorted.bam\t\" `date` >> $opt{OUTPUT_DIR}/$sampleName/logs/$markdupJobId.host\n";
@@ -404,7 +402,7 @@ sub submitSingleJobs{
     
     ###############FLAGSTAT AFTER MARKDUP JOB###############    
     open FS3_SH,">$opt{OUTPUT_DIR}/$sampleName/jobs/$markdupFSJobId.sh" or die "Couldn't create $opt{OUTPUT_DIR}/$sampleName/jobs/$markdupFSJobId.sh\n";
-    print FS3_SH "\#!/bin/sh\n\#\$ -S /bin/sh\n\n";
+    print FS3_SH "\#!/bin/sh\n\n";
     print FS3_SH "cd $opt{OUTPUT_DIR}/$sampleName/mapping \n";
     print FS3_SH "uname -n > $opt{OUTPUT_DIR}/$sampleName/logs/$markdupFSJobId.host\n";
     print FS3_SH "echo \"starting flagstat $coreName\_sorted_dedup.bam\t\" `date` >> $opt{OUTPUT_DIR}/$sampleName/logs/$markdupFSJobId.host\n";
@@ -418,7 +416,7 @@ sub submitSingleJobs{
     ###############CLEANUP JOB###############
     
     open CLEAN_SH,">$opt{OUTPUT_DIR}/$sampleName/jobs/$cleanupJobId.sh" or die "Couldn't create $opt{OUTPUT_DIR}/$sampleName/jobs/$cleanupJobId.sh\n";
-    print CLEAN_SH "\#!/bin/sh\n\#\$ -S /bin/sh\n\n";
+    print CLEAN_SH "\#!/bin/sh\n\n";
     print CLEAN_SH "cd $opt{OUTPUT_DIR}/$sampleName/mapping \n";
     print CLEAN_SH "uname -n > $opt{OUTPUT_DIR}/$sampleName/logs/$cleanupJobId.host\n";
 
@@ -463,30 +461,11 @@ sub submitSingleJobs{
 
     push(@{$samples->{$sampleName}}, {'jobId'=>$cleanupJobId, 'file'=>"$opt{OUTPUT_DIR}/$sampleName/mapping/$coreName\_sorted_dedup.bam"});
 
-
-
-
 }
-
-
-
 
 sub readConfiguration {
     my $configuration = shift;
-    
-    my %opt = (
-	
-	'BWA_PATH'      	=> undef,
-	'SAMBAMBA_PATH'		=> undef,
-	'SAMTOOLS_PATH'		=> undef,
-	'CLUSTER_PATH'  	=> undef,
-	'CLUSTER_THREADS'	=> undef,
-	'CLUSTER_MEM'		=> undef,
-	'CLUSTER_TMP'		=> undef,
-	'GENOME'		=> undef,
-	'OUTPUT_DIR'		=> undef,
-	'FASTQ'			=> []
-    );
+    my %opt;
     
     foreach my $key (keys %{$configuration}){
 	$opt{$key} = $configuration->{$key};
@@ -495,17 +474,16 @@ sub readConfiguration {
     if(! $opt{BWA_PATH}){ die "ERROR: No BWA_PATH found in .conf file\n" }
     if(! $opt{SAMBAMBA_PATH}){ die "ERROR: No SAMBAMBA_PATH found in .conf file\n" }
     if(! $opt{SAMTOOLS_PATH}){ die "ERROR: No SAMTOOLS_PATH found in .conf file\n" }
-    if(! $opt{MAPPING_THREADS}){ die "ERROR: No MAPPING_THREADS found in .ini file\n" }
-    if(! $opt{MAPPING_MEM}){ die "ERROR: No MAPPING_MEM found in .ini file\n" }
-    if(! $opt{MAPPING_QUEUE}){ die "ERROR: No MAPPING_QUEUE found in .ini file\n" }
-    if(! $opt{MAPPING_PROJECT}){ die "ERROR: No MAPPING_PROJECT found in .ini file\n" }
+    if(! $opt{MAPPING_THREADS}){ die "ERROR: No MAPPING_THREADS found in .conf file\n" }
+    if(! $opt{MAPPING_MEM}){ die "ERROR: No MAPPING_MEM found in .conf file\n" }
+    if(! $opt{MAPPING_QUEUE}){ die "ERROR: No MAPPING_QUEUE found in .conf file\n" }
+    if(! $opt{MAPPING_PROJECT}){ die "ERROR: No MAPPING_PROJECT found in .conf file\n" }
     if(! $opt{MAPPING_MODE}){ die "ERROR: No MAPPING_MODE found in .conf file\n" }
     if(! $opt{CLUSTER_PATH}){ die "ERROR: No CLUSTER_PATH found in .conf file\n" }
     if(! $opt{CLUSTER_TMP}){ die "ERROR: No CLUSTER_TMP found in .conf file\n" }
     if(! $opt{GENOME}){ die "ERROR: No GENOME found in .conf file\n" }
     if(! $opt{OUTPUT_DIR}){ die "ERROR: No OUTPUT_DIR found in .conf file\n" }
     if(! $opt{FASTQ}){ die "ERROR: No FASTQ files specified\n" }
-    
     
     return \%opt;
     

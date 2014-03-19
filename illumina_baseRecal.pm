@@ -109,35 +109,19 @@ sub runBaseRecalibration {
 
 sub readConfiguration{
     my $configuration = shift;
-    
-    my %opt = (
-	'SAMBAMBA_PATH'			=> undef,
-	'CLUSTER_PATH'  		=> undef,
-	'BASERECALIBRATION_THREADS'	=> undef,
-	'BASERECALIBRATION_MEM'		=> undef,
-	'BASERECALIBRATION_QUEUE'	=> undef,
-	'BASERECALIBRATION_SCALA'	=> undef,
-	'BASERECALIBRATION_SCATTER'	=> undef,
-	'BASERECALIBRATION_KNOWN'	=> undef,
-	'CLUSTER_TMP'			=> undef,
-	'GENOME'			=> undef,
-	'OUTPUT_DIR'			=> undef,
-	'RUNNING_JOBS'			=> {}, #do not use in .conf file
-	'SAMPLES'			=> undef #do not use in .conf file
-    );
+    my %opt;
 
     foreach my $key (keys %{$configuration}){
 	$opt{$key} = $configuration->{$key};
     }
 
     if(! $opt{SAMBAMBA_PATH}){ die "ERROR: No SAMBAMBA_PATH found in .conf file\n" }
+    if(! $opt{BASERECALIBRATION_QUEUE}){ die "ERROR: No BASERECALIBRATION_QUEUE found in .conf file\n" }
     if(! $opt{BASERECALIBRATION_THREADS}){ die "ERROR: No BASERECALIBRATION_THREADS found in .conf file\n" }
     if(! $opt{BASERECALIBRATION_MEM}){ die "ERROR: No BASERECALIBRATION_MEM found in .conf file\n" }
-    if(! $opt{BASERECALIBRATION_QUEUE}){ die "ERROR: No BASERECALIBRATION_QUEUE found in .conf file\n" }
     if(! $opt{BASERECALIBRATION_SCALA}){ die "ERROR: No BASERECALIBRATION_SCALA found in .conf file\n" }
     if(! $opt{BASERECALIBRATION_SCATTER}){ die "ERROR: No BASERECALIBRATION_SCATTER found in .conf file\n" }
     if(! $opt{CLUSTER_PATH}){ die "ERROR: No CLUSTER_PATH found in .conf file\n" }
-    if(! $opt{CLUSTER_TMP}){ die "ERROR: No CLUSTER_TMP found in .conf file\n" }
     if(! $opt{GENOME}){ die "ERROR: No GENOME found in .conf file\n" }
     if(! $opt{OUTPUT_DIR}){ die "ERROR: No OUTPUT_DIR found in .conf file\n" }
     if(! $opt{SAMPLES}){ die "ERROR: No SAMPLES found\n" }

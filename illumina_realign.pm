@@ -10,12 +10,10 @@
 ###TODO: Add known snp files!!!
 ##################################################################################################################################################
 
-
 package illumina_realign;
 
 use strict;
 use POSIX qw(tmpnam);
-
 
 sub runRealignment {
     my $configuration = shift;
@@ -44,7 +42,6 @@ sub runRealignment {
 	
 	open REALIGN_SH,">$opt{OUTPUT_DIR}/jobs/$jobId.sh" or die "Couldn't create $opt{OUTPUT_DIR}/jobs/$jobId.sh\n";
 	print REALIGN_SH "\#!/bin/sh\n\n";
-	print REALIGN_SH "#\$ -S /bin/sh\n";
 	print REALIGN_SH ". $opt{CLUSTER_PATH}/settings.sh\n\n";
 	print REALIGN_SH "cd $opt{OUTPUT_DIR}/tmp\n";
 	print REALIGN_SH "uname -n > ../logs/$jobId.host\n";
@@ -59,7 +56,6 @@ sub runRealignment {
 	
 	open CLEAN_SH, ">$opt{OUTPUT_DIR}/jobs/$cleanupJobId.sh" or die "Couldn't create $opt{OUTPUT_DIR}/jobs/$cleanupJobId.sh\n";
 	print CLEAN_SH "\#!/bin/sh\n\n";
-	print CLEAN_SH "#\$ -S /bin/sh\n";	
 	print CLEAN_SH "uname -n > $opt{OUTPUT_DIR}/logs/$cleanupJobId.host\n";
 	print CLEAN_SH "PASS=0\n";
 	
@@ -68,7 +64,7 @@ sub runRealignment {
 	    
 	    ## Check for realigned bam file, skip sample if realigned bam file already exist. MAYBE NOT SKIP SAMPLE BUT SKIP WHOLE STEP HERE???
 	    if (-e "$opt{OUTPUT_DIR}/$sample/mapping/$sample\_dedup_realigned.bam"){
-		warn "WARNING: $opt{OUTPUT_DIR}/$sample/mapping/$sample\_dedup_realigned.bam already exists, skipping\n";
+		warn "\t WARNING: $opt{OUTPUT_DIR}/$sample/mapping/$sample\_dedup_realigned.bam already exists, skipping\n";
 		next;
 	    }
 
@@ -79,7 +75,6 @@ sub runRealignment {
 
 	    open MERGE_SH, ">$opt{OUTPUT_DIR}/$sample/jobs/$mergeJobId.sh" or die "Couldn't create $opt{OUTPUT_DIR}/$sample/jobs/$mergeJobId.sh\n";
 	    print MERGE_SH "\#!/bin/sh\n\n";
-	    print MERGE_SH "#\$ -S /bin/sh\n";
     	    print MERGE_SH "cd $opt{OUTPUT_DIR}/tmp/.queue/\n";
 	    print MERGE_SH "CHUNKS=`find \$PWD -name '*$sample\_dedup_realigned.bam' | sort | xargs`\n";
 	    print MERGE_SH "if [ ! -f $opt{OUTPUT_DIR}/$sample/mapping/$sample\_dedup_realigned.done ]\n";
@@ -131,7 +126,6 @@ sub runRealignment {
     
     }
     
-    
     #SINGLE SAMPLE - MULTI OUPUT
     elsif($opt{REALIGNMENT_MODE} eq 'single'){
 	foreach my $sample (@{$opt{SAMPLES}}){
@@ -139,7 +133,7 @@ sub runRealignment {
 	    
 	    ## Check for realigned bam file, skip sample if realigned bam file already exist.
 	    if (-e "$opt{OUTPUT_DIR}/$sample/mapping/$sample\_dedup_realigned.bam"){
-		warn "WARNING: $opt{OUTPUT_DIR}/$sample/mapping/$sample\_dedup_realigned.bam already exists, skipping\n";
+		warn "\t WARNING: $opt{OUTPUT_DIR}/$sample/mapping/$sample\_dedup_realigned.bam already exists, skipping\n";
 		next;
 	    }
 	    my $jobId = "REALIGN_$sample\_".get_job_id();
@@ -147,7 +141,6 @@ sub runRealignment {
 	    open REALIGN_SH,">$opt{OUTPUT_DIR}/$sample/jobs/$jobId.sh" or die "Couldn't create $opt{OUTPUT_DIR}/$sample/jobs/$jobId.sh\n";
 	    
 	    print REALIGN_SH "\#!/bin/bash\n\n";
-	    #print REALIGN_SH "#\$ -S /bin/sh\n";
 	    print REALIGN_SH ". $opt{CLUSTER_PATH}/settings.sh\n\n";
 	    print REALIGN_SH "cd $opt{OUTPUT_DIR}/$sample/tmp \n\n";
 	    print REALIGN_SH "uname -n > ../logs/$jobId.host\n";
@@ -184,15 +177,7 @@ sub runRealignment {
 	    print REALIGN_SH "\techo \"ERROR: Either $opt{OUTPUT_DIR}/$sample/mapping/$sample\_dedup.flagstat or $opt{OUTPUT_DIR}/$sample/mapping/$sample\_dedup_realigned.flagstat is empty.\" >> ../logs/realign.err\n";
 	    print REALIGN_SH "fi\n";
 	    close REALIGN_SH;
-	    
 
-
-	    #print REALIGN_SH "cd $opt{OUTPUT_DIR}/$sample/tmp/.queue/\n";
-	    #print REALIGN_SH "CHUNKS=`find \$PWD -name '*$sample\_dedup_realigned.bam' | sort | xargs`\n";
-	    #print REALIGN_SH "$opt{SAMBAMBA_PATH}/sambamba merge -t $opt{REALIGNMENT_THREADS} $opt{OUTPUT_DIR}/$sample/mapping/$sample\_dedup_realigned.bam \`echo \$CHUNKS\` 1>>$opt{OUTPUT_DIR}/$sample/logs/realn_merge.log 2>>$opt{OUTPUT_DIR}/$sample/logs/realn_merge.err\n";
-	    #print REALIGN_SH "$opt{SAMBAMBA_PATH}/sambamba index -t $opt{REALIGNMENT_THREADS} $opt{OUTPUT_DIR}/$sample/mapping/$sample\_dedup_realigned.bam\n";
-	    #print REALIGN_SH "rm -r $opt{CLUSTER_TMP}/$jobId/\n";
-	    
 	    if ( $opt{RUNNING_JOBS}->{$sample} ){
 		print QSUB "qsub -q $opt{REALIGNMENT_QUEUE} -P $opt{REALIGNMENT_PROJECT} -pe threaded $opt{REALIGNMENT_THREADS} -o $opt{OUTPUT_DIR}/$sample/logs -e $opt{OUTPUT_DIR}/$sample/logs -N $jobId -hold_jid ".join(",",@{$opt{RUNNING_JOBS}->{$sample}})." $opt{OUTPUT_DIR}/$sample/jobs/$jobId.sh\n";
 	    } else {
@@ -203,7 +188,6 @@ sub runRealignment {
 	
     }else{
 	die "ERROR: Invalid REALIGNMENT_MODE $opt{REALIGNMENT_MODE} , use 'single' or 'multi'\n";
-    
     }
     
     system("sh $mainJobID");
@@ -213,45 +197,24 @@ sub runRealignment {
 
 sub readConfiguration{
     my $configuration = shift;
-    
-    my %opt = (
-	
-	'QUALIMAP_PATH'		=> undef,
-	'SAMBAMBA_PATH'		=> undef,
-	'CLUSTER_PATH'  	=> undef,
-	'REALIGNMENT_THREADS'	=> undef,
-	'REALIGNMENT_MEM'	=> undef,
-	'REALIGNMENT_QUEUE'	=> undef,
-	'REALIGNMENT_PROJECT'	=> undef,
-	'REALIGNMENT_SCALA'	=> undef,
-	'REALIGNMENT_SCATTER'	=> undef,
-	'REALIGNMENT_MODE'	=> undef,
-	'REALIGNMENT_KNOWN'	=> undef,
-	'CLUSTER_TMP'		=> undef,
-	'GENOME'		=> undef,
-	'OUTPUT_DIR'		=> undef,
-	'RUNNING_JOBS'		=> {}, #do not use in .conf file
-	'SAMPLES'		=> undef #do not use in .conf file
-    );
+    my %opt;
 
     foreach my $key (keys %{$configuration}){
 	$opt{$key} = $configuration->{$key};
     }
 
     if(! $opt{SAMBAMBA_PATH}){ die "ERROR: No SAMBAMBA_PATH found in .conf file\n" }
+    if(! $opt{REALIGNMENT_QUEUE}){ die "ERROR: No REALIGNMENT_QUEUE found in .conf file\n" }
     if(! $opt{REALIGNMENT_PROJECT}){ die "ERROR: No REALIGNMENT_PROJECT found in .conf file\n" }
     if(! $opt{REALIGNMENT_THREADS}){ die "ERROR: No REALIGNMENT_THREADS found in .conf file\n" }
     if(! $opt{REALIGNMENT_MERGETHREADS}){ die "ERROR: No REALIGNMENT_MERGETHREADS found in .conf file\n" }
     if(! $opt{REALIGNMENT_MEM}){ die "ERROR: No REALIGNMENT_MEM found in .conf file\n" }
-    if(! $opt{REALIGNMENT_QUEUE}){ die "ERROR: No REALIGNMENT_QUEUE found in .conf file\n" }
     if(! $opt{REALIGNMENT_SCALA}){ die "ERROR: No REALIGNMENT_SCALA found in .conf file\n" }
     if(! $opt{REALIGNMENT_SCATTER}){ die "ERROR: No REALIGNMENT_SCATTER found in .conf file\n" }
     if(! $opt{REALIGNMENT_MODE}){ die "ERROR: No REALIGNMENT_MODE found in .conf file\n" }
     if(! $opt{CLUSTER_PATH}){ die "ERROR: No CLUSTER_PATH found in .conf file\n" }
-    if(! $opt{CLUSTER_TMP}){ die "ERROR: No CLUSTER_TMP found in .conf file\n" }
     if(! $opt{GENOME}){ die "ERROR: No GENOME found in .conf file\n" }
     if(! $opt{OUTPUT_DIR}){ die "ERROR: No OUTPUT_DIR found in .conf file\n" }
-    if(! $opt{SAMPLES}){ die "ERROR: No SAMPLES found\n" }
 
     return \%opt;
 }

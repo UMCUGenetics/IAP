@@ -74,20 +74,7 @@ sub runPostStats {
 
 sub readConfiguration{
     my $configuration = shift;
-    
-    my %opt = (
-	
-	'PICARD_PATH'		=> undef,
-	'POSTSTATS_THREADS'	=> undef,
-	'POSTSTATS_MEM'		=> undef,
-	'POSTSTATS_QUEUE'	=> undef,,
-	'POSTSTATS_TARGETS'	=> undef,
-	'POSTSTATS_BAITS'	=> undef,
-	'GENOME'		=> undef,
-	'OUTPUT_DIR'		=> undef,
-	'RUNNING_JOBS'		=> {}, #do not use in .conf file
-	'SAMPLES'		=> undef #do not use in .conf file
-    );
+    my %opt;
 
     foreach my $key (keys %{$configuration}){
 	$opt{$key} = $configuration->{$key};
@@ -99,7 +86,6 @@ sub readConfiguration{
     if(! $opt{POSTSTATS_QUEUE}){ die "ERROR: No POSTSTATS_THREADS found in .conf file\n" }
     if(! $opt{GENOME}){ die "ERROR: No GENOME found in .conf file\n" }
     if(! $opt{OUTPUT_DIR}){ die "ERROR: No OUTPUT_DIR found in .conf file\n" }
-    if(! $opt{SAMPLES}){ die "ERROR: No SAMPLES found\n" }
     return \%opt;
 }
 

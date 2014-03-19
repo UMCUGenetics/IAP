@@ -1,7 +1,4 @@
 #!/usr/bin/perl -w
-use strict;
-
-
 ##################################################################################################################################################
 ###This script is designed to run the various parts of the illumina 'pipeline' using a single .conf configuration file.
 ###
@@ -12,9 +9,7 @@ use strict;
 ###TODO: baserecalibration, variantfilter, createDirs function -> see comments in subroutine section
 ##################################################################################################################################################
 
-
-
-
+use strict;
 use POSIX qw(tmpnam);
 use Getopt::Long;
 
@@ -27,72 +22,17 @@ use illumina_calling;
 use illumina_filterVariants;
 use illumina_annotateVariants;
 
+### Check correct usage
+die usage() if @ARGV == 0;
+
+### initiate opt hash with settings
 my %opt;
 my $configurationFile;
 
-
 %opt = (
-    'BWA_PATH'      		=> undef,
-    'PICARD_PATH'   		=> undef,
-    'SAMBAMBA_PATH'		=> undef,
-    'SAMTOOLS_PATH'		=> undef,
-    'FASTQC_PATH' 		=> undef,
-    'QUALIMAP_PATH' 		=> undef,
-    'QUEUE_PATH' 		=> undef,
-    'GATK_PATH'			=> undef,
-    'SNPEFF_PATH'		=> undef,
-    'VCFTOOLS_PATH'		=> undef,
-    'CLUSTER_PATH'  		=> undef,
-    'CLUSTER_THREADS'		=> undef,
-    'CLUSTER_MEM'		=> undef,
-    'CLUSTER_TMP'		=> undef,
-    'PRESTATS_QUEUE'		=> undef,
-    'PRESTATS_PROJECT'		=> undef,
-    'PRESTATS_THREADS'		=> undef,
-    'PRESTATS_MEM'		=> undef,
-    'MAPPING_QUEUE'		=> undef,
-    'MAPPING_PROJECT'		=> undef,
-    'MAPPING_THREADS'		=> undef,
-    'MAPPING_MEM'		=> undef,
-    'POSTSTATS_QUEUE'		=> undef,
-    'POSTSTATS_PROJECT'		=> undef,
-    'POSTSTATS_THREADS'		=> undef,
-    'POSTSTATS_MEM'		=> undef,
-    'POSTSTATS_TARGETS'		=> undef,
-    'POSTSTATS_BAITS'		=> undef,
-    'REALIGNMENT_QUEUE'		=> undef,
-    'REALIGNMENT_PROJECT'	=> undef,
-    'REALIGNMENT_THREADS'	=> undef,
-    'REALIGNMENT_MEM'		=> undef,
-    'RECALIBRATION_QUEUE'	=> undef,
-    'RECALIBRATION_PROJECT'	=> undef,
-    'RECALIBRATION_THREADS'	=> undef,
-    'RECALIBRATION_MEM'		=> undef,
-    'CALLING_QUEUE'		=> undef,
-    'CALLING_PROJECT'		=> undef,
-    'CALLING_THREADS'		=> undef,
-    'CALLING_MEM'		=> undef,
-    'CHECKING_QUEUE'		=> undef,
-    'CHECKING_PROJECT'		=> undef,
-    'CHECKING_THREADS'		=> undef,
-    'CHECKING_MEM'		=> undef,
-    'GENOME'			=> undef,
-    'PRESTATS'			=> "yes",
-    'MAPPING'			=> "yes",
-    'POSTSTATS'			=> "yes",
-    'INDELREALIGNMENT'		=> "no",
-    'BASEQUALITYRECAL'		=> "no",
-    'VARIANT_CALLING'		=> "no",
-    'FILTER_VARIANTS'		=> "no",
-    'ANNOTATE_VARIANTS'		=> "no",
-    'OUTPUT_DIR'		=> undef,
-    'FASTQ'			=> {},
-    'KNOWN_SITES'		=> [],
-    'RUNNING_JOBS'		=> {}, #do not use in .conf
-    'SAMPLES'			=> undef #do not use in .conf
+    'RUNNING_JOBS'		=> {}, #do not use in .conf or .ini
+    'SAMPLES'			=> undef #do not use in .conf or .ini
 );
-
-die usage() if @ARGV == 0;
 
 ########### READ MAIN SETTINGS FROM .ini FILE ####################
 my $iniFile = $0; $iniFile =~ s/pl$/ini/;
@@ -103,14 +43,13 @@ while(<INI>){
     next if m/^#/ or ! $_;
     my ($key, $val) = split("\t",$_,2);
     $opt{$key} = $val;
-    
 }
 
 close INI;
-    
+
 ############ READ RUN SPECIFIC SETTINGS FORM .conf FILE ############
 $configurationFile = $ARGV[0];
-    
+
 open (CONFIGURATION, "<$configurationFile") or die "Couldn't open .conf file: $configurationFile\n";
 while(<CONFIGURATION>){
     chomp;
@@ -119,8 +58,6 @@ while(<CONFIGURATION>){
 
     if($key eq 'FASTQ'){
         $opt{$key}->{$val} = 1;
-    }elsif($key eq 'KNOWN_SITES'){
-        push(@{$opt{$key}}, $val); 
     }else{
         $opt{$key} = $val;	
     }
@@ -140,7 +77,6 @@ if($opt{PRESTATS} eq "yes"){
     print "###SCHEDULING PRESTATS###\n";
     illumina_prestats::runPreStats(\%opt);
 }
-
 
 if($opt{MAPPING} eq "yes"){
     print "\n###SCHEDULING MAPPING###\n";
@@ -252,8 +188,6 @@ sub createOutputDirs{
     }
 }
 
-#### USAGE - HELP ####
-# Add more information?
 sub usage{
     warn <<END;
     Usage: perl illumina_pipeline.pl configurationFile.conf

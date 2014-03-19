@@ -122,42 +122,28 @@ sub runFilterVariants {
 
 sub readConfiguration{
     my $configuration = shift;
-
-    my %opt = (
-	'QUEUE_PATH'			=> undef,
-	'FILTER_QUEUE'			=> undef,
-	'FILTER_THREADS'		=> undef,
-	'FILTER_MEM'			=> undef,
-	'FILTER_SCATTER'		=> undef,
-	'FILTER_SCALA'			=> undef,
-	'FILTER_MODE'			=> undef,
-	'FILTER_SNPNAME'		=> undef,
-	'FILTER_SNPEXPR'		=> undef,
-	'FILTER_INDELNAME'		=> undef,
-	'FILTER_INDELEXPR'		=> undef,
-	'FILTER_CLUSTERSIZE'		=> undef,
-	'FILTER_CLUSTERWINDOWSIZE'	=> undef,
-	'GENOME'			=> undef,
-	'OUTPUT_DIR'			=> undef,
-	'RUNNING_JOBS'			=> {} #do not use in .conf file
-    );
+    my %opt;
 
     foreach my $key (keys %{$configuration}){
 	$opt{$key} = $configuration->{$key};
     }
 
     if(! $opt{QUEUE_PATH}){ die "ERROR: No PICARD_PATH found in .conf file\n" }
-    if(! $opt{FILTER_QUEUE}){ die "ERROR: No FILTER_QUEUE found in .ini file\n" }
-    if(! $opt{FILTER_THREADS}){ die "ERROR: No FILTER_THREADS found in .ini file\n" }
-    if(! $opt{FILTER_MEM}){ die "ERROR: No FILTER_QUEUE found in .ini file\n" }
-    if(! $opt{FILTER_SCATTER}){ die "ERROR: No FILTER_SCATTER found in .ini file\n" }
-    if(! $opt{FILTER_SCALA}){ die "ERROR: No FILTER_SCALA found in .ini file\n" }
-    if(! $opt{FILTER_MODE}){ die "ERROR: No FILTER_MODE  found in .ini file\n" }
+    if(! $opt{FILTER_QUEUE}){ die "ERROR: No FILTER_QUEUE found in .conf file\n" }
+    if(! $opt{FILTER_THREADS}){ die "ERROR: No FILTER_THREADS found in .conf file\n" }
+    if(! $opt{FILTER_MEM}){ die "ERROR: No FILTER_QUEUE found in .conf file\n" }
+    if(! $opt{FILTER_SCATTER}){ die "ERROR: No FILTER_SCATTER found in .conf file\n" }
+    if(! $opt{FILTER_SCALA}){ die "ERROR: No FILTER_SCALA found in .conf file\n" }
+    if(! $opt{FILTER_MODE}){ die "ERROR: No FILTER_MODE  found in .conf file\n" }
     if($opt{FILTER_MODE} ne "SNP" and $opt{FILTER_MODE} ne "INDEL" and $opt{FILTER_MODE} ne "BOTH"){ die "ERROR: FILTER_MODE $opt{FILTER_MODE} does not exist use SNP, INDEL or BOTH\n"}
-    if(! $opt{FILTER_SNPNAME}){ die "ERROR: No FILTER_SNPNAME found in .ini file\n" }
-    if(! $opt{FILTER_SNPEXPR}){ die "ERROR: No FILTER_SNPEXPR  found in .ini file\n" }
-    if(! $opt{FILTER_INDELNAME}){ die "ERROR: No FILTER_INDELNAME found in .ini file\n" }
-    if(! $opt{FILTER_INDELEXPR}){ die "ERROR: No FILTER_INDELEXPR found in .ini file\n" }
+    if ($opt{FILTER_MODE} eq "SNP" || $opt{FILTER_MODE} eq "BOTH") {
+	if(! $opt{FILTER_SNPNAME}){ die "ERROR: No FILTER_SNPNAME found in .conf file\n" }
+	if(! $opt{FILTER_SNPEXPR}){ die "ERROR: No FILTER_SNPEXPR  found in .conf file\n" }
+    }
+    if ($opt{FILTER_MODE} eq "INDEL" || $opt{FILTER_MODE} eq "BOTH") {
+	if(! $opt{FILTER_INDELNAME}){ die "ERROR: No FILTER_INDELNAME found in .conf file\n" }
+	if(! $opt{FILTER_INDELEXPR}){ die "ERROR: No FILTER_INDELEXPR found in .conf file\n" }
+    }
     if(! $opt{GENOME}){ die "ERROR: No GENOME found in .conf file\n" }
     if(! $opt{OUTPUT_DIR}){ die "ERROR: No OUTPUT_DIR found in .conf file\n" }
 

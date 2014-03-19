@@ -1,6 +1,5 @@
 #!/usr/bin/perl -w
 
-
 ##################################################################################################################################################
 ###This script is designed to run FastQC on a set of fastq.gz files. Currently this script can only be run using the illumina_pipeline.pl script.
 ###In a later version I also plan to add per-sample summary PDFs, this is currrently not supported yet.
@@ -11,14 +10,10 @@
 ###TODO: Add system call actually firing jobs off
 ##################################################################################################################################################
 
-
-
 package illumina_prestats;
 
 use strict;
 use POSIX qw(tmpnam);
-
-
 
 sub runPreStats {
     
@@ -44,7 +39,7 @@ sub runPreStats {
 	    my $preStatsJobId = "PRESTATS_$coreName\_".get_job_id();
 	    push(@{$jobIds->{$sampleName}}, $preStatsJobId);
 	    open PS,">$opt{OUTPUT_DIR}/$sampleName/jobs/$preStatsJobId.sh";
-	    print PS "\#!/bin/sh\n\#\$ -S /bin/sh\n\n";
+	    print PS "\#!/bin/sh\n\n";
 	    print PS "cd $opt{OUTPUT_DIR}/$sampleName\n\n";
 	    print PS "uname -n > logs/$preStatsJobId.host\n";
 	    print PS "echo \"FastQC\t\" `date` >> logs/$preStatsJobId.host\n";
@@ -62,35 +57,22 @@ sub runPreStats {
     close QSUB;
 
     system("sh $mainJobID");
-    
 }
-
 
 sub readConfiguration {
     my $configuration = shift;
-    my %opt = (
-        'FASTQC_PATH'      	=> undef,
-        'CLUSTER_PATH'  	=> undef,
-	'CLUSTER_TMP'		=> undef,
-	'PRESTATS_THREADS'	=> undef,
-        'PRESTATS_MEM'		=> undef,
-        'PRESTATS_QUEUE'	=> undef,
-	'PRESTATS_PROJECT'	=> undef,
-        'OUTPUT_DIR'		=> undef,
-	'FASTQ'			=> []
-    );
+    my %opt;
 
     foreach my $key (keys %{$configuration}){
 	    $opt{$key} = $configuration->{$key}; 
     }
 
     if(! $opt{FASTQC_PATH}){ die "ERROR: No FASTQC_PATH found in .conf file\n" }
-    if(! $opt{PRESTATS_THREADS}){ die "ERROR: No PRESTATS_THREADS found in .ini file\n" }
-    if(! $opt{PRESTATS_MEM}){ die "ERROR: No PRESTATS_MEM found in .ini file\n" }
-    if(! $opt{PRESTATS_QUEUE}){ die "ERROR: No PRESTATS_QUEUE found in .ini file\n" }
-    if(! $opt{PRESTATS_PROJECT}){ die "ERROR: No PRESTATS_PROJECT found in .ini file\n" }
+    if(! $opt{PRESTATS_THREADS}){ die "ERROR: No PRESTATS_THREADS found in .conf file\n" }
+    if(! $opt{PRESTATS_MEM}){ die "ERROR: No PRESTATS_MEM found in .conf file\n" }
+    if(! $opt{PRESTATS_QUEUE}){ die "ERROR: No PRESTATS_QUEUE found in .conf file\n" }
+    if(! $opt{PRESTATS_PROJECT}){ die "ERROR: No PRESTATS_PROJECT found in .conf file\n" }
     if(! $opt{CLUSTER_PATH}){ die "ERROR: No CLUSTER_PATH found in .conf file\n" }
-    if(! $opt{CLUSTER_TMP}){ die "ERROR: No CLUSTER_TMP found in .conf file\n" }
     if(! $opt{OUTPUT_DIR}){ die "ERROR: No OUTPUT_DIR found in .conf file\n" }
     if(! $opt{FASTQ}){ die "ERROR: No FASTQ files specified\n" }
 
@@ -104,5 +86,5 @@ sub get_job_id {
       $id=~s/\/tmp\/file//;
    return $id;
 }
-############ 
+############
 1;

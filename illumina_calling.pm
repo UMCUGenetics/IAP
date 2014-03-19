@@ -103,41 +103,24 @@ sub runVariantCalling {
 
 sub readConfiguration{
     my $configuration = shift;
-
-    my %opt = (
-	'QUEUE_PATH'		=> undef,
-	'CALLING_QUEUE'		=> undef,
-	'CALLING_LONGQUEUE'	=> undef,
-	'CALLING_THREADS'	=> undef,
-	'CALLING_MEM'		=> undef,
-	'CALLING_SCATTER'	=> undef,
-	'CALLING_SCALA'		=> undef,
-	'CALLING_DBSNP'		=> undef,
-	'CALLING_TARGETS'	=> undef,
-	'CALLING_INTPADDING'	=> undef,
-	'CALLING_STANDCALLCONF'	=> undef,
-	'CALLING_STANDEMITCONF'	=> undef,
-	'GENOME'		=> undef,
-	'OUTPUT_DIR'		=> undef,
-	'RUNNING_JOBS'		=> {} #do not use in .conf file
-    );
+    my %opt;
 
     foreach my $key (keys %{$configuration}){
 	$opt{$key} = $configuration->{$key};
     }
 
     if(! $opt{QUEUE_PATH}){ die "ERROR: No PICARD_PATH found in .conf file\n" }
-    if(! $opt{CALLING_QUEUE}){ die "ERROR: No CALLING_QUEUE found in .ini file\n" }
-    if(! $opt{CALLING_LONGQUEUE}){ die "ERROR: No CALLING_LONGQUEUE found in .ini file\n" }
-    if(! $opt{CALLING_THREADS}){ die "ERROR: No CALLING_THREADS found in .ini file\n" }
-    if(! $opt{CALLING_MEM}){ die "ERROR: No CALLING_QUEUE found in .ini file\n" }
-    if(! $opt{CALLING_SCATTER}){ die "ERROR: No CALLING_SCATTER found in .ini file\n" }
-    if(! $opt{CALLING_SCALA}){ die "ERROR: No CALLING_SCALA found in .ini file\n" }
+    if(! $opt{CALLING_QUEUE}){ die "ERROR: No CALLING_QUEUE found in .conf file\n" }
+    if(! $opt{CALLING_LONGQUEUE}){ die "ERROR: No CALLING_LONGQUEUE found in .conf file\n" }
+    if(! $opt{CALLING_THREADS}){ die "ERROR: No CALLING_THREADS found in .conf file\n" }
+    if(! $opt{CALLING_MEM}){ die "ERROR: No CALLING_QUEUE found in .conf file\n" }
+    if(! $opt{CALLING_SCATTER}){ die "ERROR: No CALLING_SCATTER found in .conf file\n" }
+    if(! $opt{CALLING_SCALA}){ die "ERROR: No CALLING_SCALA found in .conf file\n" }
     if($opt{CALLING_UGMODE}){ 
 	if($opt{CALLING_UGMODE} ne "SNP" and $opt{CALLING_UGMODE} ne "INDEL" and $opt{CALLING_UGMODE} ne "BOTH"){ die "ERROR: UGMODE: $opt{CALLING_UGMODE} does not exist use SNP, INDEL or BOTH\n"}
     }
-    if(! $opt{CALLING_STANDCALLCONF}){ die "ERROR: No CALLING_STANDCALLCONF found in .ini file\n" }
-    if(! $opt{CALLING_STANDEMITCONF}){ die "ERROR: No CALLING_STANDEMITCONF found in .ini file\n" }
+    if(! $opt{CALLING_STANDCALLCONF}){ die "ERROR: No CALLING_STANDCALLCONF found in .conf file\n" }
+    if(! $opt{CALLING_STANDEMITCONF}){ die "ERROR: No CALLING_STANDEMITCONF found in .conf file\n" }
     if(! $opt{GENOME}){ die "ERROR: No GENOME found in .conf file\n" }
     if(! $opt{OUTPUT_DIR}){ die "ERROR: No OUTPUT_DIR found in .conf file\n" }
 
