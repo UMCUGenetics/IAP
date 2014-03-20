@@ -72,7 +72,8 @@ sub runAnnotateVariants {
 	    print ANNOTATE_SH "if [ -f $outvcf ]\nthen\n rm $invcf\nfi\n\n";
 	}
     }
-
+    print ANNOTATE_SH "touch tmp/annotateVariants.done \n";
+    
     ### Process runningjobs
     foreach my $sample (keys %{$opt{RUNNING_JOBS}}){
 	push(@runningJobs, join(",",@{$opt{RUNNING_JOBS}->{$sample}}));
@@ -84,7 +85,6 @@ sub runAnnotateVariants {
     } else {
 	system "qsub -q $opt{ANNOTATE_QUEUE} -pe threaded $opt{ANNOTATE_THREADS} -o $logDir -e $logDir -N $jobID $bashFile";
     }
-    print "\n";
 
     return $jobID;
 }

@@ -88,21 +88,22 @@ sub runFilterVariants {
 	print FILTER_SH "then\n";
 	print FILTER_SH "\tmv $opt{OUTPUT_DIR}/tmp/$runName\.filtered_snps.vcf $opt{OUTPUT_DIR}/\n";
 	print FILTER_SH "\tmv $opt{OUTPUT_DIR}/tmp/$runName\.filtered_snps.vcf.idx $opt{OUTPUT_DIR}/\n";
-	print FILTER_SH "fi\n";
+	print FILTER_SH "fi\n\n";
     } elsif ($opt{FILTER_MODE} eq "INDEL"){
 	print FILTER_SH "if [ -f $opt{OUTPUT_DIR}/tmp/.$runName\.filtered_indels.vcf.done ]\n";
 	print FILTER_SH "then\n";
 	print FILTER_SH "\tmv $opt{OUTPUT_DIR}/tmp/$runName\.filtered_indels.vcf $opt{OUTPUT_DIR}/\n";
 	print FILTER_SH "\tmv $opt{OUTPUT_DIR}/tmp/$runName\.filtered_indels.vcf.idx $opt{OUTPUT_DIR}/\n";
-	print FILTER_SH "fi\n";
+	print FILTER_SH "fi\n\n";
     } elsif ($opt{FILTER_MODE} eq "BOTH"){
 	print FILTER_SH "if [ -f $opt{OUTPUT_DIR}/tmp/.$runName\.filtered_variants.vcf.done ]\n";
 	print FILTER_SH "then\n";
 	print FILTER_SH "\tmv $opt{OUTPUT_DIR}/tmp/$runName\.filtered_variants.vcf $opt{OUTPUT_DIR}/\n";
 	print FILTER_SH "\tmv $opt{OUTPUT_DIR}/tmp/$runName\.filtered_variants.vcf.idx $opt{OUTPUT_DIR}/\n";
-	print FILTER_SH "fi\n";
+	print FILTER_SH "fi\n\n";
     }
-
+    print FILTER_SH "touch filterVariants.done \n";
+    
     ### Process runningjobs
     foreach my $sample (keys %{$opt{RUNNING_JOBS}}){
 	push(@runningJobs, join(",",@{$opt{RUNNING_JOBS}->{$sample}}));
@@ -114,10 +115,8 @@ sub runFilterVariants {
     } else {
 	system "qsub -q $opt{FILTER_QUEUE} -pe threaded $opt{FILTER_THREADS} -o $logDir -e $logDir -N $jobID $bashFile";
     }
-    print "\n";
-    
+
     return $jobID;
-    
 }
 
 sub readConfiguration{

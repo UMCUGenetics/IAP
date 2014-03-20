@@ -21,6 +21,7 @@ use illumina_baseRecal;
 use illumina_calling;
 use illumina_filterVariants;
 use illumina_annotateVariants;
+use illumina_check;
 
 ### Check correct usage
 die usage() if @ARGV == 0;
@@ -68,6 +69,15 @@ close CONFIGURATION;
 ############ START PIPELINE  ############
 if(! $opt{OUTPUT_DIR}){ die "ERROR: No OUTPUT_DIR found in .conf file\n" }
 if(! $opt{FASTQ}){ die "ERROR: No FASTQ files specified\n" }
+if(! $opt{PRESTATS}){ die "ERROR: No PRESTATS option in .conf file \n" }
+if(! $opt{MAPPING}){ die "ERROR: No MAPPING option in .conf file \n" }
+if(! $opt{POSTSTATS}){ die "ERROR: No POSTSTATS option in .conf file \n" }
+if(! $opt{INDELREALIGNMENT}){ die "ERROR: No INDELREALIGNMENT option in .conf file \n" }
+if(! $opt{BASEQUALITYRECAL}){ die "ERROR: No BASEQUALITYRECAL option in .conf file \n" }
+if(! $opt{VARIANT_CALLING}){ die "ERROR: No VARIANT_CALLING option in .conf file \n" }
+if(! $opt{FILTER_VARIANTS}){ die "ERROR: No FILTER_VARIANTS option in .conf file \n" }
+if(! $opt{ANNOTATE_VARIANTS}){ die "ERROR: No ANNOTATE_VARIANTS option in .conf file \n" }
+if(! $opt{CHECKING}){ die "ERROR: No CHECKING option in .conf file \n" }
 
 ###Read samples from FASTQ's
 getSamples();
@@ -138,6 +148,11 @@ if($opt{ANNOTATE_VARIANTS} eq "yes"){
     foreach my $sample (@{$opt{SAMPLES}}){
 	push (@{$opt{RUNNING_JOBS}->{$sample}} , $AVJob);
     }
+}
+
+if($opt{CHECKING} eq "yes"){
+    print "\n###SCHEDULING CHECK AND CLEAN####\n";
+    illumina_check::runCheck(\%opt);
 }
 
 ############ SUBROUTINES  ############
