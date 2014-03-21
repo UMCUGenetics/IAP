@@ -62,9 +62,9 @@ sub runRealignment {
 	foreach my $sample (@{$opt{SAMPLES}}){
 	    print "\t$opt{OUTPUT_DIR}/$sample/mapping/$sample\_dedup.bam\n";
 	    
-	    ## Check for realigned bam file, skip sample if realigned bam file already exist. MAYBE NOT SKIP SAMPLE BUT SKIP WHOLE STEP HERE???
-	    if (-e "$opt{OUTPUT_DIR}/$sample/mapping/$sample\_dedup_realigned.bam"){
-		warn "\t WARNING: $opt{OUTPUT_DIR}/$sample/mapping/$sample\_dedup_realigned.bam already exists, skipping\n";
+	    ## Check for realigned bam file, skip sample if realigned bam file already exist.
+	    if (-e "$opt{OUTPUT_DIR}/$sample/logs/Realignment_$sample.done"){
+		warn "\t WARNING: $opt{OUTPUT_DIR}/$sample/logs/Realignment_$sample.done exists, skipping\n";
 		next;
 	    }
 
@@ -77,7 +77,7 @@ sub runRealignment {
 	    print MERGE_SH "\#!/bin/sh\n\n";
     	    print MERGE_SH "cd $opt{OUTPUT_DIR}/tmp/.queue/\n";
 	    print MERGE_SH "CHUNKS=`find \$PWD -name '*$sample\_dedup_realigned.bam' | sort | xargs`\n";
-	    print MERGE_SH "if [ ! -f $opt{OUTPUT_DIR}/$sample/mapping/$sample\_dedup_realigned.done ]\n";
+	    print MERGE_SH "if [ ! -f $opt{OUTPUT_DIR}/$sample/logs/Realignment_$sample.done ]\n";
 	    print MERGE_SH "then\n";
 	    print MERGE_SH "\t$opt{SAMBAMBA_PATH}/sambamba merge -t $opt{REALIGNMENT_MERGETHREADS} $opt{OUTPUT_DIR}/$sample/mapping/$sample\_dedup_realigned.bam \`echo \$CHUNKS\` 1>>$opt{OUTPUT_DIR}/$sample/logs/realn_merge.log 2>>$opt{OUTPUT_DIR}/$sample/logs/realn_merge.err\n";
 	    print MERGE_SH "\t$opt{SAMBAMBA_PATH}/sambamba index -t $opt{REALIGNMENT_MERGETHREADS} $opt{OUTPUT_DIR}/$sample/mapping/$sample\_dedup_realigned.bam\n";
@@ -89,7 +89,7 @@ sub runRealignment {
 	    print MERGE_SH "\tFS2=\`grep -m 1 -P \"\\d+ \" $opt{OUTPUT_DIR}/$sample/mapping/$sample\_dedup_realigned.flagstat | awk '{{split(\$0,columns , \"+\")} print columns[1]}'\`\n";
 	    print MERGE_SH "\tif [ \$FS1 -eq \$FS2 ]\n";
 	    print MERGE_SH "\tthen\n";
-	    print MERGE_SH "\t\ttouch $opt{OUTPUT_DIR}/$sample/mapping/$sample\_dedup_realigned.done\n";
+	    print MERGE_SH "\t\ttouch $opt{OUTPUT_DIR}/$sample/logs/Realignment_$sample.done\n";
 	    print MERGE_SH "\telse\n";
 	    print MERGE_SH "\t\techo \"ERROR: $opt{OUTPUT_DIR}/$sample/mapping/$sample\_dedup.flagstat and $opt{OUTPUT_DIR}/$sample/mapping/$sample\_dedup_realigned.flagstat do not have the same read counts\" >>$opt{OUTPUT_DIR}/$sample/logs/realn_merge.err\n";
 	    print MERGE_SH "\tfi\n";
@@ -98,7 +98,7 @@ sub runRealignment {
 	    print MERGE_SH "fi\n";
 	    close MERGE_SH;
 	    
-	    print CLEAN_SH "if [ ! -f $opt{OUTPUT_DIR}/$sample/mapping/$sample\_dedup_realigned.done ]\n";
+	    print CLEAN_SH "if [ ! -f $opt{OUTPUT_DIR}/$sample/logs/Realignment_$sample.done ]\n";
 	    print CLEAN_SH "then\n";
 	    print CLEAN_SH "\tPASS=1\n";
 	    print CLEAN_SH "else\n";
@@ -115,7 +115,6 @@ sub runRealignment {
 	print CLEAN_SH "if [ \$PASS -eq 0 ]\n";
 	print CLEAN_SH "then\n";
 	print CLEAN_SH "\tmv $opt{OUTPUT_DIR}/tmp/IndelRealigner.jobreport.txt $opt{OUTPUT_DIR}/logs/IndelRealigner.jobreport.txt\n";
-	#print CLEAN_SH "\trm -r $opt{OUTPUT_DIR}/tmp/\n";
 	print CLEAN_SH "fi\n";
 	close CLEAN_SH;
 	
@@ -132,10 +131,11 @@ sub runRealignment {
 	    print "\t$opt{OUTPUT_DIR}/$sample/mapping/$sample\_dedup.bam\n";
 	    
 	    ## Check for realigned bam file, skip sample if realigned bam file already exist.
-	    if (-e "$opt{OUTPUT_DIR}/$sample/mapping/$sample\_dedup_realigned.bam"){
-		warn "\t WARNING: $opt{OUTPUT_DIR}/$sample/mapping/$sample\_dedup_realigned.bam already exists, skipping\n";
+	    if (-e "$opt{OUTPUT_DIR}/$sample/logs/Realignment_$sample.done"){
+		warn "\t WARNING: $opt{OUTPUT_DIR}/$sample/logs/Realignment_$sample.done exists, skipping\n";
 		next;
 	    }
+	    
 	    my $jobId = "REALIGN_$sample\_".get_job_id();
 
 	    open REALIGN_SH,">$opt{OUTPUT_DIR}/$sample/jobs/$jobId.sh" or die "Couldn't create $opt{OUTPUT_DIR}/$sample/jobs/$jobId.sh\n";
@@ -152,7 +152,7 @@ sub runRealignment {
 		    print REALIGN_SH "-known $knownIndelFile "
 		}
 	    }
-	    print REALIGN_SH "-run -I $opt{OUTPUT_DIR}/$sample/mapping/$sample\_dedup.bam -jobRunner GridEngine 1>>../logs/realign.log 2>>../logs/realign.err\n";
+	    print REALIGN_SH "-run -I $opt{OUTPUT_DIR}/$sample/mapping/$sample\_dedup.bam -jobRunner GridEngine 1>>../logs/realign.log 2>>../logs/realign.log\n";
 	    
 	    print REALIGN_SH "if [ -f $opt{OUTPUT_DIR}/$sample/tmp/$sample\_dedup.realigned.bam ]\n";
 	    print REALIGN_SH "then\n";
@@ -167,9 +167,8 @@ sub runRealignment {
 	    print REALIGN_SH "\tFS2=\`grep -m 1 -P \"\\d+ \" $opt{OUTPUT_DIR}/$sample/mapping/$sample\_dedup_realigned.flagstat | awk '{{split(\$0,columns , \"+\")} print columns[1]}'\`\n";
 	    print REALIGN_SH "\tif [ \$FS1 -eq \$FS2 ]\n";
 	    print REALIGN_SH "\tthen\n";
-	    print REALIGN_SH "\t\ttouch $opt{OUTPUT_DIR}/$sample/mapping/$sample\_dedup_realigned.done\n";
+	    print REALIGN_SH "\t\ttouch $opt{OUTPUT_DIR}/$sample/logs/Realignment_$sample.done\n";
 	    print REALIGN_SH "\t\tmv $opt{OUTPUT_DIR}/$sample/tmp/IndelRealigner.jobreport.txt $opt{OUTPUT_DIR}/$sample/logs/IndelRealigner.jobreport.txt\n";
-	    #print REALIGN_SH "\trm -r $opt{OUTPUT_DIR}/$sample/tmp/\n";
 	    print REALIGN_SH "\telse\n";
 	    print REALIGN_SH "\t\techo \"ERROR: $opt{OUTPUT_DIR}/$sample/mapping/$sample\_dedup.flagstat and $opt{OUTPUT_DIR}/$sample/mapping/$sample\_dedup_realigned.flagstat do not have the same read counts\" >>../logs/realign.err\n";
 	    print REALIGN_SH "\tfi\n";

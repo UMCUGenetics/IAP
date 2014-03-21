@@ -171,6 +171,9 @@ sub createOutputDirs{
     if(! -e $opt{OUTPUT_DIR}){
 	mkdir($opt{OUTPUT_DIR}) or die "Couldn't create directory: $opt{OUTPUT_DIR}\n";
     }
+    if(! -e "$opt{OUTPUT_DIR}/QCStats"){
+	mkdir("$opt{OUTPUT_DIR}/QCStats") or die "Couldn't create directory: $opt{OUTPUT_DIR}/QCStats\n";
+    }
     if(! -e "$opt{OUTPUT_DIR}/jobs"){
 	mkdir("$opt{OUTPUT_DIR}/jobs") or die "Couldn't create directory: $opt{OUTPUT_DIR}/jobs\n";
     }
@@ -180,6 +183,7 @@ sub createOutputDirs{
     if(! -e "$opt{OUTPUT_DIR}/tmp"){
 	mkdir("$opt{OUTPUT_DIR}/tmp") or die "Couldn't create directory: $opt{OUTPUT_DIR}/tmp\n";
     }
+
     ### Create sample specific output directories
     foreach my $sample (@{$opt{SAMPLES}}){
 	if(! -e "$opt{OUTPUT_DIR}/$sample"){

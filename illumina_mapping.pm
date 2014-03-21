@@ -94,9 +94,9 @@ sub runMapping {
 	
 	print "Creating $opt{OUTPUT_DIR}/$sampleName/mapping/$coreName\_dedup.bam with:\n";
 		
-	###Skip mapping if merged dedup.bam file already exists
-	if (-e "$opt{OUTPUT_DIR}/$sampleName/mapping/$sampleName\_dedup.bam"){
-	    warn "WARNING: $opt{OUTPUT_DIR}/$sampleName/mapping/$sampleName\_dedup.bam already exists, skipping\n";
+	###Skip mapping if dedup.done file already exists
+	if (-e "$opt{OUTPUT_DIR}/$sampleName/logs/Mapping_$sampleName.done"){
+	    warn "WARNING: $opt{OUTPUT_DIR}/$sampleName/logs/Mapping_$sampleName.done exists, skipping\n";
 	    next;
         }
 
@@ -183,6 +183,7 @@ sub runMapping {
 	print MERGE_SH "if [ ! -s logs/$sample\_cleanup.err ]\n";
 	print MERGE_SH "then\n";
 	print MERGE_SH "\ttouch mapping/$sample\_dedup.done\n";
+	print MERGE_SH "\ttouch logs/Mapping_$sample.done\n";
 	print MERGE_SH "fi\n\n";
 	
 	close MERGE_SH;

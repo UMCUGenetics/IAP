@@ -20,23 +20,23 @@ sub runCheck {
     my $runName = (split("/", $opt{OUTPUT_DIR}))[-1];
     my $doneFile;
     my @runningJobs;
-    
+
     ### Create bash file
     my $jobID = get_job_id();
     my $bashFile = "$opt{OUTPUT_DIR}/jobs/check_".get_job_id().".sh";
     open (BASH,">$bashFile") or die "ERROR: Couldn't create $bashFile\n";
     print BASH "\#!/bin/sh\n . $opt{CLUSTER_PATH}/settings.sh\n\n";
-    
+
     ### Log file
     my $logFile = "$opt{OUTPUT_DIR}/logs/check.log";
     print BASH "failed=false \n";
     print BASH "echo \"Check and cleanup for run: $runName \" >>$logFile\n\n";
-    
+
     ### Check sample steps
     foreach my $sample (@{$opt{SAMPLES}}){
 	print BASH "echo \"Sample: $sample\" >>$logFile\n";
 	if($opt{PRESTATS} eq "yes"){
-	    $doneFile = $opt{OUTPUT_DIR}."/$sample/QCStats/$sample.done";
+	    $doneFile = $opt{OUTPUT_DIR}."/$sample/logs/PreStats_$sample.done";
 	    print BASH "if [ -f $doneFile ]; then\n";
 	    print BASH "\techo \"\t PreStats: done \" >>$logFile\n";
 	    print BASH "else\n";
@@ -45,7 +45,7 @@ sub runCheck {
 	    print BASH "fi\n";
 	}
 	if($opt{MAPPING} eq "yes"){
-	    $doneFile = $opt{OUTPUT_DIR}."/$sample/mapping/$sample\_dedup.done";
+	    $doneFile = $opt{OUTPUT_DIR}."/$sample/logs/Mapping_$sample.done";
 	    print BASH "if [ -f $doneFile ]; then\n";
 	    print BASH "\techo \"\t Mapping: done \" >>$logFile\n";
 	    print BASH "else\n";
@@ -54,7 +54,7 @@ sub runCheck {
 	    print BASH "fi\n";
 	}
 	if($opt{INDELREALIGNMENT} eq "yes"){
-	    $doneFile = $opt{OUTPUT_DIR}."/$sample/mapping/$sample\*_realigned.done";
+	    $doneFile = $opt{OUTPUT_DIR}."/$sample/logs/Realignment_$sample.done";
 	    print BASH "if [ -f $doneFile ]; then\n";
 	    print BASH "\techo \"\t IndelRealignment: done \" >>$logFile\n";
 	    print BASH "else\n";
@@ -63,7 +63,7 @@ sub runCheck {
 	    print BASH "fi\n";
 	}
 	if($opt{BASEQUALITYRECAL} eq "yes"){
-	    $doneFile = $opt{OUTPUT_DIR}."/$sample/mapping/$sample\*_recalibrated.done";
+	    $doneFile = $opt{OUTPUT_DIR}."/$sample/logs/BaseRecalibration_$sample.done";
 	    print BASH "if [ -f $doneFile ]; then\n";
 	    print BASH "\techo \"\t BaseRecalibration: done \" >>$logFile\n";
 	    print BASH "else\n";
@@ -78,10 +78,10 @@ sub runCheck {
 	    push( @runningJobs, @{$opt{RUNNING_JOBS}->{$sample}} );
 	}
     }
-    
+
     ### Check run steps
     if($opt{POSTSTATS} eq "yes"){
-	$doneFile = $opt{OUTPUT_DIR}."/tmp/postStats.done";
+	$doneFile = $opt{OUTPUT_DIR}."/logs/PostStats.done";
 	print BASH "if [ -f $doneFile ]; then\n";
 	print BASH "\techo \"PostStats: done \" >>$logFile\n";
 	print BASH "else\n";
@@ -90,7 +90,7 @@ sub runCheck {
 	print BASH "fi\n";
     }
     if($opt{VARIANT_CALLING} eq "yes"){
-	$doneFile = $opt{OUTPUT_DIR}."/tmp/variantCalling.done";
+	$doneFile = $opt{OUTPUT_DIR}."/logs/VariantCalling.done";
 	print BASH "if [ -f $doneFile ]; then\n";
 	print BASH "\techo \"VariantCalling: done \" >>$logFile\n";
 	print BASH "else\n";
@@ -99,7 +99,7 @@ sub runCheck {
 	print BASH "fi\n";
     }
     if($opt{FILTER_VARIANTS} eq "yes"){
-	$doneFile = $opt{OUTPUT_DIR}."/tmp/filterVariants.done";
+	$doneFile = $opt{OUTPUT_DIR}."/logs/FilterVariants.done";
 	print BASH "if [ -f $doneFile ]; then\n";
 	print BASH "\techo \"FilterVariants: done \" >>$logFile\n";
 	print BASH "else\n";
@@ -108,7 +108,7 @@ sub runCheck {
 	print BASH "fi\n";
     }
     if($opt{ANNOTATE_VARIANTS} eq "yes"){
-	$doneFile = $opt{OUTPUT_DIR}."/tmp/annotateVariants.done";
+	$doneFile = $opt{OUTPUT_DIR}."/logs/AnnotateVariants.done";
 	print BASH "if [ -f $doneFile ]; then\n";
 	print BASH "\techo \"AnnotateVariants: done \" >>$logFile\n";
 	print BASH "else\n";
@@ -116,21 +116,27 @@ sub runCheck {
 	print BASH "\tfailed=true\n";
 	print BASH "fi\n";
     }
-    
+
     ### Check failed variable
     print BASH "echo \"\">>$logFile\n\n"; ## empty line after stats
     print BASH "if [ \"\$failed\" = true  ]; then\n";
     print BASH "\techo \"One or multiple step(s) of the pipeline failed. \" >>$logFile\n";
     print BASH "else\n";
     print BASH "\techo \"The pipeline completed successfully. \">>$logFile\n";
+    #remove all tmp folders and empty logs except .done files
+    print BASH "\trm -r $opt{OUTPUT_DIR}/tmp\n";
+    print BASH "\trm -r $opt{OUTPUT_DIR}/*/tmp\n";
+    print BASH "\tfind  $opt{OUTPUT_DIR}/logs -size 0 -not -name \"*.done\" -delete\n"; 
+    print BASH "\tfind  $opt{OUTPUT_DIR}/*/logs -size 0 -not -name \"*.done\" -delete\n";
+    ### add remove steps for folders/files
     print BASH "fi\n";
-    
+
     #Start main bash script
     my $logDir = $opt{OUTPUT_DIR}."/logs";
     if (@runningJobs){
-	system "qsub -q $opt{CHECKING_QUEUE} -pe threaded $opt{CHECKING_THREADS} -o $logDir -e $logDir -N check_$jobID -hold_jid ".join(",",@runningJobs)." $bashFile";
+	system "qsub -q $opt{CHECKING_QUEUE} -pe threaded $opt{CHECKING_THREADS} -N check_$jobID -hold_jid ".join(",",@runningJobs)." $bashFile";
     } else {
-	system "qsub -q $opt{CHECKING_QUEUE} -pe threaded $opt{CHECKING_THREADS} -o $logDir -e $logDir -N check_$jobID $bashFile";
+	system "qsub -q $opt{CHECKING_QUEUE} -pe threaded $opt{CHECKING_THREADS} -N check_$jobID $bashFile";
     }
 }
 

@@ -23,14 +23,9 @@ sub runFilterVariants {
     my $jobID = "FV_".get_job_id();
 
     ### Skip variant calling if .raw_variants.vcf already exists
-    if ($opt{FILTER_MODE} eq "SNP" && -e "$opt{OUTPUT_DIR}/$runName.filtered_snps.vcf"){
-	warn "WARNING: $opt{OUTPUT_DIR}/$runName.filtered_snps.vcf already exists, skipping \n";
-	return $jobID;
-    } elsif ($opt{FILTER_MODE} eq "INDEL" && -e "$opt{OUTPUT_DIR}/$runName.filtered_indels.vcf"){
-	warn "WARNING: $opt{OUTPUT_DIR}/$runName.filtered_indels.vcf already exists, skipping \n";
-	return $jobID;
-    } elsif ($opt{FILTER_MODE} eq "BOTH" && -e "$opt{OUTPUT_DIR}/$runName.filtered_variants.vcf"){
-	warn "WARNING: $opt{OUTPUT_DIR}/$runName.filtered_variants.vcf already exists, skipping \n";
+    ### add .done file checking?
+    if (-e "$opt{OUTPUT_DIR}/logs/FilterVariants.done"){
+	warn "WARNING: $opt{OUTPUT_DIR}/logs/FilterVariants.done exists, skipping \n";
 	return $jobID;
     }
 
@@ -102,7 +97,7 @@ sub runFilterVariants {
 	print FILTER_SH "\tmv $opt{OUTPUT_DIR}/tmp/$runName\.filtered_variants.vcf.idx $opt{OUTPUT_DIR}/\n";
 	print FILTER_SH "fi\n\n";
     }
-    print FILTER_SH "touch filterVariants.done \n";
+    print FILTER_SH "touch $opt{OUTPUT_DIR}/logs/FilterVariants.done \n";
     
     ### Process runningjobs
     foreach my $sample (keys %{$opt{RUNNING_JOBS}}){

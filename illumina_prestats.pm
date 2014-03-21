@@ -34,7 +34,7 @@ sub runPreStats {
 	my ($sampleName) =  split("_", $coreName);
 	print "\t$input\n"; #print fastq filename
 
-	if(! -e "$opt{OUTPUT_DIR}/$sampleName/QCStats/$sampleName.done"){
+	if(! -e "$opt{OUTPUT_DIR}/$sampleName/logs/PreStats_$sampleName.done"){
 
 	    my $preStatsJobId = "PRESTATS_$coreName\_".get_job_id();
 	    push(@{$jobIds->{$sampleName}}, $preStatsJobId);
@@ -44,7 +44,7 @@ sub runPreStats {
 	    print PS "uname -n > logs/$preStatsJobId.host\n";
 	    print PS "echo \"FastQC\t\" `date` >> logs/$preStatsJobId.host\n";
 	    print PS "$opt{FASTQC_PATH}/fastqc $input -o QCStats --noextract\n";
-	    print PS "touch QCStats/$sampleName.done\n";
+	    print PS "touch logs/PreStats_$sampleName.done\n";
 	    close PS;
 
 	    print QSUB "qsub -pe threaded $opt{PRESTATS_THREADS} -q $opt{PRESTATS_QUEUE} -P $opt{PRESTATS_PROJECT} -o $opt{OUTPUT_DIR}/$sampleName/logs -e $opt{OUTPUT_DIR}/$sampleName/logs -N $preStatsJobId $opt{OUTPUT_DIR}/$sampleName/jobs/$preStatsJobId.sh\n";

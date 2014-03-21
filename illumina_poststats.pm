@@ -54,23 +54,28 @@ sub runPostStats {
 	}
     }
     ### Run plotilluminametrics
-    my $command = "perl $FindBin::Bin/modules/plotIlluminaMetrics/plotIlluminaMetrics.pl ".join(" ",@{$opt{SAMPLES}});
+    if(! -e "$opt{OUTPUT_DIR}/logs/PostStats.done"){
+	my $command = "perl $FindBin::Bin/modules/plotIlluminaMetrics/plotIlluminaMetrics.pl ".join(" ",@{$opt{SAMPLES}});
     
-    my $jobID = get_job_id();
-    my $bashFile = $opt{OUTPUT_DIR}."/jobs/PICARD_".$jobID.".sh";
-    my $logDir = $opt{OUTPUT_DIR}."/logs";
+	my $jobID = get_job_id();
+	my $bashFile = $opt{OUTPUT_DIR}."/jobs/PICARD_".$jobID.".sh";
+	my $logDir = $opt{OUTPUT_DIR}."/logs";
         
-    open OUT, ">$bashFile" or die "cannot open file $bashFile\n";
-    print OUT "#!/bin/bash\n\n";
-    print OUT "cd $opt{OUTPUT_DIR}\n";
-    print OUT "$command\n";
-    print OUT "touch tmp/postStats.done \n";
-    if (@runningJobs){
-	system "qsub -q $opt{POSTSTATS_QUEUE} -pe threaded $opt{POSTSTATS_THREADS} -o $logDir -e $logDir -N PICARD_$jobID -hold_jid ".join(",",@runningJobs)." $bashFile";
-    } else {
-	system "qsub -q $opt{POSTSTATS_QUEUE} -pe threaded $opt{POSTSTATS_THREADS} -o $logDir -e $logDir -N PICARD_$jobID $bashFile";
-    }
+	open OUT, ">$bashFile" or die "cannot open file $bashFile\n";
+	print OUT "#!/bin/bash\n\n";
+	print OUT "cd $opt{OUTPUT_DIR}\n";
+	print OUT "$command\n";
+	print OUT "touch logs/postStats.done \n";
+	print OUT "mv *HSMetric_summary* QCStats/ \n";
+	print OUT "mv *picardMetrics* QCStats/ \n";
+	print OUT "mv figure/ QCStats/ \n";
 
+	if (@runningJobs){
+	    system "qsub -q $opt{POSTSTATS_QUEUE} -pe threaded $opt{POSTSTATS_THREADS} -o $logDir -e $logDir -N PICARD_$jobID -hold_jid ".join(",",@runningJobs)." $bashFile";
+	} else {
+	    system "qsub -q $opt{POSTSTATS_QUEUE} -pe threaded $opt{POSTSTATS_THREADS} -o $logDir -e $logDir -N PICARD_$jobID $bashFile";
+	}
+    }
 }
 
 sub readConfiguration{

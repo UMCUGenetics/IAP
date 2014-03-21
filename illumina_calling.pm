@@ -23,14 +23,14 @@ sub runVariantCalling {
     my $jobID = "VC_".get_job_id();
     
     ### Skip variant calling if .raw_variants.vcf already exists
-    if (-e "$opt{OUTPUT_DIR}/$runName.raw_variants.vcf"){
-	warn "WARNING: $opt{OUTPUT_DIR}/$runName.raw_variants.vcf already exists, skipping \n";
+    if (-e "$opt{OUTPUT_DIR}/logs/VariantCalling.done"){
+	warn "WARNING: $opt{OUTPUT_DIR}/logs/VariantCalling.done exists, skipping \n";
 	return $jobID;
     }
     
     ### Build Queue command
     my $javaMem = $opt{CALLING_THREADS} * $opt{CALLING_MEM};
-    my $command = "java -Xmx".$javaMem."G -Xms".$opt{CALLING_MEM}."G -jar $opt{QUEUE_PATH}/Queue.jar "; ### Change memory allocation here!!!!!
+    my $command = "java -Xmx".$javaMem."G -Xms".$opt{CALLING_MEM}."G -jar $opt{QUEUE_PATH}/Queue.jar ";
     $command .= "-jobQueue $opt{CALLING_QUEUE} -jobEnv \"threaded $opt{CALLING_THREADS}\" -jobRunner GridEngine -jobReport $opt{OUTPUT_DIR}/logs/variantCaller.jobReport.txt "; #Queue options
 
     ### Add caller and UG specific settings
@@ -90,7 +90,7 @@ sub runVariantCalling {
     print CALLING_SH "\tmv $opt{OUTPUT_DIR}/tmp/$runName\.raw_variants.vcf.idx $opt{OUTPUT_DIR}/\n";
     print CALLING_SH "fi\n\n";
     
-    print CALLING_SH "touch variantCalling.done \n";
+    print CALLING_SH "touch $opt{OUTPUT_DIR}/logs/VariantCalling.done \n";
     
     #Start main bash script
     if (@runningJobs){

@@ -21,6 +21,13 @@ sub runAnnotateVariants {
     my $runName = (split("/", $opt{OUTPUT_DIR}))[-1];
     my @runningJobs;
     my $command;
+    my $jobID = "AV_".get_job_id();
+    
+    ### Skip variant annotation if .done file exists.
+    if (-e "$opt{OUTPUT_DIR}/logs/AnnotateVariants.done"){
+	warn "WARNING: $opt{OUTPUT_DIR}/logs/AnnotateVariants.done exists, skipping \n";
+	return $jobID;
+    }
     
     ### vcf file
     my $invcf;
@@ -32,7 +39,6 @@ sub runAnnotateVariants {
     } elsif ($opt{FILTER_VARIANTS} eq "no") { $invcf = $runName.".raw_variants.vcf"; }
     
     ### Create main bash script
-    my $jobID = "AV_".get_job_id();
     my $bashFile = $opt{OUTPUT_DIR}."/jobs/AnnotateVariants_".$jobID.".sh";
     my $logDir = $opt{OUTPUT_DIR}."/logs";
     
@@ -72,7 +78,7 @@ sub runAnnotateVariants {
 	    print ANNOTATE_SH "if [ -f $outvcf ]\nthen\n rm $invcf\nfi\n\n";
 	}
     }
-    print ANNOTATE_SH "touch tmp/annotateVariants.done \n";
+    print ANNOTATE_SH "touch $opt{OUTPUT_DIR}/logs/AnnotateVariants.done \n";
     
     ### Process runningjobs
     foreach my $sample (keys %{$opt{RUNNING_JOBS}}){

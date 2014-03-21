@@ -39,8 +39,8 @@ sub runBaseRecalibration {
 	print "\t".$inBam."\n";
 	
 	### Check output .bam files
-	if (-e "$opt{OUTPUT_DIR}/$sample/mapping/$outBam\.bam"){
-	    warn "\t WARNING: $opt{OUTPUT_DIR}/$sample/mapping/$outBam already exists, skipping \n";
+	if (-e "$opt{OUTPUT_DIR}/$sample/logs/BaseRecalibration_$sample.done"){
+	    warn "\t WARNING: $opt{OUTPUT_DIR}/$sample/logs/BaseRecalibration_$sample.done exists, skipping \n";
 	    next;
 	}
 	
@@ -86,7 +86,7 @@ sub runBaseRecalibration {
 	print BASERECAL_SH "\tthen\n";
 	print BASERECAL_SH "\t\tmv $opt{OUTPUT_DIR}/$sample/tmp/$outBam\.bam $opt{OUTPUT_DIR}/$sample/mapping/\n";
 	print BASERECAL_SH "\t\tmv $opt{OUTPUT_DIR}/$sample/tmp/$outBam\.bai $opt{OUTPUT_DIR}/$sample/mapping/\n";
-	print BASERECAL_SH "\t\ttouch $opt{OUTPUT_DIR}/$sample/mapping/$outBam\.done\n";
+	print BASERECAL_SH "\t\ttouch $opt{OUTPUT_DIR}/$sample/logs/BaseRecalibration_$sample.done\n";
 	print BASERECAL_SH "\telse\n";
 	print BASERECAL_SH "\t\techo \"ERROR: $opt{OUTPUT_DIR}/$sample/mapping/$sample\_dedup.flagstat and $opt{OUTPUT_DIR}/$sample/mapping/$outBam\.flagstat do not have the same read counts\" >>../logs/recalibration.err\n";
 	print BASERECAL_SH "\tfi\n";
