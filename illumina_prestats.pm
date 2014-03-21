@@ -43,7 +43,7 @@ sub runPreStats {
 	    print PS "cd $opt{OUTPUT_DIR}/$sampleName\n\n";
 	    print PS "uname -n > logs/$preStatsJobId.host\n";
 	    print PS "echo \"FastQC\t\" `date` >> logs/$preStatsJobId.host\n";
-	    print PS "$opt{FASTQC_PATH}/fastqc $input -o QCStats\n";
+	    print PS "$opt{FASTQC_PATH}/fastqc $input -o QCStats --noextract\n";
 	    print PS "touch QCStats/$sampleName.done\n";
 	    close PS;
 
