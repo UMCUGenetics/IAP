@@ -65,7 +65,7 @@ sub runPostStats {
 	print OUT "#!/bin/bash\n\n";
 	print OUT "cd $opt{OUTPUT_DIR}\n";
 	print OUT "$command\n";
-	print OUT "touch logs/postStats.done \n";
+	print OUT "touch logs/PostStats.done \n";
 	print OUT "mv *HSMetric_summary* QCStats/ \n";
 	print OUT "mv *picardMetrics* QCStats/ \n";
 	print OUT "mv figure/ QCStats/ \n";
