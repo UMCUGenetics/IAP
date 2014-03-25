@@ -13,6 +13,20 @@ GATK_PATH	/data_fedor13/common_scripts/gatk/GenomeAnalysisTK-2.8-1-g932cd3a
 SNPEFF_PATH	/hpc/cog_bioinf/data/robert/src/snpEff
 VCFTOOLS_PATH	/hpc/cog_bioinf/common_scripts/vcftools/bin/
 
+####MODES####
+PRESTATS	yes
+MAPPING	yes
+POSTSTATS	yes
+INDELREALIGNMENT	yes
+BASEQUALITYRECAL	yes
+VARIANT_CALLING	yes
+FILTER_VARIANTS	yes
+ANNOTATE_VARIANTS	yes
+CHECKING	yes
+
+####GENOME SETTINGS####
+GENOME	/hpc/cog_bioinf/GENOMES/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta
+
 ####PRESTATS CLUSTER CONFIGURATION####
 PRESTATS_QUEUE	all.q
 PRESTATS_PROJECT	mapping
@@ -102,10 +116,3 @@ ANNOTATE_COLUMNS	CHROM,FROM,TO,-,GoNL_CHR,GoNL_FREQ1,GoNL_FREQ2
 ####CHECKING CLUSTER CONFIGURATION####
 CHECKING_QUEUE	all.q
 CHECKING_THREADS	1
-
-
-
-
-
-
-

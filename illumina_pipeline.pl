@@ -4,9 +4,9 @@
 ###
 ###
 ###Author: S.W.Boymans
-###Latest change: VariantCalling (Robert)
+###Latest change: ini parsing
 ###
-###TODO: baserecalibration, variantfilter, createDirs function -> see comments in subroutine section
+###TODO:
 ##################################################################################################################################################
 
 use strict;
@@ -35,20 +35,7 @@ my $configurationFile;
     'SAMPLES'			=> undef #do not use in .conf or .ini
 );
 
-########### READ MAIN SETTINGS FROM .ini FILE ####################
-my $iniFile = $0; $iniFile =~ s/pl$/ini/;
-open (INI, "<$iniFile") or die "Couldn't open .ini file $iniFile\n";
-
-while(<INI>){
-    chomp;
-    next if m/^#/ or ! $_;
-    my ($key, $val) = split("\t",$_,2);
-    $opt{$key} = $val;
-}
-
-close INI;
-
-############ READ RUN SPECIFIC SETTINGS FORM .conf FILE ############
+############ READ RUN SETTINGS FORM .conf FILE ############
 $configurationFile = $ARGV[0];
 
 open (CONFIGURATION, "<$configurationFile") or die "Couldn't open .conf file: $configurationFile\n";
@@ -56,17 +43,31 @@ while(<CONFIGURATION>){
     chomp;
     next if m/^#/ or ! $_;
     my ($key, $val) = split("\t",$_,2);
-
-    if($key eq 'FASTQ'){
+    #parse ini file
+    if($key eq 'INIFILE') {
+	$opt{$key} = $val;
+	open (INI, "<$val") or die "Couldn't open .ini file $val\n";
+	while(<INI>){
+	    chomp;
+	    next if m/^#/ or ! $_;
+	    my ($key, $val) = split("\t",$_,2);
+	    $opt{$key} = $val;
+	}
+	close INI;
+    #parse other config attributes
+    } elsif($key eq 'FASTQ') {
         $opt{$key}->{$val} = 1;
-    }else{
-        $opt{$key} = $val;	
+    } else {
+        $opt{$key} = $val;
     }
 
 }
 close CONFIGURATION;
 
 ############ START PIPELINE  ############
+
+### Check config file
+if(! $opt{INIFILE}){ die "ERROR: No INIFILE found in .conf file\n" }
 if(! $opt{OUTPUT_DIR}){ die "ERROR: No OUTPUT_DIR found in .conf file\n" }
 if(! $opt{FASTQ}){ die "ERROR: No FASTQ files specified\n" }
 if(! $opt{PRESTATS}){ die "ERROR: No PRESTATS option in .conf file \n" }
