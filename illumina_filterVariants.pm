@@ -83,21 +83,23 @@ sub runFilterVariants {
 	print FILTER_SH "then\n";
 	print FILTER_SH "\tmv $opt{OUTPUT_DIR}/tmp/$runName\.filtered_snps.vcf $opt{OUTPUT_DIR}/\n";
 	print FILTER_SH "\tmv $opt{OUTPUT_DIR}/tmp/$runName\.filtered_snps.vcf.idx $opt{OUTPUT_DIR}/\n";
+	print FILTER_SH "\ttouch $opt{OUTPUT_DIR}/logs/FilterVariants.done \n";
 	print FILTER_SH "fi\n\n";
     } elsif ($opt{FILTER_MODE} eq "INDEL"){
 	print FILTER_SH "if [ -f $opt{OUTPUT_DIR}/tmp/.$runName\.filtered_indels.vcf.done ]\n";
 	print FILTER_SH "then\n";
 	print FILTER_SH "\tmv $opt{OUTPUT_DIR}/tmp/$runName\.filtered_indels.vcf $opt{OUTPUT_DIR}/\n";
 	print FILTER_SH "\tmv $opt{OUTPUT_DIR}/tmp/$runName\.filtered_indels.vcf.idx $opt{OUTPUT_DIR}/\n";
+	print FILTER_SH "\ttouch $opt{OUTPUT_DIR}/logs/FilterVariants.done \n";
 	print FILTER_SH "fi\n\n";
     } elsif ($opt{FILTER_MODE} eq "BOTH"){
 	print FILTER_SH "if [ -f $opt{OUTPUT_DIR}/tmp/.$runName\.filtered_variants.vcf.done ]\n";
 	print FILTER_SH "then\n";
 	print FILTER_SH "\tmv $opt{OUTPUT_DIR}/tmp/$runName\.filtered_variants.vcf $opt{OUTPUT_DIR}/\n";
 	print FILTER_SH "\tmv $opt{OUTPUT_DIR}/tmp/$runName\.filtered_variants.vcf.idx $opt{OUTPUT_DIR}/\n";
+	print FILTER_SH "\ttouch $opt{OUTPUT_DIR}/logs/FilterVariants.done \n";
 	print FILTER_SH "fi\n\n";
     }
-    print FILTER_SH "touch $opt{OUTPUT_DIR}/logs/FilterVariants.done \n";
     
     ### Process runningjobs
     foreach my $sample (keys %{$opt{RUNNING_JOBS}}){

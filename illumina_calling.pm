@@ -88,9 +88,8 @@ sub runVariantCalling {
     print CALLING_SH "then\n";
     print CALLING_SH "\tmv $opt{OUTPUT_DIR}/tmp/$runName\.raw_variants.vcf $opt{OUTPUT_DIR}/\n";
     print CALLING_SH "\tmv $opt{OUTPUT_DIR}/tmp/$runName\.raw_variants.vcf.idx $opt{OUTPUT_DIR}/\n";
+    print CALLING_SH "\ttouch $opt{OUTPUT_DIR}/logs/VariantCalling.done \n";
     print CALLING_SH "fi\n\n";
-    
-    print CALLING_SH "touch $opt{OUTPUT_DIR}/logs/VariantCalling.done \n";
     
     #Start main bash script
     if (@runningJobs){
