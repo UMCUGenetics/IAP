@@ -13,13 +13,13 @@ use Cwd            qw( abs_path );
 use File::Basename qw( dirname );
 use Getopt::Long;
 
-### Variables
+### Variables ###
 my $settingsDir = dirname(abs_path($0))."/settings";
 
-### Check usage
+### Check usage ###
 interactive() if @ARGV == 0;
 
-### Parse options
+### Parse options ###
 my $iniFile;
 my $outputDir;
 my @rawDataDirs;
@@ -57,15 +57,12 @@ sub interactive{
     #Raw data dir -> add while loop to allow for multiple raw data dirs.
     print "Raw data project dir: ";
     chomp(my $rawDataDir = <STDIN>); # no tab completion :(
-    if ($rawDataDir eq "") { die "Please provide a correct raw data directory." } #check for existence
+    if($rawDataDir eq "") { die "Please provide a correct raw data directory." } #check for existence
     push(@rawDataDirs, $rawDataDir);
     
     #Create config
     createConfig($iniFile,$outputDir,\@rawDataDirs);
 }
-
-
-#### SUBROUTINES ####
 
 ### Parse and print available ini files ###
 sub getIniFiles{
@@ -96,20 +93,21 @@ sub createConfig {
     if(! -e $outputDir){
 	mkdir($outputDir) or die "Couldn't create directory: $outputDir\n";
     }
-
+    # Create settings.config file in outputDir
     open CONFIG, ">$configFile" or die "cannot open file $configFile \n";
     print CONFIG "### SETTINGS ###\n";
     print CONFIG "INIFILE\t$iniFile\n";
     print CONFIG "OUTPUT_DIR\t$outputDir\n";
-    
+
     print CONFIG "\n### FASTQ FILES ###";
     #Find fastq files for each rawDataDir
     foreach my $rawDataDir (@rawDataDirs){
+	if(! -e $rawDataDir) { die "$rawDataDir does not exist." }
 	print CONFIG "\n# $rawDataDir\n";
-	my @files = glob($rawDataDir."/*/*.fastq.gz");
+	my @files = glob($rawDataDir."/*{/,}*.fastq.gz");
 	foreach my $file (@files){ print CONFIG "FASTQ\t$file\n" }
     }
-    
+
     close CONFIG
 }
 
@@ -118,7 +116,7 @@ sub usage{
     print "Usage: perl illumina_createConfig.pl\n\n";
     print "Advanced usage: \n";
     print "perl illumina_createConfig.pl -iniFile settings.ini -outputDir /path/to/outputDir -rawDataDir /hiseq/140305_D00267_0081_AH8DB2ADXX/Unaligned/Project_1/ -rawDataDir /hiseq/140305_D00267_0081_AH8DB2ADXX/Unaligned/Project_2\n\n";
-    print "Available setting files:\n";
+    print "Available ini files:\n";
     getIniFiles($settingsDir);
     exit;
 }
