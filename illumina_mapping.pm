@@ -24,7 +24,7 @@ sub runMapping {
     die "genome $opt{GENOME} does not exists!!\t$!\n" if !-e "$opt{GENOME}.bwt";
     die "fai file $FAI does not exists!!\n" if !-e $FAI;
     
-    my $mainJobID = "$opt{OUTPUT_DIR}/jobs/MappingMainJob_".get_job_id().".sh";
+    my $mainJobID = "$opt{OUTPUT_DIR}/jobs/MapMainJob_".get_job_id().".sh";
 
     open (my $QSUB,">$mainJobID") or die "ERROR: Couldn't create $mainJobID\n";
     print $QSUB "\#!/bin/sh\n\n. $opt{CLUSTER_PATH}/settings.sh\n\n";
@@ -128,7 +128,7 @@ sub runMapping {
 	}
 	
 	
-	my $jobId = "MERGING_$sample\_".get_job_id();
+	my $jobId = "MERGE_$sample\_".get_job_id();
 	$mergeJobs->{$sample} = $jobId;
 	
 	open MERGE_SH,">$opt{OUTPUT_DIR}/$sample/jobs/$jobId.sh" or die "Couldn't create $opt{OUTPUT_DIR}/$sample/jobs/$jobId.sh\n";
@@ -205,7 +205,7 @@ sub submitBatchJobs{
     
     my ($opt,$QSUB ,$samples, $sampleName, $coreName, $R1, $R2) = @_;
     my %opt = %$opt;
-    my $jobId = "MAPPING_$coreName\_".get_job_id();
+    my $jobId = "MAP_$coreName\_".get_job_id();
     my ($RG_PL, $RG_ID, $RG_LB, $RG_SM) = ('ILLUMINA_HISEQ', $coreName, $sampleName, $sampleName);
     
 
@@ -299,14 +299,14 @@ sub submitSingleJobs{
     my %opt = %$opt;
     my ($RG_PL, $RG_ID, $RG_LB, $RG_SM) = ('ILLUMINA_HISEQ', $coreName, $sampleName, $sampleName);
     
-    my $mappingJobId = "MAPPING_$coreName\_".get_job_id();
-    my $mappingFSJobId = "MAPPING_FS_$coreName\_".get_job_id();
-    my $sortJobId = "SORT_$coreName\_".get_job_id();
-    my $sortFSJobId = "SORT_FS_$coreName\_".get_job_id();
-    my $indexJobId = "INDEX_$coreName\_".get_job_id();
-    my $markdupJobId = "MARKDUP_$coreName\_".get_job_id();
-    my $markdupFSJobId = "MARKDUP_FS_$coreName\_".get_job_id();
-    my $cleanupJobId = "CLEANUP_$coreName\_".get_job_id();
+    my $mappingJobId = "M_$coreName\_".get_job_id();
+    my $mappingFSJobId = "MFS_$coreName\_".get_job_id();
+    my $sortJobId = "S_$coreName\_".get_job_id();
+    my $sortFSJobId = "SFS_$coreName\_".get_job_id();
+    my $indexJobId = "I_$coreName\_".get_job_id();
+    my $markdupJobId = "MD_$coreName\_".get_job_id();
+    my $markdupFSJobId = "MDFS_$coreName\_".get_job_id();
+    my $cleanupJobId = "C_$coreName\_".get_job_id();
     
     ###############BWA JOB###############
     open BWA_SH,">$opt{OUTPUT_DIR}/$sampleName/jobs/$mappingJobId.sh" or die "Couldn't create $opt{OUTPUT_DIR}/$sampleName/jobs/$mappingJobId.sh\n";
@@ -347,7 +347,6 @@ sub submitSingleJobs{
     ##################################
     
     ###############SORT JOB###############
-    
     open SORT_SH,">$opt{OUTPUT_DIR}/$sampleName/jobs/$sortJobId.sh" or die "Couldn't create $opt{OUTPUT_DIR}/$sampleName/jobs/$sortJobId.sh\n";
     print SORT_SH "\#!/bin/sh\n\n";
     print SORT_SH "cd $opt{OUTPUT_DIR}/$sampleName/mapping \n";
@@ -361,7 +360,6 @@ sub submitSingleJobs{
     ##################################
     
     ###############FLAGSTAT AFTER SORT JOB###############
-    
     open FS2_SH,">$opt{OUTPUT_DIR}/$sampleName/jobs/$sortFSJobId.sh" or die "Couldn't create $opt{OUTPUT_DIR}/$sampleName/jobs/$sortFSJobId.sh\n";
     print FS2_SH "\#!/bin/sh\n\n";
     print FS2_SH "cd $opt{OUTPUT_DIR}/$sampleName/mapping \n";
@@ -375,7 +373,6 @@ sub submitSingleJobs{
     #################################
     
     ###############INDEX JOB###############
-    
     open INDEX_SH,">$opt{OUTPUT_DIR}/$sampleName/jobs/$indexJobId.sh" or die "Couldn't create $opt{OUTPUT_DIR}/$sampleName/jobs/$indexJobId.sh\n";
     print INDEX_SH "\#!/bin/sh\n\n";
     print INDEX_SH "cd $opt{OUTPUT_DIR}/$sampleName/mapping \n";
@@ -415,13 +412,11 @@ sub submitSingleJobs{
     ###############################
     
     ###############CLEANUP JOB###############
-    
     open CLEAN_SH,">$opt{OUTPUT_DIR}/$sampleName/jobs/$cleanupJobId.sh" or die "Couldn't create $opt{OUTPUT_DIR}/$sampleName/jobs/$cleanupJobId.sh\n";
     print CLEAN_SH "\#!/bin/sh\n\n";
     print CLEAN_SH "cd $opt{OUTPUT_DIR}/$sampleName/mapping \n";
     print CLEAN_SH "uname -n > $opt{OUTPUT_DIR}/$sampleName/logs/$cleanupJobId.host\n";
 
-    
     print CLEAN_SH "if [ -s $coreName.flagstat ] && [ -s $coreName\_sorted.flagstat ]\n";
     print CLEAN_SH "then\n";
     print CLEAN_SH "\tFS1=\`grep -m 1 -P \"\\d+ \" $coreName.flagstat | awk '{{split(\$0,columns , \"+\")} print columns[1]}'\`\n";
@@ -496,6 +491,6 @@ sub get_job_id {
       $id=~s/\/tmp\/file//;
    return $id;
 }
-############ 
+############
 
 1;
