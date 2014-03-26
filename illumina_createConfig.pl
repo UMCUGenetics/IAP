@@ -24,18 +24,20 @@ my $iniFile;
 my $outputDir;
 my @rawDataDirs;
 my $help;
+my $run;
 
 GetOptions ("iniFile=s" => \$iniFile,
 	    "outputDir=s" => \$outputDir,
 	    "rawDataDir=s" => \@rawDataDirs,
-	    "help" => \$help)
+	    "help" => \$help,
+	    "run" => \$run)
 or die usage();
 
-if ($help) { usage() }
+if ($help || ! $iniFile || ! $outputDir || ! @rawDataDirs ) { usage() }
 
 ### Non interactive mode ###
 $iniFile = $settingsDir."/".$iniFile;
-createConfig($iniFile,$outputDir,\@rawDataDirs);
+createConfig($iniFile,$outputDir,\@rawDataDirs,$run);
 
 ### Interactive mode ###
 sub interactive{
@@ -61,7 +63,7 @@ sub interactive{
     push(@rawDataDirs, $rawDataDir);
     
     #Create config
-    createConfig($iniFile,$outputDir,\@rawDataDirs);
+    createConfig($iniFile,$outputDir,\@rawDataDirs,$run);
 }
 
 ### Parse and print available ini files ###
@@ -87,6 +89,7 @@ sub createConfig {
     my $iniFile = $_[0];
     my $outputDir = $_[1];
     my @rawDataDirs = @{$_[2]};
+    my $run = $_[3];
 
     my $configFile = $outputDir."/settings.config";
 
@@ -108,14 +111,21 @@ sub createConfig {
 	foreach my $file (@files){ print CONFIG "FASTQ\t$file\n" }
     }
 
-    close CONFIG
+    close CONFIG;
+    
+    ###Run pipeline if -run is specified 
+    if($run) {
+	### run pipeline
+	my $pipeline = dirname(abs_path($0))."/illumina_pipeline.pl";
+	system "perl $pipeline $configFile";
+    }
 }
 
 ### Help information ###
 sub usage{
     print "Usage: perl illumina_createConfig.pl\n\n";
     print "Advanced usage: \n";
-    print "perl illumina_createConfig.pl -iniFile settings.ini -outputDir /path/to/outputDir -rawDataDir /hiseq/140305_D00267_0081_AH8DB2ADXX/Unaligned/Project_1/ -rawDataDir /hiseq/140305_D00267_0081_AH8DB2ADXX/Unaligned/Project_2\n\n";
+    print "perl illumina_createConfig.pl -iniFile settings.ini -outputDir /path/to/outputDir -rawDataDir /hiseq/140305_D00267_0081_AH8DB2ADXX/Unaligned/Project_1/ -rawDataDir /hiseq/140305_D00267_0081_AH8DB2ADXX/Unaligned/Project_2 [-run]\n\n";
     print "Available ini files:\n";
     getIniFiles($settingsDir);
     exit;
