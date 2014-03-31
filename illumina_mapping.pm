@@ -92,13 +92,7 @@ sub runMapping {
 	my ($RG_PL, $RG_ID, $RG_LB, $RG_SM) = ('ILLUMINA_HISEQ', $coreName, $sampleName, $sampleName);
 	
 	
-	print "Creating $opt{OUTPUT_DIR}/$sampleName/mapping/$coreName\_dedup.bam with:\n";
-		
-	###Skip mapping if dedup.done file already exists
-	if (-e "$opt{OUTPUT_DIR}/$sampleName/logs/Mapping_$sampleName.done"){
-	    warn "WARNING: $opt{OUTPUT_DIR}/$sampleName/logs/Mapping_$sampleName.done exists, skipping\n";
-	    next;
-        }
+	print "Creating $opt{OUTPUT_DIR}/$sampleName/mapping/$coreName\_sorted_dedup.bam with:\n";
 
 	if($opt{MAPPING_MODE} eq 'batch'){
 	
@@ -115,7 +109,7 @@ sub runMapping {
 
 
     my $mergeJobs = {};
-
+    print "\n";
     #Create a merging joblist for every sample
     foreach my $sample (keys %{$samples}){
     
@@ -126,7 +120,12 @@ sub runMapping {
 	    push(@bamList, $chunk->{'file'});
 	    push(@jobIds, $chunk->{'jobId'});
 	}
-	
+	print "Creating $opt{OUTPUT_DIR}/$sample/mapping/$sample.dedup.bam\n";
+	###Skip mapping if dedup.done file already exists
+	if (-e "$opt{OUTPUT_DIR}/$sample/logs/Mapping_$sample.done"){
+	    warn "\tWARNING: $opt{OUTPUT_DIR}/$sample/logs/Mapping_$sample.done exists, skipping\n";
+	    next;
+        }
 	
 	my $jobId = "MERGE_$sample\_".get_job_id();
 	$mergeJobs->{$sample} = $jobId;
@@ -208,6 +207,13 @@ sub submitBatchJobs{
     my $jobId = "MAP_$coreName\_".get_job_id();
     my ($RG_PL, $RG_ID, $RG_LB, $RG_SM) = ('ILLUMINA_HISEQ', $coreName, $sampleName, $sampleName);
     
+    push(@{$samples->{$sampleName}}, {'jobId'=>$jobId, 'file'=>"$opt{OUTPUT_DIR}/$sampleName/mapping/$coreName\_sorted_dedup.bam"});
+    
+    ###Skip mapping if coreName_sorted_dedup.done file already exists
+    if (-e "$opt{OUTPUT_DIR}/$sampleName/mapping/$coreName\_sorted_dedup.done"){
+        warn "\tWARNING: $opt{OUTPUT_DIR}/$sampleName/mapping/$coreName\_sorted_dedup.done exists, skipping\n";
+        return;
+    }
 
     open BWA_SH,">$opt{OUTPUT_DIR}/$sampleName/jobs/$jobId.sh" or die "Couldn't create $opt{OUTPUT_DIR}/$sampleName/jobs/$jobId.sh\n";
     print BWA_SH "\#!/bin/sh\n\n";
@@ -215,7 +221,6 @@ sub submitBatchJobs{
     print BWA_SH "cd $opt{CLUSTER_TMP}/$jobId/ \n";
     print BWA_SH "uname -n > $opt{OUTPUT_DIR}/$sampleName/logs/$jobId.host\n\n";
     print BWA_SH "echo \"Mapping pair\t\" `date` >> $opt{OUTPUT_DIR}/$sampleName/logs/$jobId.host\n";
-    
     
     if($R2){
         print "\t$R1\n\t$R2\n";
@@ -288,7 +293,6 @@ sub submitBatchJobs{
 
     close BWA_SH;
 	
-    push(@{$samples->{$sampleName}}, {'jobId'=>$jobId, 'file'=>"$opt{OUTPUT_DIR}/$sampleName/mapping/$coreName\_sorted_dedup.bam"});
     print $QSUB "qsub -q $opt{MAPPING_QUEUE} -P $opt{MAPPING_PROJECT} -pe threaded $opt{MAPPING_THREADS} -o $opt{OUTPUT_DIR}/$sampleName/logs -e $opt{OUTPUT_DIR}/$sampleName/logs -N $jobId $opt{OUTPUT_DIR}/$sampleName/jobs/$jobId.sh\n\n";
 
 }
@@ -307,6 +311,15 @@ sub submitSingleJobs{
     my $markdupJobId = "MD_$coreName\_".get_job_id();
     my $markdupFSJobId = "MDFS_$coreName\_".get_job_id();
     my $cleanupJobId = "C_$coreName\_".get_job_id();
+    
+    push(@{$samples->{$sampleName}}, {'jobId'=>$cleanupJobId, 'file'=>"$opt{OUTPUT_DIR}/$sampleName/mapping/$coreName\_sorted_dedup.bam"});
+    
+    
+    ###Skip mapping if coreName_sorted_dedup.done file already exists
+    if (-e "$opt{OUTPUT_DIR}/$sampleName/mapping/$coreName\_sorted_dedup.done"){
+        warn "\tWARNING: $opt{OUTPUT_DIR}/$sampleName/mapping/$coreName\_sorted_dedup.done exists, skipping\n";
+        return;
+    }
     
     ###############BWA JOB###############
     open BWA_SH,">$opt{OUTPUT_DIR}/$sampleName/jobs/$mappingJobId.sh" or die "Couldn't create $opt{OUTPUT_DIR}/$sampleName/jobs/$mappingJobId.sh\n";
@@ -454,8 +467,6 @@ sub submitSingleJobs{
     close CLEAN_SH;
 
     print $QSUB "qsub -q $opt{MAPPING_QUEUE} -P $opt{MAPPING_PROJECT} -pe threaded $opt{MAPPING_THREADS} -o $opt{OUTPUT_DIR}/$sampleName/logs -e $opt{OUTPUT_DIR}/$sampleName/logs -N $cleanupJobId -hold_jid $mappingFSJobId,$sortFSJobId,$markdupFSJobId $opt{OUTPUT_DIR}/$sampleName/jobs/$cleanupJobId.sh\n\n";
-
-    push(@{$samples->{$sampleName}}, {'jobId'=>$cleanupJobId, 'file'=>"$opt{OUTPUT_DIR}/$sampleName/mapping/$coreName\_sorted_dedup.bam"});
 
 }
 
