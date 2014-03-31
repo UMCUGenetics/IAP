@@ -65,10 +65,12 @@ sub runPostStats {
 	print OUT "#!/bin/bash\n\n";
 	print OUT "cd $opt{OUTPUT_DIR}\n";
 	print OUT "$command\n";
-	print OUT "touch logs/PostStats.done \n";
 	print OUT "mv *HSMetric_summary* QCStats/ \n";
 	print OUT "mv *picardMetrics* QCStats/ \n";
-	print OUT "mv figure/ QCStats/ \n";
+	print OUT "mv figure/ QCStats/ \n\n";
+	print OUT "if [ -f QCStats/*.picardMetrics.pdf -a -f QCStats/*.picardMetrics.html ]\nthen\n";
+	print OUT "\ttouch logs/PostStats.done \n";
+	print OUT "fi\n";
 
 	if (@runningJobs){
 	    system "qsub -q $opt{POSTSTATS_QUEUE} -pe threaded $opt{POSTSTATS_THREADS} -o $logDir -e $logDir -N PICARD_$jobID -hold_jid ".join(",",@runningJobs)." $bashFile";
