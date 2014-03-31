@@ -23,7 +23,7 @@ sub runBaseRecalibration {
     print "Running base recalibration for the following BAM-files:\n";
     
     foreach my $sample (@{$opt{SAMPLES}}){
-	my $jobID = "BaseRecal_".$sample."_".get_job_id();
+	my $jobID = "BR_".$sample."_".get_job_id();
 	
 	### Check input .bam files
 	my $inBam;

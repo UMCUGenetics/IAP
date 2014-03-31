@@ -35,7 +35,7 @@ sub runRealignment {
     
     #MULTI SAMPLE - MULTI OUTPUT
     if($opt{REALIGNMENT_MODE} eq 'multi'){
-	my $jobId = "REALIGN_".get_job_id();
+	my $jobId = "RE_".get_job_id();
 	my $cleanupJobId = "REALIGN_CLEANUP\_".get_job_id();
 	my $mergeJobs = "";
 	my @waitFor = ();
@@ -136,7 +136,7 @@ sub runRealignment {
 		next;
 	    }
 	    
-	    my $jobId = "REALIGN_$sample\_".get_job_id();
+	    my $jobId = "RE_$sample\_".get_job_id();
 
 	    open REALIGN_SH,">$opt{OUTPUT_DIR}/$sample/jobs/$jobId.sh" or die "Couldn't create $opt{OUTPUT_DIR}/$sample/jobs/$jobId.sh\n";
 	    
