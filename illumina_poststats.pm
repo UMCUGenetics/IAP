@@ -57,8 +57,8 @@ sub runPostStats {
     if(! -e "$opt{OUTPUT_DIR}/logs/PostStats.done"){
 	my $command = "perl $FindBin::Bin/modules/plotIlluminaMetrics/plotIlluminaMetrics.pl ".join(" ",@{$opt{SAMPLES}});
     
-	my $jobID = get_job_id();
-	my $bashFile = $opt{OUTPUT_DIR}."/jobs/PICARD_".$jobID.".sh";
+	my $jobID = "PICARD_".get_job_id();
+	my $bashFile = $opt{OUTPUT_DIR}."/jobs/".$jobID.".sh";
 	my $logDir = $opt{OUTPUT_DIR}."/logs";
         
 	open OUT, ">$bashFile" or die "cannot open file $bashFile\n";
@@ -73,10 +73,11 @@ sub runPostStats {
 	print OUT "fi\n";
 
 	if (@runningJobs){
-	    system "qsub -q $opt{POSTSTATS_QUEUE} -pe threaded $opt{POSTSTATS_THREADS} -o $logDir -e $logDir -N PICARD_$jobID -hold_jid ".join(",",@runningJobs)." $bashFile";
+	    system "qsub -q $opt{POSTSTATS_QUEUE} -pe threaded $opt{POSTSTATS_THREADS} -o $logDir -e $logDir -N $jobID -hold_jid ".join(",",@runningJobs)." $bashFile";
 	} else {
-	    system "qsub -q $opt{POSTSTATS_QUEUE} -pe threaded $opt{POSTSTATS_THREADS} -o $logDir -e $logDir -N PICARD_$jobID $bashFile";
+	    system "qsub -q $opt{POSTSTATS_QUEUE} -pe threaded $opt{POSTSTATS_THREADS} -o $logDir -e $logDir -N $jobID $bashFile";
 	}
+    return $jobID;
     }
 }
 
