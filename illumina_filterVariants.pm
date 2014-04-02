@@ -24,15 +24,15 @@ sub runFilterVariants {
 
     ### Skip variant calling if .raw_variants.vcf already exists
     ### add .done file checking?
-    if (-e "$opt{OUTPUT_DIR}/logs/FilterVariants.done"){
-	warn "WARNING: $opt{OUTPUT_DIR}/logs/FilterVariants.done exists, skipping \n";
+    if (-e "$opt{OUTPUT_DIR}/logs/VariantFilter.done"){
+	warn "WARNING: $opt{OUTPUT_DIR}/logs/VariantFilter.done exists, skipping \n";
 	return $jobID;
     }
 
     ### Build Queue command
-    my $javaMem = $opt{FILTER_THREADS} * $opt{FILTER_MEM};
+    my $javaMem = $opt{FILTER_MASTERTHREADS} * $opt{FILTER_MEM};
     my $command = "java -Xmx".$javaMem."G -Xms".$opt{FILTER_MEM}."G -jar $opt{QUEUE_PATH}/Queue.jar "; ### Change memory allocation here!!!!!
-    $command .= "-jobQueue $opt{FILTER_QUEUE} -jobEnv \"threaded $opt{FILTER_THREADS}\" -jobRunner GridEngine -jobReport $opt{OUTPUT_DIR}/logs/filterVariants.jobReport.txt "; #Queue options
+    $command .= "-jobQueue $opt{FILTER_QUEUE} -jobEnv \"threaded $opt{FILTER_THREADS}\" -jobRunner GridEngine -jobReport $opt{OUTPUT_DIR}/logs/VariantFilter.jobReport.txt "; #Queue options
 
     ### Common settings
     $command .= "-S $opt{FILTER_SCALA} -R $opt{GENOME} -V $opt{OUTPUT_DIR}/$runName\.raw_variants.vcf -O $runName -mem $opt{FILTER_MEM} -nsc $opt{FILTER_SCATTER} -mode $opt{FILTER_MODE} ";
@@ -76,6 +76,7 @@ sub runFilterVariants {
     print FILTER_SH "#!/bin/bash\n\n";
     print FILTER_SH "bash $opt{CLUSTER_PATH}/settings.sh\n\n";
     print FILTER_SH "cd $opt{OUTPUT_DIR}/tmp/\n";
+    print FILTER_SH "echo \"Start variant filter\t\" `date` \"\t$runName.raw_variants.vcf\t\" `uname -n` >> $opt{OUTPUT_DIR}/logs/$runName.log\n";
     print FILTER_SH "$command\n\n";
 
     if ($opt{FILTER_MODE} eq "SNP"){
@@ -83,24 +84,24 @@ sub runFilterVariants {
 	print FILTER_SH "then\n";
 	print FILTER_SH "\tmv $opt{OUTPUT_DIR}/tmp/$runName\.filtered_snps.vcf $opt{OUTPUT_DIR}/\n";
 	print FILTER_SH "\tmv $opt{OUTPUT_DIR}/tmp/$runName\.filtered_snps.vcf.idx $opt{OUTPUT_DIR}/\n";
-	print FILTER_SH "\ttouch $opt{OUTPUT_DIR}/logs/FilterVariants.done \n";
+	print FILTER_SH "\ttouch $opt{OUTPUT_DIR}/logs/VariantFilter.done \n";
 	print FILTER_SH "fi\n\n";
     } elsif ($opt{FILTER_MODE} eq "INDEL"){
 	print FILTER_SH "if [ -f $opt{OUTPUT_DIR}/tmp/.$runName\.filtered_indels.vcf.done ]\n";
 	print FILTER_SH "then\n";
 	print FILTER_SH "\tmv $opt{OUTPUT_DIR}/tmp/$runName\.filtered_indels.vcf $opt{OUTPUT_DIR}/\n";
 	print FILTER_SH "\tmv $opt{OUTPUT_DIR}/tmp/$runName\.filtered_indels.vcf.idx $opt{OUTPUT_DIR}/\n";
-	print FILTER_SH "\ttouch $opt{OUTPUT_DIR}/logs/FilterVariants.done \n";
+	print FILTER_SH "\ttouch $opt{OUTPUT_DIR}/logs/VariantFilter.done \n";
 	print FILTER_SH "fi\n\n";
     } elsif ($opt{FILTER_MODE} eq "BOTH"){
 	print FILTER_SH "if [ -f $opt{OUTPUT_DIR}/tmp/.$runName\.filtered_variants.vcf.done ]\n";
 	print FILTER_SH "then\n";
 	print FILTER_SH "\tmv $opt{OUTPUT_DIR}/tmp/$runName\.filtered_variants.vcf $opt{OUTPUT_DIR}/\n";
 	print FILTER_SH "\tmv $opt{OUTPUT_DIR}/tmp/$runName\.filtered_variants.vcf.idx $opt{OUTPUT_DIR}/\n";
-	print FILTER_SH "\ttouch $opt{OUTPUT_DIR}/logs/FilterVariants.done \n";
+	print FILTER_SH "\ttouch $opt{OUTPUT_DIR}/logs/VariantFilter.done \n";
 	print FILTER_SH "fi\n\n";
     }
-    
+    print FILTER_SH "echo \"End variant filter\t\" `date` \"\t$runName.raw_variants.vcf\t\" `uname -n` >> $opt{OUTPUT_DIR}/logs/$runName.log\n";
     ### Process runningjobs
     foreach my $sample (keys %{$opt{RUNNING_JOBS}}){
 	push(@runningJobs, join(",",@{$opt{RUNNING_JOBS}->{$sample}}));
@@ -108,9 +109,9 @@ sub runFilterVariants {
 
     ### Start main bash script
     if (@runningJobs){
-	system "qsub -q $opt{FILTER_QUEUE} -pe threaded $opt{FILTER_THREADS} -o $logDir -e $logDir -N $jobID -hold_jid ".join(",",@runningJobs)." $bashFile";
+	system "qsub -q $opt{FILTER_MASTERQUEUE} -pe threaded $opt{FILTER_MASTERTHREADS} -o $logDir/VariantFilter_$runName.out -e $logDir/VariantFilter_$runName.err -N $jobID -hold_jid ".join(",",@runningJobs)." $bashFile";
     } else {
-	system "qsub -q $opt{FILTER_QUEUE} -pe threaded $opt{FILTER_THREADS} -o $logDir -e $logDir -N $jobID $bashFile";
+	system "qsub -q $opt{FILTER_MASTERQUEUE} -pe threaded $opt{FILTER_MASTERTHREADS} -o $logDir/VariantFilter_$runName.out -e $logDir/VariantFilter_$runName.err -N $jobID $bashFile";
     }
 
     return $jobID;
@@ -125,6 +126,8 @@ sub readConfiguration{
     }
 
     if(! $opt{QUEUE_PATH}){ die "ERROR: No PICARD_PATH found in .conf file\n" }
+    if(! $opt{FILTER_MASTERQUEUE}){ die "ERROR: No FILTER_MASTERQUEUE found in .conf file\n" }
+    if(! $opt{FILTER_MASTERTHREADS}){ die "ERROR: No FILTER_MASTERTHREADS found in .conf file\n" }    
     if(! $opt{FILTER_QUEUE}){ die "ERROR: No FILTER_QUEUE found in .conf file\n" }
     if(! $opt{FILTER_THREADS}){ die "ERROR: No FILTER_THREADS found in .conf file\n" }
     if(! $opt{FILTER_MEM}){ die "ERROR: No FILTER_QUEUE found in .conf file\n" }

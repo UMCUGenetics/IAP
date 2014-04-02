@@ -22,10 +22,11 @@ sub runPostStats {
     my $javaMem = $opt{POSTSTATS_THREADS} * $opt{POSTSTATS_MEM};
     my $picard = "java -Xmx".$javaMem."G -jar $opt{PICARD_PATH}";
     my @runningJobs; #internal job array
+    my $runName = (split("/", $opt{OUTPUT_DIR}))[-1];
+    my $jobID;
     
     ### Run Picard for each sample
     foreach my $sample (@{$opt{SAMPLES}}){
-	my $jobID;
 	my $bam = $opt{OUTPUT_DIR}."/".$sample."/mapping/".$sample."_dedup.bam";
 	my $picardOut = $opt{OUTPUT_DIR}."/".$sample."/QCStats/";
 	my $command;
@@ -54,31 +55,33 @@ sub runPostStats {
 	}
     }
     ### Run plotilluminametrics
+    $jobID = "PostStats_".get_job_id();
     if(! -e "$opt{OUTPUT_DIR}/logs/PostStats.done"){
 	my $command = "perl $FindBin::Bin/modules/plotIlluminaMetrics/plotIlluminaMetrics.pl ".join(" ",@{$opt{SAMPLES}});
     
-	my $jobID = "PS_".get_job_id();
 	my $bashFile = $opt{OUTPUT_DIR}."/jobs/".$jobID.".sh";
 	my $logDir = $opt{OUTPUT_DIR}."/logs";
         
 	open OUT, ">$bashFile" or die "cannot open file $bashFile\n";
 	print OUT "#!/bin/bash\n\n";
 	print OUT "cd $opt{OUTPUT_DIR}\n";
+	print OUT "echo \"Start poststats\t\" `date` \"\t\" `uname -n` >> $opt{OUTPUT_DIR}/logs/$runName.log\n";
 	print OUT "$command\n";
 	print OUT "mv *HSMetric_summary* QCStats/ \n";
 	print OUT "mv *picardMetrics* QCStats/ \n";
 	print OUT "mv figure/ QCStats/ \n\n";
 	print OUT "if [ -f QCStats/*.picardMetrics.pdf -a -f QCStats/*.picardMetrics.html ]\nthen\n";
 	print OUT "\ttouch logs/PostStats.done \n";
+	print OUT "\techo \"Finished poststats\t\" `date` \"\t\" `uname -n` >> $opt{OUTPUT_DIR}/logs/$runName.log\n";
 	print OUT "fi\n";
 
 	if (@runningJobs){
-	    system "qsub -q $opt{POSTSTATS_QUEUE} -pe threaded $opt{POSTSTATS_THREADS} -o $logDir -e $logDir -N $jobID -hold_jid ".join(",",@runningJobs)." $bashFile";
+	    system "qsub -q $opt{POSTSTATS_QUEUE} -pe threaded $opt{POSTSTATS_THREADS} -o $logDir/PostStats_$runName.out -e $logDir/PostStats_$runName.err -N $jobID -hold_jid ".join(",",@runningJobs)." $bashFile";
 	} else {
-	    system "qsub -q $opt{POSTSTATS_QUEUE} -pe threaded $opt{POSTSTATS_THREADS} -o $logDir -e $logDir -N $jobID $bashFile";
+	    system "qsub -q $opt{POSTSTATS_QUEUE} -pe threaded $opt{POSTSTATS_THREADS} -o $logDir/PostStats_$runName.out -e $logDir/PostStats_$runName.err -N $jobID $bashFile";
 	}
-    return $jobID;
     }
+    return $jobID;
 }
 
 sub readConfiguration{
@@ -111,7 +114,7 @@ sub bashAndSubmit {
     my $sample = shift;
     my %opt = %{shift()};
     
-    my $jobID = "PSP".get_job_id();
+    my $jobID = "PostStats_".$sample."_".get_job_id();
     my $bashFile = $opt{OUTPUT_DIR}."/".$sample."/jobs/PICARD_".$sample."_".$jobID.".sh";
     my $logDir = $opt{OUTPUT_DIR}."/".$sample."/logs";
     
@@ -121,9 +124,9 @@ sub bashAndSubmit {
     print OUT "$command\n";
     
     if ( $opt{RUNNING_JOBS}->{$sample} ){
-	system "qsub -q $opt{POSTSTATS_QUEUE} -pe threaded $opt{POSTSTATS_THREADS} -o $logDir -e $logDir -N $jobID -hold_jid ".join(",",@{$opt{RUNNING_JOBS}->{$sample} })." $bashFile";
+	system "qsub -q $opt{POSTSTATS_QUEUE} -pe threaded $opt{POSTSTATS_THREADS} -o $logDir/PostStats_$sample.out -e $logDir/PostStats_$sample.err -N $jobID -hold_jid ".join(",",@{$opt{RUNNING_JOBS}->{$sample} })." $bashFile";
     } else {
-	system "qsub -q $opt{POSTSTATS_QUEUE} -pe threaded $opt{POSTSTATS_THREADS} -o $logDir -e $logDir -N $jobID $bashFile";
+	system "qsub -q $opt{POSTSTATS_QUEUE} -pe threaded $opt{POSTSTATS_THREADS} -o $logDir/PostStats_$sample.out -e $logDir/PostStats_$sample.err -N $jobID $bashFile";
     }
     return $jobID;
 }

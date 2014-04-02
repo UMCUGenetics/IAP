@@ -28,7 +28,7 @@ sub runCheck {
     print BASH "\#!/bin/sh\n . $opt{CLUSTER_PATH}/settings.sh\n\n";
 
     ### Log file
-    my $logFile = "$opt{OUTPUT_DIR}/logs/check.log";
+    my $logFile = "$opt{OUTPUT_DIR}/logs/PipelineCheck.log";
     print BASH "failed=false \n";
     print BASH "echo \"Check and cleanup for run: $runName \" >>$logFile\n\n";
 
@@ -90,29 +90,29 @@ sub runCheck {
 	print BASH "fi\n";
     }
     if($opt{VARIANT_CALLING} eq "yes"){
-	$doneFile = $opt{OUTPUT_DIR}."/logs/VariantCalling.done";
+	$doneFile = $opt{OUTPUT_DIR}."/logs/VariantCaller.done";
 	print BASH "if [ -f $doneFile ]; then\n";
-	print BASH "\techo \"VariantCalling: done \" >>$logFile\n";
+	print BASH "\techo \"VariantCaller: done \" >>$logFile\n";
 	print BASH "else\n";
-	print BASH "\techo \"VariantCalling: failed \">>$logFile\n";
+	print BASH "\techo \"VariantCaller: failed \">>$logFile\n";
 	print BASH "\tfailed=true\n";
 	print BASH "fi\n";
     }
     if($opt{FILTER_VARIANTS} eq "yes"){
-	$doneFile = $opt{OUTPUT_DIR}."/logs/FilterVariants.done";
+	$doneFile = $opt{OUTPUT_DIR}."/logs/VariantFilter.done";
 	print BASH "if [ -f $doneFile ]; then\n";
-	print BASH "\techo \"FilterVariants: done \" >>$logFile\n";
+	print BASH "\techo \"VariantFilter: done \" >>$logFile\n";
 	print BASH "else\n";
-	print BASH "\techo \"FilterVariants: failed \">>$logFile\n";
+	print BASH "\techo \"VariantFilter: failed \">>$logFile\n";
 	print BASH "\tfailed=true\n";
 	print BASH "fi\n";
     }
     if($opt{ANNOTATE_VARIANTS} eq "yes"){
-	$doneFile = $opt{OUTPUT_DIR}."/logs/AnnotateVariants.done";
+	$doneFile = $opt{OUTPUT_DIR}."/logs/VariantAnnotation.done";
 	print BASH "if [ -f $doneFile ]; then\n";
-	print BASH "\techo \"AnnotateVariants: done \" >>$logFile\n";
+	print BASH "\techo \"VariantAnnotation: done \" >>$logFile\n";
 	print BASH "else\n";
-	print BASH "\techo \"AnnotateVariants: failed \">>$logFile\n";
+	print BASH "\techo \"VariantAnnotation: failed \">>$logFile\n";
 	print BASH "\tfailed=true\n";
 	print BASH "fi\n";
     }

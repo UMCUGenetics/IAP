@@ -19,8 +19,9 @@ sub runRealignment {
     my $configuration = shift;
     my %opt = %{readConfiguration($configuration)};
     my $realignJobs = {};
-    my $javaMem = $opt{REALIGNMENT_THREADS} * $opt{REALIGNMENT_MEM};
-    
+    my $javaMem = $opt{REALIGNMENT_MASTERTHREADS} * $opt{REALIGNMENT_MEM};
+    my $runName = (split("/", $opt{OUTPUT_DIR}))[-1];
+
     print "Running $opt{REALIGNMENT_MODE} sample indel realignment for the following BAM-files:\n";
     
     ### Parsing known indel files
@@ -45,7 +46,7 @@ sub runRealignment {
 	print REALIGN_SH ". $opt{CLUSTER_PATH}/settings.sh\n\n";
 	print REALIGN_SH "cd $opt{OUTPUT_DIR}/tmp\n";
 	print REALIGN_SH "uname -n > ../logs/$jobId.host\n";
-	print REALIGN_SH "echo \"Starting indel realignment\t\" `date` >> ../logs/$jobId.host\n"; 
+	print REALIGN_SH "echo \"Start indel realignment\t\" `date` >> ../logs/$runName.log\n";
 	print REALIGN_SH "java -Djava.io.tmpdir=$opt{OUTPUT_DIR}/tmp/ -Xmx".$javaMem."G -jar $opt{QUEUE_PATH}/Queue.jar -R $opt{GENOME} -S $opt{REALIGNMENT_SCALA} -jobQueue $opt{REALIGNMENT_QUEUE} -nt $opt{REALIGNMENT_THREADS} -mem $opt{REALIGNMENT_MEM} -nsc $opt{REALIGNMENT_SCATTER} -mode $opt{REALIGNMENT_MODE} -jobNative \"-pe threaded $opt{REALIGNMENT_THREADS}\" -run ";
 	
 	if($opt{REALIGNMENT_KNOWN}) {
@@ -114,12 +115,13 @@ sub runRealignment {
 	
 	print CLEAN_SH "if [ \$PASS -eq 0 ]\n";
 	print CLEAN_SH "then\n";
+	print CLEAN_SH "echo \"Finished indel realignment\t\" `date` >> ../logs/$runName.log\n";
 	print CLEAN_SH "\tmv $opt{OUTPUT_DIR}/tmp/IndelRealigner.jobreport.txt $opt{OUTPUT_DIR}/logs/IndelRealigner.jobreport.txt\n";
 	print CLEAN_SH "fi\n";
 	close CLEAN_SH;
 	
-	print QSUB "qsub -q $opt{REALIGNMENT_QUEUE} -P $opt{REALIGNMENT_PROJECT} -pe threaded $opt{REALIGNMENT_THREADS} -o $opt{OUTPUT_DIR}/logs -e $opt{OUTPUT_DIR}/logs -N $jobId -hold_jid ".join(",", @waitFor)." $opt{OUTPUT_DIR}/jobs/$jobId.sh\n";
-	print QSUB "qsub -q $opt{REALIGNMENT_QUEUE} -P $opt{REALIGNMENT_PROJECT} -pe threaded $opt{REALIGNMENT_THREADS} -o $opt{OUTPUT_DIR}/logs -e $opt{OUTPUT_DIR}/logs -N $cleanupJobId -hold_jid $jobId $opt{OUTPUT_DIR}/jobs/$cleanupJobId.sh\n";
+	print QSUB "qsub -q $opt{REALIGNMENT_MASTERQUEUE} -P $opt{REALIGNMENT_PROJECT} -pe threaded $opt{REALIGNMENT_MASTERTHREADS} -o $opt{OUTPUT_DIR}/logs -e $opt{OUTPUT_DIR}/logs -N $jobId -hold_jid ".join(",", @waitFor)." $opt{OUTPUT_DIR}/jobs/$jobId.sh\n";
+	print QSUB "qsub -q $opt{REALIGNMENT_MASTERQUEUE} -P $opt{REALIGNMENT_PROJECT} -pe threaded $opt{REALIGNMENT_MASTERTHREADS} -o $opt{OUTPUT_DIR}/logs -e $opt{OUTPUT_DIR}/logs -N $cleanupJobId -hold_jid $jobId $opt{OUTPUT_DIR}/jobs/$cleanupJobId.sh\n";
 	print QSUB $mergeJobs."\n";
 	
     
@@ -136,27 +138,26 @@ sub runRealignment {
 		next;
 	    }
 	    
-	    my $jobId = "RE_$sample\_".get_job_id();
+	    my $jobId = "Realign_$sample\_".get_job_id();
 
 	    open REALIGN_SH,">$opt{OUTPUT_DIR}/$sample/jobs/$jobId.sh" or die "Couldn't create $opt{OUTPUT_DIR}/$sample/jobs/$jobId.sh\n";
 	    
 	    print REALIGN_SH "\#!/bin/bash\n\n";
 	    print REALIGN_SH ". $opt{CLUSTER_PATH}/settings.sh\n\n";
 	    print REALIGN_SH "cd $opt{OUTPUT_DIR}/$sample/tmp \n\n";
-	    print REALIGN_SH "uname -n > ../logs/$jobId.host\n";
-	    print REALIGN_SH "echo \"Starting indel realignment\t\" `date` >> ../logs/$jobId.host\n"; 
+	    print REALIGN_SH "echo \"Start indel realignment\t\" `date` \"\t$sample\_dedup.bam\t\" `uname -n` >> ../logs/$sample.log\n";
 	    print REALIGN_SH "java -Djava.io.tmpdir=$opt{OUTPUT_DIR}/$sample/tmp -Xmx".$javaMem."G -jar $opt{QUEUE_PATH}/Queue.jar -R $opt{GENOME} -S $opt{REALIGNMENT_SCALA} -jobQueue $opt{REALIGNMENT_QUEUE} -nt $opt{REALIGNMENT_THREADS} -mem $opt{REALIGNMENT_MEM} -nsc $opt{REALIGNMENT_SCATTER} -mode $opt{REALIGNMENT_MODE} -jobNative \"-pe threaded $opt{REALIGNMENT_THREADS}\" ";
 	    
 	    if($opt{REALIGNMENT_KNOWN}) {
 		foreach my $knownIndelFile (@knownIndelFiles) {
-		    print REALIGN_SH "-known $knownIndelFile "
+		    print REALIGN_SH "-known $knownIndelFile ";
 		}
 	    }
-	    print REALIGN_SH "-run -I $opt{OUTPUT_DIR}/$sample/mapping/$sample\_dedup.bam -jobRunner GridEngine 1>>../logs/realign.log 2>>../logs/realign.log\n";
+	    print REALIGN_SH "-run -I $opt{OUTPUT_DIR}/$sample/mapping/$sample\_dedup.bam -jobRunner GridEngine\n";
 	    
 	    print REALIGN_SH "if [ -f $opt{OUTPUT_DIR}/$sample/tmp/$sample\_dedup.realigned.bam ]\n";
 	    print REALIGN_SH "then\n";
-	    print REALIGN_SH "\t$opt{SAMBAMBA_PATH}/sambamba flagstat -t $opt{REALIGNMENT_MERGETHREADS} $opt{OUTPUT_DIR}/$sample/tmp/$sample\_dedup.realigned.bam > $opt{OUTPUT_DIR}/$sample/mapping/$sample\_dedup_realigned.flagstat\n";
+	    print REALIGN_SH "\t$opt{SAMBAMBA_PATH}/sambamba flagstat -t $opt{REALIGNMENT_THREADS} $opt{OUTPUT_DIR}/$sample/tmp/$sample\_dedup.realigned.bam > $opt{OUTPUT_DIR}/$sample/mapping/$sample\_dedup_realigned.flagstat\n";
 	    print REALIGN_SH "\tmv $opt{OUTPUT_DIR}/$sample/tmp/$sample\_dedup.realigned.bam $opt{OUTPUT_DIR}/$sample/mapping/$sample\_dedup_realigned.bam\n";
 	    print REALIGN_SH "\tmv $opt{OUTPUT_DIR}/$sample/tmp/$sample\_dedup.realigned.bai $opt{OUTPUT_DIR}/$sample/mapping/$sample\_dedup_realigned.bai\n";
 	    print REALIGN_SH "fi\n";
@@ -169,18 +170,20 @@ sub runRealignment {
 	    print REALIGN_SH "\tthen\n";
 	    print REALIGN_SH "\t\ttouch $opt{OUTPUT_DIR}/$sample/logs/Realignment_$sample.done\n";
 	    print REALIGN_SH "\t\tmv $opt{OUTPUT_DIR}/$sample/tmp/IndelRealigner.jobreport.txt $opt{OUTPUT_DIR}/$sample/logs/IndelRealigner.jobreport.txt\n";
+	    print REALIGN_SH "\t\techo \"Finished indel realignment\t\" `date` >> ../logs/$sample.log\n";
 	    print REALIGN_SH "\telse\n";
 	    print REALIGN_SH "\t\techo \"ERROR: $opt{OUTPUT_DIR}/$sample/mapping/$sample\_dedup.flagstat and $opt{OUTPUT_DIR}/$sample/mapping/$sample\_dedup_realigned.flagstat do not have the same read counts\" >>../logs/realign.err\n";
 	    print REALIGN_SH "\tfi\n";
 	    print REALIGN_SH "else\n";
 	    print REALIGN_SH "\techo \"ERROR: Either $opt{OUTPUT_DIR}/$sample/mapping/$sample\_dedup.flagstat or $opt{OUTPUT_DIR}/$sample/mapping/$sample\_dedup_realigned.flagstat is empty.\" >> ../logs/realign.err\n";
 	    print REALIGN_SH "fi\n";
+	    print REALIGN_SH "echo \"End indel realignment\t\" `date` \"\t$sample\_dedup.bam\t\" `uname -n` >> ../logs/$sample.log\n"; 
 	    close REALIGN_SH;
-
+	    
 	    if ( $opt{RUNNING_JOBS}->{$sample} ){
-		print QSUB "qsub -q $opt{REALIGNMENT_QUEUE} -P $opt{REALIGNMENT_PROJECT} -pe threaded $opt{REALIGNMENT_THREADS} -o $opt{OUTPUT_DIR}/$sample/logs -e $opt{OUTPUT_DIR}/$sample/logs -N $jobId -hold_jid ".join(",",@{$opt{RUNNING_JOBS}->{$sample}})." $opt{OUTPUT_DIR}/$sample/jobs/$jobId.sh\n";
+		print QSUB "qsub -q $opt{REALIGNMENT_MASTERQUEUE} -P $opt{REALIGNMENT_PROJECT} -pe threaded $opt{REALIGNMENT_MASTERTHREADS} -o $opt{OUTPUT_DIR}/$sample/logs/Realignment_$sample.out -e $opt{OUTPUT_DIR}/$sample/logs/Realignment_$sample.err -N $jobId -hold_jid ".join(",",@{$opt{RUNNING_JOBS}->{$sample}})." $opt{OUTPUT_DIR}/$sample/jobs/$jobId.sh\n";
 	    } else {
-		print QSUB "qsub -q $opt{REALIGNMENT_QUEUE} -P $opt{REALIGNMENT_PROJECT} -pe threaded $opt{REALIGNMENT_THREADS} -o $opt{OUTPUT_DIR}/$sample/logs -e $opt{OUTPUT_DIR}/$sample/logs -N $jobId $opt{OUTPUT_DIR}/$sample/jobs/$jobId.sh\n";
+		print QSUB "qsub -q $opt{REALIGNMENT_MASTERQUEUE} -P $opt{REALIGNMENT_PROJECT} -pe threaded $opt{REALIGNMENT_MASTERTHREADS} -o $opt{OUTPUT_DIR}/$sample/logs/Realignment_$sample.out -e $opt{OUTPUT_DIR}/$sample/logs/Realignment_$sample.err -N $jobId $opt{OUTPUT_DIR}/$sample/jobs/$jobId.sh\n";
 	    }
 	    $realignJobs->{$sample} = $jobId;
 	}
@@ -203,6 +206,8 @@ sub readConfiguration{
     }
 
     if(! $opt{SAMBAMBA_PATH}){ die "ERROR: No SAMBAMBA_PATH found in .conf file\n" }
+    if(! $opt{REALIGNMENT_MASTERQUEUE}){ die "ERROR: No REALIGNMENT_MASTERQUEUE found in .conf file\n" }
+    if(! $opt{REALIGNMENT_MASTERTHREADS}){ die "ERROR: No REALIGNMENT_MASTERTHREADS found in .conf file\n" }
     if(! $opt{REALIGNMENT_QUEUE}){ die "ERROR: No REALIGNMENT_QUEUE found in .conf file\n" }
     if(! $opt{REALIGNMENT_PROJECT}){ die "ERROR: No REALIGNMENT_PROJECT found in .conf file\n" }
     if(! $opt{REALIGNMENT_THREADS}){ die "ERROR: No REALIGNMENT_THREADS found in .conf file\n" }
@@ -225,6 +230,6 @@ sub get_job_id {
       $id=~s/\/tmp\/file//;
    return $id;
 }
-############ 
+############
 
 1;

@@ -45,10 +45,10 @@ sub runBaseRecalibration {
 	}
 	
 	### Build Queue command
-	my $javaMem = $opt{BASERECALIBRATION_THREADS} * $opt{BASERECALIBRATION_MEM};
+	my $javaMem = $opt{BASERECALIBRATION_MASTERTHREADS} * $opt{BASERECALIBRATION_MEM};
 	my $command = "java -Xmx".$javaMem."G -Xms".$opt{BASERECALIBRATION_MEM}."G -jar $opt{QUEUE_PATH}/Queue.jar ";
 	# cluster options
-	$command .= "-jobQueue $opt{BASERECALIBRATION_QUEUE} -jobEnv \"threaded $opt{BASERECALIBRATION_THREADS}\" -jobRunner GridEngine -jobReport $opt{OUTPUT_DIR}/$sample/logs/baseRecalibration.jobReport.txt "; #Queue options
+	$command .= "-jobQueue $opt{BASERECALIBRATION_QUEUE} -jobEnv \"threaded $opt{BASERECALIBRATION_THREADS}\" -jobRunner GridEngine -jobReport $opt{OUTPUT_DIR}/$sample/logs/BaseRecalibration.jobReport.txt "; #Queue options
 	# baseRecalibration options
 	$command .= "-S $opt{BASERECALIBRATION_SCALA} -R $opt{GENOME} -I $inBam -mem $opt{BASERECALIBRATION_MEM} -nct $opt{BASERECALIBRATION_THREADS} -nsc $opt{BASERECALIBRATION_SCATTER} ";
 	
@@ -69,6 +69,7 @@ sub runBaseRecalibration {
 	print BASERECAL_SH "#!/bin/bash\n\n";
 	print BASERECAL_SH "bash $opt{CLUSTER_PATH}/settings.sh\n\n";
 	print BASERECAL_SH "cd $opt{OUTPUT_DIR}/$sample/tmp/\n";
+	print BASERECAL_SH "echo \"Start base recalibration\t\" `date` \"\t$inBam\t\" `uname -n` >> ../logs/$sample.log\n";
 	print BASERECAL_SH "$command\n\n";
 	
 	### Generate FlagStats if gatk .done file present
@@ -88,18 +89,19 @@ sub runBaseRecalibration {
 	print BASERECAL_SH "\t\tmv $opt{OUTPUT_DIR}/$sample/tmp/$outBam\.bai $opt{OUTPUT_DIR}/$sample/mapping/\n";
 	print BASERECAL_SH "\t\ttouch $opt{OUTPUT_DIR}/$sample/logs/BaseRecalibration_$sample.done\n";
 	print BASERECAL_SH "\telse\n";
-	print BASERECAL_SH "\t\techo \"ERROR: $opt{OUTPUT_DIR}/$sample/mapping/$sample\_dedup.flagstat and $opt{OUTPUT_DIR}/$sample/mapping/$outBam\.flagstat do not have the same read counts\" >>../logs/recalibration.err\n";
+	print BASERECAL_SH "\t\techo \"ERROR: $opt{OUTPUT_DIR}/$sample/mapping/$sample\_dedup.flagstat and $opt{OUTPUT_DIR}/$sample/mapping/$outBam\.flagstat do not have the same read counts\" >>../logs/BaseRecalibration_$sample.err\n";
 	print BASERECAL_SH "\tfi\n";
 	print BASERECAL_SH "else\n";
-	print BASERECAL_SH "\techo \"ERROR: Either $opt{OUTPUT_DIR}/$sample/mapping/$sample\_dedup.flagstat or $opt{OUTPUT_DIR}/$sample/mapping/$outBam\.flagstat is empty.\" >> ../logs/recalibration.err\n";
+	print BASERECAL_SH "\techo \"ERROR: Either $opt{OUTPUT_DIR}/$sample/mapping/$sample\_dedup.flagstat or $opt{OUTPUT_DIR}/$sample/mapping/$outBam\.flagstat is empty.\" >> ../logs/BaseRecalibration_$sample.err\n";
 	print BASERECAL_SH "fi\n";
+	print BASERECAL_SH "echo \"End base recalibration\t\" `date` \"\t$inBam\t\" `uname -n` >> ../logs/$sample.log\n";
 	close BASERECAL_SH;
 	
 	### Submit bash script
 	if ( $opt{RUNNING_JOBS}->{$sample} ){
-	    system "qsub -q $opt{BASERECALIBRATION_QUEUE} -pe threaded $opt{BASERECALIBRATION_THREADS} -o $logDir -e $logDir -N $jobID -hold_jid ".join(",",@{$opt{RUNNING_JOBS}->{$sample}})." $bashFile";
+	    system "qsub -q $opt{BASERECALIBRATION_MASTERQUEUE} -pe threaded $opt{BASERECALIBRATION_MASTERTHREADS} -o $logDir/BaseRecalibration_$sample.out -e $logDir/BaseRecalibration_$sample.err -N $jobID -hold_jid ".join(",",@{$opt{RUNNING_JOBS}->{$sample}})." $bashFile";
 	} else {
-	    system "qsub -q $opt{BASERECALIBRATION_QUEUE} -pe threaded $opt{BASERECALIBRATION_THREADS} -o $logDir -e $logDir -N $jobID $bashFile";
+	    system "qsub -q $opt{BASERECALIBRATION_MASTERQUEUE} -pe threaded $opt{BASERECALIBRATION_MASTERTHREADS} -o $logDir/BaseRecalibration_$sample.out -e $logDir/BaseRecalibration_$sample.err -N $jobID $bashFile";
 	}
 	$baseRecalJobs{$sample} = $jobID;
     }
@@ -116,6 +118,8 @@ sub readConfiguration{
     }
 
     if(! $opt{SAMBAMBA_PATH}){ die "ERROR: No SAMBAMBA_PATH found in .conf file\n" }
+    if(! $opt{BASERECALIBRATION_MASTERQUEUE}){ die "ERROR: No BASERECALIBRATION_QUEUE found in .conf file\n" }
+    if(! $opt{BASERECALIBRATION_MASTERTHREADS}){ die "ERROR: No BASERECALIBRATION_THREADS found in .conf file\n" }
     if(! $opt{BASERECALIBRATION_QUEUE}){ die "ERROR: No BASERECALIBRATION_QUEUE found in .conf file\n" }
     if(! $opt{BASERECALIBRATION_THREADS}){ die "ERROR: No BASERECALIBRATION_THREADS found in .conf file\n" }
     if(! $opt{BASERECALIBRATION_MEM}){ die "ERROR: No BASERECALIBRATION_MEM found in .conf file\n" }

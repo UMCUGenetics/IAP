@@ -24,8 +24,8 @@ sub runAnnotateVariants {
     my $jobID = "AV_".get_job_id();
     
     ### Skip variant annotation if .done file exists.
-    if (-e "$opt{OUTPUT_DIR}/logs/AnnotateVariants.done"){
-	warn "WARNING: $opt{OUTPUT_DIR}/logs/AnnotateVariants.done exists, skipping \n";
+    if (-e "$opt{OUTPUT_DIR}/logs/VariantAnnotation.done"){
+	warn "WARNING: $opt{OUTPUT_DIR}/logs/VariantAnnotation.done exists, skipping \n";
 	return $jobID;
     }
     
@@ -46,7 +46,7 @@ sub runAnnotateVariants {
     print ANNOTATE_SH "#!/bin/bash\n\n";
     print ANNOTATE_SH "bash $opt{CLUSTER_PATH}/settings.sh\n\n";
     print ANNOTATE_SH "cd $opt{OUTPUT_DIR}/\n\n";
-
+    print ANNOTATE_SH "echo \"Start variant annotation\t\" `date` \"\t$invcf\t\" `uname -n` >> $opt{OUTPUT_DIR}/logs/$runName.log\n";
     ### basic eff prediction and annotation
     if($opt{ANNOTATE_SNPEFF} eq "yes"){
 	$outvcf = $invcf;
@@ -78,7 +78,8 @@ sub runAnnotateVariants {
 	    print ANNOTATE_SH "if [ -f $outvcf ]\nthen\n rm $invcf\nfi\n\n";
 	}
     }
-    print ANNOTATE_SH "touch $opt{OUTPUT_DIR}/logs/AnnotateVariants.done \n";
+    print ANNOTATE_SH "if [ -s $outvcf ]\nthen\n touch $opt{OUTPUT_DIR}/logs/VariantAnnotation.done\nfi\n\n"; ### check whether annotated vcf is not empty
+    print ANNOTATE_SH "echo \"End variant annotation\t\" `date` \"\t$invcf\t\" `uname -n` >> $opt{OUTPUT_DIR}/logs/$runName.log\n";
     
     ### Process runningjobs
     foreach my $sample (keys %{$opt{RUNNING_JOBS}}){
@@ -87,9 +88,9 @@ sub runAnnotateVariants {
 
     ### Start main bash script
     if (@runningJobs){
-	system "qsub -q $opt{ANNOTATE_QUEUE} -pe threaded $opt{ANNOTATE_THREADS} -o $logDir -e $logDir -N $jobID -hold_jid ".join(",",@runningJobs)." $bashFile";
+	system "qsub -q $opt{ANNOTATE_QUEUE} -pe threaded $opt{ANNOTATE_THREADS} -o $logDir/VariantAnnotation_$runName.out -e $logDir/VariantAnnotation_$runName.err -N $jobID -hold_jid ".join(",",@runningJobs)." $bashFile";
     } else {
-	system "qsub -q $opt{ANNOTATE_QUEUE} -pe threaded $opt{ANNOTATE_THREADS} -o $logDir -e $logDir -N $jobID $bashFile";
+	system "qsub -q $opt{ANNOTATE_QUEUE} -pe threaded $opt{ANNOTATE_THREADS} -o $logDir/VariantAnnotation_$runName.out -e $logDir/VariantAnnotation_$runName.err -N $jobID $bashFile";
     }
 
     return $jobID;

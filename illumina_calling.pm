@@ -23,15 +23,15 @@ sub runVariantCalling {
     my $jobID = "VC_".get_job_id();
     
     ### Skip variant calling if .raw_variants.vcf already exists
-    if (-e "$opt{OUTPUT_DIR}/logs/VariantCalling.done"){
-	warn "WARNING: $opt{OUTPUT_DIR}/logs/VariantCalling.done exists, skipping \n";
+    if (-e "$opt{OUTPUT_DIR}/logs/VariantCaller.done"){
+	warn "WARNING: $opt{OUTPUT_DIR}/logs/VariantCaller.done exists, skipping \n";
 	return $jobID;
     }
     
     ### Build Queue command
-    my $javaMem = $opt{CALLING_THREADS} * $opt{CALLING_MEM};
+    my $javaMem = $opt{CALLING_MASTERTHREADS} * $opt{CALLING_MEM};
     my $command = "java -Xmx".$javaMem."G -Xms".$opt{CALLING_MEM}."G -jar $opt{QUEUE_PATH}/Queue.jar ";
-    $command .= "-jobQueue $opt{CALLING_QUEUE} -jobEnv \"threaded $opt{CALLING_THREADS}\" -jobRunner GridEngine -jobReport $opt{OUTPUT_DIR}/logs/variantCaller.jobReport.txt "; #Queue options
+    $command .= "-jobQueue $opt{CALLING_QUEUE} -jobEnv \"threaded $opt{CALLING_THREADS}\" -jobRunner GridEngine -jobReport $opt{OUTPUT_DIR}/logs/VariantCaller.jobReport.txt "; #Queue options
 
     ### Add caller and UG specific settings
     $command .= "-S $opt{CALLING_SCALA} ";
@@ -82,20 +82,22 @@ sub runVariantCalling {
     print CALLING_SH "#!/bin/bash\n\n";
     print CALLING_SH "bash $opt{CLUSTER_PATH}/settings.sh\n\n";
     print CALLING_SH "cd $opt{OUTPUT_DIR}/tmp/\n";
+    print CALLING_SH "echo \"Start variant caller\t\" `date` \"\t\" `uname -n` >> $opt{OUTPUT_DIR}/logs/$runName.log\n";
     print CALLING_SH "$command\n\n";
     
     print CALLING_SH "if [ -f $opt{OUTPUT_DIR}/tmp/.$runName\.raw_variants.vcf.done ]\n";
     print CALLING_SH "then\n";
     print CALLING_SH "\tmv $opt{OUTPUT_DIR}/tmp/$runName\.raw_variants.vcf $opt{OUTPUT_DIR}/\n";
     print CALLING_SH "\tmv $opt{OUTPUT_DIR}/tmp/$runName\.raw_variants.vcf.idx $opt{OUTPUT_DIR}/\n";
-    print CALLING_SH "\ttouch $opt{OUTPUT_DIR}/logs/VariantCalling.done \n";
+    print CALLING_SH "\ttouch $opt{OUTPUT_DIR}/logs/VariantCaller.done \n";
+    print CALLING_SH "\techo \"Finished variant caller\t\" `date` \"\t\" `uname -n` >> $opt{OUTPUT_DIR}/logs/$runName.log\n";
     print CALLING_SH "fi\n\n";
     
     #Start main bash script
     if (@runningJobs){
-	system "qsub -q $opt{CALLING_LONGQUEUE} -pe threaded $opt{CALLING_THREADS} -o $logDir -e $logDir -N $jobID -hold_jid ".join(",",@runningJobs)." $bashFile";
+	system "qsub -q $opt{CALLING_MASTERQUEUE} -pe threaded $opt{CALLING_THREADS} -o $logDir/VariantCaller_$runName.out -e $logDir/VariantCaller_$runName.err -N $jobID -hold_jid ".join(",",@runningJobs)." $bashFile";
     } else {
-	system "qsub -q $opt{CALLING_LONGQUEUE} -pe threaded $opt{CALLING_THREADS} -o $logDir -e $logDir -N $jobID $bashFile";
+	system "qsub -q $opt{CALLING_MASTERQUEUE} -pe threaded $opt{CALLING_THREADS} -o $logDir/VariantCaller_$runName.out -e $logDir/VariantCaller_$runName.err -N $jobID $bashFile";
     }
     
     return $jobID;
@@ -110,8 +112,9 @@ sub readConfiguration{
     }
 
     if(! $opt{QUEUE_PATH}){ die "ERROR: No PICARD_PATH found in .conf file\n" }
+    if(! $opt{CALLING_MASTERQUEUE}){ die "ERROR: No CALLING_MASTERQUEUE found in .conf file\n" }
+    if(! $opt{CALLING_MASTERTHREADS}){ die "ERROR: No CALLING_MASTERTHREADS found in .conf file\n" }
     if(! $opt{CALLING_QUEUE}){ die "ERROR: No CALLING_QUEUE found in .conf file\n" }
-    if(! $opt{CALLING_LONGQUEUE}){ die "ERROR: No CALLING_LONGQUEUE found in .conf file\n" }
     if(! $opt{CALLING_THREADS}){ die "ERROR: No CALLING_THREADS found in .conf file\n" }
     if(! $opt{CALLING_MEM}){ die "ERROR: No CALLING_QUEUE found in .conf file\n" }
     if(! $opt{CALLING_SCATTER}){ die "ERROR: No CALLING_SCATTER found in .conf file\n" }
