@@ -170,7 +170,6 @@ sub runRealignment {
 	    print REALIGN_SH "\tthen\n";
 	    print REALIGN_SH "\t\ttouch $opt{OUTPUT_DIR}/$sample/logs/Realignment_$sample.done\n";
 	    print REALIGN_SH "\t\tmv $opt{OUTPUT_DIR}/$sample/tmp/IndelRealigner.jobreport.txt $opt{OUTPUT_DIR}/$sample/logs/IndelRealigner.jobreport.txt\n";
-	    print REALIGN_SH "\t\techo \"Finished indel realignment\t\" `date` >> ../logs/$sample.log\n";
 	    print REALIGN_SH "\telse\n";
 	    print REALIGN_SH "\t\techo \"ERROR: $opt{OUTPUT_DIR}/$sample/mapping/$sample\_dedup.flagstat and $opt{OUTPUT_DIR}/$sample/mapping/$sample\_dedup_realigned.flagstat do not have the same read counts\" >>../logs/realign.err\n";
 	    print REALIGN_SH "\tfi\n";

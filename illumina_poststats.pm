@@ -81,7 +81,6 @@ sub runPostStats {
 	    system "qsub -q $opt{POSTSTATS_QUEUE} -pe threaded $opt{POSTSTATS_THREADS} -o $logDir/PostStats_$runName.out -e $logDir/PostStats_$runName.err -N $jobID $bashFile";
 	}
     }
-    return $jobID;
 }
 
 sub readConfiguration{

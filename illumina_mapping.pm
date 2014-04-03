@@ -129,12 +129,11 @@ sub runMapping {
 	
 	my $jobId = "Merge_$sample\_".get_job_id();
 	$mergeJobs->{$sample} = $jobId;
-	
 	open MERGE_SH,">$opt{OUTPUT_DIR}/$sample/jobs/$jobId.sh" or die "Couldn't create $opt{OUTPUT_DIR}/$sample/jobs/$jobId.sh\n";
 	print MERGE_SH "\#!/bin/sh\n\n";
 	print MERGE_SH "cd $opt{OUTPUT_DIR}/$sample\n";
 	print MERGE_SH "echo \"Start merge \t\" `date` \"\t$sample\t\" `uname -n` >> $opt{OUTPUT_DIR}/$sample/logs/$sample.log\n\n";
-	
+	print MERGE_SH "rm -f $opt{OUTPUT_DIR}/$sample/logs/$sample\_cleanup.err\n"; #rm old error file
 	print MERGE_SH "BAMS=( ".join(" ",@bamList)." )\n";
 	print MERGE_SH "PASS=0\n";
 	print MERGE_SH "for i in \"\$\{BAMS\[\@\]\}\"\n";
@@ -181,7 +180,6 @@ sub runMapping {
 	
 	print MERGE_SH "if [ ! -s logs/$sample\_cleanup.err ]\n";
 	print MERGE_SH "then\n";
-	print MERGE_SH "\ttouch mapping/$sample\_dedup.done\n";
 	print MERGE_SH "\ttouch logs/Mapping_$sample.done\n";
 	print MERGE_SH "fi\n\n";
 	
@@ -261,6 +259,7 @@ sub submitBatchJobs{
     
     ### Check and clean
     print BWA_SH "echo \"Start cleanup\t\" `date` \"\t $coreName \t\" `uname -n` >> $opt{OUTPUT_DIR}/$sampleName/logs/$sampleName.log\n";
+    print BWA_SH "rm -f $opt{OUTPUT_DIR}/$sampleName/logs/$coreName\_cleanup.err\n"; #rm old error file
     print BWA_SH "if [ -s $coreName.flagstat ] && [ -s $coreName\_sorted.flagstat ]\n";
     print BWA_SH "then\n";
     print BWA_SH "\tFS1=\`grep -m 1 -P \"\\d+ \" $coreName.flagstat | awk '{{split(\$0,columns , \"+\")} print columns[1]}'\`\n";
@@ -431,11 +430,11 @@ sub submitSingleJobs{
     ###############################
     
     ###############CLEANUP JOB###############
-    system("rm -f $opt{OUTPUT_DIR}/$sampleName/logs/$coreName\_cleanup.err"); #rm old error file
     open CLEAN_SH,">$opt{OUTPUT_DIR}/$sampleName/jobs/$cleanupJobId.sh" or die "Couldn't create $opt{OUTPUT_DIR}/$sampleName/jobs/$cleanupJobId.sh\n";
     print CLEAN_SH "\#!/bin/sh\n\n";
     print CLEAN_SH "cd $opt{OUTPUT_DIR}/$sampleName/mapping \n";
     print CLEAN_SH "echo \"Start cleanup\t\" `date` \"\t $coreName \t\" `uname -n` >> $opt{OUTPUT_DIR}/$sampleName/logs/$sampleName.log\n";
+    print CLEAN_SH "rm -f $opt{OUTPUT_DIR}/$sampleName/logs/$coreName\_cleanup.err\n"; #rm old error file
 
     print CLEAN_SH "if [ -s $coreName.flagstat ] && [ -s $coreName\_sorted.flagstat ]\n";
     print CLEAN_SH "then\n";
