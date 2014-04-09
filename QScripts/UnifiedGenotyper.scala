@@ -31,6 +31,9 @@ class VariantCaller extends QScript {
     @Argument(doc="Genotype likelihoods calculation model to employ (SNP, INDEL or BOTH)", shortName="glm", required=true)
     var glm: String = _
 
+    @Argument(doc="Make reference calls", shortName="rc", required=false)
+    var refcalls: String = _
+
     @Argument(doc="Minimum phred-scaled confidence to call variants", shortName="stand_call_conf", required=true)
     var standCallConf: Int = _ //30 //default: best-practices value
 
@@ -62,6 +65,12 @@ class VariantCaller extends QScript {
 	unifiedGenotyper.stand_call_conf = standCallConf
 
 	unifiedGenotyper.out = qscript.out + ".raw_variants.vcf"
+
+	if(refcalls == "yes"){
+	    unifiedGenotyper.output_mode = org.broadinstitute.sting.gatk.walkers.genotyper.UnifiedGenotyperEngine.OUTPUT_MODE.EMIT_ALL_CONFIDENT_SITES
+	}
+	
+
 
 	//SNP INDEL or BOTH
 	if (glm == "SNP") {

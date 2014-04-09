@@ -57,9 +57,9 @@ if ( scalar(@files) != 0 ) {
 
 ### Run R plot script and markdown to generate pdf
 system "Rscript $rootDir/plotIlluminaMetrics.R ".$rootDir." ". $runName." ".join(" ",@samples);
-system "rm plotIlluminaMetrics.md";
-system "rm -r pdfFigures";
-system "rm plotIlluminaMetrics.tex"; #clean up tex to pdf conversion.
+#system "rm plotIlluminaMetrics.md";
+#system "rm -r pdfFigures";
+#system "rm plotIlluminaMetrics.tex"; #clean up tex to pdf conversion.
 system "mv plotIlluminaMetrics.pdf ".$runName.".picardMetrics.pdf";
 
 

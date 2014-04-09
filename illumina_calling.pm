@@ -31,7 +31,7 @@ sub runVariantCalling {
     ### Build Queue command
     my $javaMem = $opt{CALLING_MASTERTHREADS} * $opt{CALLING_MEM};
     my $command = "java -Xmx".$javaMem."G -Xms".$opt{CALLING_MEM}."G -jar $opt{QUEUE_PATH}/Queue.jar ";
-    $command .= "-jobQueue $opt{CALLING_QUEUE} -jobEnv \"threaded $opt{CALLING_THREADS}\" -jobRunner GridEngine -jobReport $opt{OUTPUT_DIR}/logs/VariantCaller.jobReport.txt "; #Queue options
+    $command .= "-jobQueue $opt{CALLING_QUEUE} -jobNative \"-pe threaded $opt{CALLING_THREADS}\" -jobRunner GridEngine -jobReport $opt{OUTPUT_DIR}/logs/VariantCaller.jobReport.txt "; #Queue options
 
     ### Add caller and UG specific settings
     $command .= "-S $opt{CALLING_SCALA} ";
