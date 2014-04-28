@@ -106,7 +106,7 @@ sub runRealignment {
 	    print CLEAN_SH "\techo \"ERROR: $opt{OUTPUT_DIR}/$sample/mapping/$sample\_dedup_realigned.bam didn't finish properly.\" >> $opt{OUTPUT_DIR}/logs/realn_cleanup.err\n";
 	    print CLEAN_SH "fi\n\n";
 	    
-	    $mergeJobs .= "qsub -q $opt{REALIGNMENT_QUEUE} -p 100 -P $opt{REALIGNMENT_PROJECT} -pe threaded $opt{REALIGNMENT_MERGETHREADS} -o $opt{OUTPUT_DIR}/$sample/logs -e $opt{OUTPUT_DIR}/$sample/logs -N $mergeJobId -hold_jid $jobId $opt{OUTPUT_DIR}/$sample/jobs/$mergeJobId.sh\n";
+	    $mergeJobs .= "qsub -q $opt{REALIGNMENT_QUEUE} -p 100 -P $opt{REALIGNMENT_PROJECT} -m abe -M $opt{MAIL} -pe threaded $opt{REALIGNMENT_MERGETHREADS} -o $opt{OUTPUT_DIR}/$sample/logs -e $opt{OUTPUT_DIR}/$sample/logs -N $mergeJobId -hold_jid $jobId $opt{OUTPUT_DIR}/$sample/jobs/$mergeJobId.sh\n";
 	    $realignJobs->{$sample} = $mergeJobId;
 	}
 	
@@ -120,7 +120,7 @@ sub runRealignment {
 	print CLEAN_SH "fi\n";
 	close CLEAN_SH;
 	
-	print QSUB "qsub -q $opt{REALIGNMENT_MASTERQUEUE} -P $opt{REALIGNMENT_PROJECT} -pe threaded $opt{REALIGNMENT_MASTERTHREADS} -o $opt{OUTPUT_DIR}/logs -e $opt{OUTPUT_DIR}/logs -N $jobId -hold_jid ".join(",", @waitFor)." $opt{OUTPUT_DIR}/jobs/$jobId.sh\n";
+	print QSUB "qsub -q $opt{REALIGNMENT_MASTERQUEUE} -P $opt{REALIGNMENT_PROJECT} -m abe -M $opt{MAIL} -pe threaded $opt{REALIGNMENT_MASTERTHREADS} -o $opt{OUTPUT_DIR}/logs -e $opt{OUTPUT_DIR}/logs -N $jobId -hold_jid ".join(",", @waitFor)." $opt{OUTPUT_DIR}/jobs/$jobId.sh\n";
 	print QSUB "qsub -q $opt{REALIGNMENT_MASTERQUEUE} -P $opt{REALIGNMENT_PROJECT} -pe threaded $opt{REALIGNMENT_MASTERTHREADS} -o $opt{OUTPUT_DIR}/logs -e $opt{OUTPUT_DIR}/logs -N $cleanupJobId -hold_jid $jobId $opt{OUTPUT_DIR}/jobs/$cleanupJobId.sh\n";
 	print QSUB $mergeJobs."\n";
 	
@@ -180,9 +180,9 @@ sub runRealignment {
 	    close REALIGN_SH;
 	    
 	    if ( $opt{RUNNING_JOBS}->{$sample} ){
-		print QSUB "qsub -q $opt{REALIGNMENT_MASTERQUEUE} -P $opt{REALIGNMENT_PROJECT} -pe threaded $opt{REALIGNMENT_MASTERTHREADS} -o $opt{OUTPUT_DIR}/$sample/logs/Realignment_$sample.out -e $opt{OUTPUT_DIR}/$sample/logs/Realignment_$sample.err -N $jobId -hold_jid ".join(",",@{$opt{RUNNING_JOBS}->{$sample}})." $opt{OUTPUT_DIR}/$sample/jobs/$jobId.sh\n";
+		print QSUB "qsub -q $opt{REALIGNMENT_MASTERQUEUE} -P $opt{REALIGNMENT_PROJECT} -m abe -M $opt{MAIL} -pe threaded $opt{REALIGNMENT_MASTERTHREADS} -o $opt{OUTPUT_DIR}/$sample/logs/Realignment_$sample.out -e $opt{OUTPUT_DIR}/$sample/logs/Realignment_$sample.err -N $jobId -hold_jid ".join(",",@{$opt{RUNNING_JOBS}->{$sample}})." $opt{OUTPUT_DIR}/$sample/jobs/$jobId.sh\n";
 	    } else {
-		print QSUB "qsub -q $opt{REALIGNMENT_MASTERQUEUE} -P $opt{REALIGNMENT_PROJECT} -pe threaded $opt{REALIGNMENT_MASTERTHREADS} -o $opt{OUTPUT_DIR}/$sample/logs/Realignment_$sample.out -e $opt{OUTPUT_DIR}/$sample/logs/Realignment_$sample.err -N $jobId $opt{OUTPUT_DIR}/$sample/jobs/$jobId.sh\n";
+		print QSUB "qsub -q $opt{REALIGNMENT_MASTERQUEUE} -P $opt{REALIGNMENT_PROJECT} -m abe -M $opt{MAIL} -pe threaded $opt{REALIGNMENT_MASTERTHREADS} -o $opt{OUTPUT_DIR}/$sample/logs/Realignment_$sample.out -e $opt{OUTPUT_DIR}/$sample/logs/Realignment_$sample.err -N $jobId $opt{OUTPUT_DIR}/$sample/jobs/$jobId.sh\n";
 	    }
 	    $realignJobs->{$sample} = $jobId;
 	}
@@ -218,7 +218,7 @@ sub readConfiguration{
     if(! $opt{CLUSTER_PATH}){ die "ERROR: No CLUSTER_PATH found in .conf file\n" }
     if(! $opt{GENOME}){ die "ERROR: No GENOME found in .conf file\n" }
     if(! $opt{OUTPUT_DIR}){ die "ERROR: No OUTPUT_DIR found in .conf file\n" }
-
+    if(! $opt{MAIL}){ die "ERROR: No MAIL adress specified\n" }
     return \%opt;
 }
 

@@ -134,9 +134,9 @@ sub runCheck {
     #Start main bash script
     my $logDir = $opt{OUTPUT_DIR}."/logs";
     if (@runningJobs){
-	system "qsub -q $opt{CHECKING_QUEUE} -pe threaded $opt{CHECKING_THREADS} -o /dev/null -e /dev/null -N check_$jobID -hold_jid ".join(",",@runningJobs)." $bashFile";
+	system "qsub -q $opt{CHECKING_QUEUE} -m abe -M $opt{MAIL} -pe threaded $opt{CHECKING_THREADS} -o /dev/null -e /dev/null -N check_$jobID -hold_jid ".join(",",@runningJobs)." $bashFile";
     } else {
-	system "qsub -q $opt{CHECKING_QUEUE} -pe threaded $opt{CHECKING_THREADS} -o /dev/null -e /dev/null -N check_$jobID $bashFile";
+	system "qsub -q $opt{CHECKING_QUEUE} -m abe -M $opt{MAIL} -pe threaded $opt{CHECKING_THREADS} -o /dev/null -e /dev/null -N check_$jobID $bashFile";
     }
 }
 
@@ -151,7 +151,7 @@ sub readConfiguration{
     if(! $opt{CHECKING_QUEUE}){ die "ERROR: No CALLING_QUEUE found in .conf file\n" }
     if(! $opt{CHECKING_THREADS}){ die "ERROR: No CALLING_THREADS found in .conf file\n" }
     if(! $opt{OUTPUT_DIR}){ die "ERROR: No OUTPUT_DIR found in .conf file\n" }
-
+    if(! $opt{MAIL}){ die "ERROR: No MAIL adress specified\n" }
     return \%opt;
 }
 

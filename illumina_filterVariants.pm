@@ -109,9 +109,9 @@ sub runFilterVariants {
 
     ### Start main bash script
     if (@runningJobs){
-	system "qsub -q $opt{FILTER_MASTERQUEUE} -pe threaded $opt{FILTER_MASTERTHREADS} -o $logDir/VariantFilter_$runName.out -e $logDir/VariantFilter_$runName.err -N $jobID -hold_jid ".join(",",@runningJobs)." $bashFile";
+	system "qsub -q $opt{FILTER_MASTERQUEUE} -m abe -M $opt{MAIL} -pe threaded $opt{FILTER_MASTERTHREADS} -o $logDir/VariantFilter_$runName.out -e $logDir/VariantFilter_$runName.err -N $jobID -hold_jid ".join(",",@runningJobs)." $bashFile";
     } else {
-	system "qsub -q $opt{FILTER_MASTERQUEUE} -pe threaded $opt{FILTER_MASTERTHREADS} -o $logDir/VariantFilter_$runName.out -e $logDir/VariantFilter_$runName.err -N $jobID $bashFile";
+	system "qsub -q $opt{FILTER_MASTERQUEUE} -m abe -M $opt{MAIL} -pe threaded $opt{FILTER_MASTERTHREADS} -o $logDir/VariantFilter_$runName.out -e $logDir/VariantFilter_$runName.err -N $jobID $bashFile";
     }
 
     return $jobID;
@@ -145,6 +145,7 @@ sub readConfiguration{
     }
     if(! $opt{GENOME}){ die "ERROR: No GENOME found in .conf file\n" }
     if(! $opt{OUTPUT_DIR}){ die "ERROR: No OUTPUT_DIR found in .conf file\n" }
+    if(! $opt{MAIL}){die "ERROR: No MAIL adress specified\n"}
 
     return \%opt;
 }

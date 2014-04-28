@@ -99,9 +99,9 @@ sub runBaseRecalibration {
 	
 	### Submit bash script
 	if ( $opt{RUNNING_JOBS}->{$sample} ){
-	    system "qsub -q $opt{BASERECALIBRATION_MASTERQUEUE} -pe threaded $opt{BASERECALIBRATION_MASTERTHREADS} -o $logDir/BaseRecalibration_$sample.out -e $logDir/BaseRecalibration_$sample.err -N $jobID -hold_jid ".join(",",@{$opt{RUNNING_JOBS}->{$sample}})." $bashFile";
+	    system "qsub -q $opt{BASERECALIBRATION_MASTERQUEUE} -m abe -M $opt{MAIL} -pe threaded $opt{BASERECALIBRATION_MASTERTHREADS} -o $logDir/BaseRecalibration_$sample.out -e $logDir/BaseRecalibration_$sample.err -N $jobID -hold_jid ".join(",",@{$opt{RUNNING_JOBS}->{$sample}})." $bashFile";
 	} else {
-	    system "qsub -q $opt{BASERECALIBRATION_MASTERQUEUE} -pe threaded $opt{BASERECALIBRATION_MASTERTHREADS} -o $logDir/BaseRecalibration_$sample.out -e $logDir/BaseRecalibration_$sample.err -N $jobID $bashFile";
+	    system "qsub -q $opt{BASERECALIBRATION_MASTERQUEUE} -m abe -M $opt{MAIL} -pe threaded $opt{BASERECALIBRATION_MASTERTHREADS} -o $logDir/BaseRecalibration_$sample.out -e $logDir/BaseRecalibration_$sample.err -N $jobID $bashFile";
 	}
 	$baseRecalJobs{$sample} = $jobID;
     }
@@ -129,7 +129,7 @@ sub readConfiguration{
     if(! $opt{GENOME}){ die "ERROR: No GENOME found in .conf file\n" }
     if(! $opt{OUTPUT_DIR}){ die "ERROR: No OUTPUT_DIR found in .conf file\n" }
     if(! $opt{SAMPLES}){ die "ERROR: No SAMPLES found\n" }
-
+    if(! $opt{MAIL}){ die "ERROR: No MAIL adress specified\n" }
     return \%opt;
 }
 

@@ -95,9 +95,9 @@ sub runVariantCalling {
     
     #Start main bash script
     if (@runningJobs){
-	system "qsub -q $opt{CALLING_MASTERQUEUE} -pe threaded $opt{CALLING_THREADS} -o $logDir/VariantCaller_$runName.out -e $logDir/VariantCaller_$runName.err -N $jobID -hold_jid ".join(",",@runningJobs)." $bashFile";
+	system "qsub -q $opt{CALLING_MASTERQUEUE} -m abe -M $opt{MAIL} -pe threaded $opt{CALLING_THREADS} -o $logDir/VariantCaller_$runName.out -e $logDir/VariantCaller_$runName.err -N $jobID -hold_jid ".join(",",@runningJobs)." $bashFile";
     } else {
-	system "qsub -q $opt{CALLING_MASTERQUEUE} -pe threaded $opt{CALLING_THREADS} -o $logDir/VariantCaller_$runName.out -e $logDir/VariantCaller_$runName.err -N $jobID $bashFile";
+	system "qsub -q $opt{CALLING_MASTERQUEUE} -m abe -M $opt{MAIL} -pe threaded $opt{CALLING_THREADS} -o $logDir/VariantCaller_$runName.out -e $logDir/VariantCaller_$runName.err -N $jobID $bashFile";
     }
     
     return $jobID;
@@ -126,7 +126,7 @@ sub readConfiguration{
     if(! $opt{CALLING_STANDEMITCONF}){ die "ERROR: No CALLING_STANDEMITCONF found in .conf file\n" }
     if(! $opt{GENOME}){ die "ERROR: No GENOME found in .conf file\n" }
     if(! $opt{OUTPUT_DIR}){ die "ERROR: No OUTPUT_DIR found in .conf file\n" }
-
+    if(! $opt{MAIL}){ die "ERROR: No MAIL adress specified\n" }
     return \%opt;
 }
 
