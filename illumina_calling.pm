@@ -95,9 +95,9 @@ sub runVariantCalling {
     
     #Start main bash script
     if (@runningJobs){
-	system "qsub -q $opt{CALLING_MASTERQUEUE} -m abe -M $opt{MAIL} -pe threaded $opt{CALLING_THREADS} -o $logDir/VariantCaller_$runName.out -e $logDir/VariantCaller_$runName.err -N $jobID -hold_jid ".join(",",@runningJobs)." $bashFile";
+	system "qsub -q $opt{CALLING_MASTERQUEUE} -m abe -M $opt{MAIL} -pe threaded $opt{CALLING_MASTERTHREADS} -o $logDir/VariantCaller_$runName.out -e $logDir/VariantCaller_$runName.err -N $jobID -hold_jid ".join(",",@runningJobs)." $bashFile";
     } else {
-	system "qsub -q $opt{CALLING_MASTERQUEUE} -m abe -M $opt{MAIL} -pe threaded $opt{CALLING_THREADS} -o $logDir/VariantCaller_$runName.out -e $logDir/VariantCaller_$runName.err -N $jobID $bashFile";
+	system "qsub -q $opt{CALLING_MASTERQUEUE} -m abe -M $opt{MAIL} -pe threaded $opt{CALLING_MASTERTHREADS} -o $logDir/VariantCaller_$runName.out -e $logDir/VariantCaller_$runName.err -N $jobID $bashFile";
     }
     
     return $jobID;
