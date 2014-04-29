@@ -76,9 +76,9 @@ sub runPostStats {
 	print OUT "fi\n";
 
 	if (@runningJobs){
-	    system "qsub -q $opt{POSTSTATS_QUEUE} -m abe -M $opt{MAIL} -pe threaded $opt{POSTSTATS_THREADS} -o $logDir/PostStats_$runName.out -e $logDir/PostStats_$runName.err -N $jobID -hold_jid ".join(",",@runningJobs)." $bashFile";
+	    system "qsub -q $opt{POSTSTATS_QUEUE} -m a -M $opt{MAIL} -pe threaded $opt{POSTSTATS_THREADS} -o $logDir/PostStats_$runName.out -e $logDir/PostStats_$runName.err -N $jobID -hold_jid ".join(",",@runningJobs)." $bashFile";
 	} else {
-	    system "qsub -q $opt{POSTSTATS_QUEUE} -m abe -M $opt{MAIL} -pe threaded $opt{POSTSTATS_THREADS} -o $logDir/PostStats_$runName.out -e $logDir/PostStats_$runName.err -N $jobID $bashFile";
+	    system "qsub -q $opt{POSTSTATS_QUEUE} -m a -M $opt{MAIL} -pe threaded $opt{POSTSTATS_THREADS} -o $logDir/PostStats_$runName.out -e $logDir/PostStats_$runName.err -N $jobID $bashFile";
 	}
     }
 }
@@ -91,13 +91,13 @@ sub readConfiguration{
 	$opt{$key} = $configuration->{$key};
     }
 
-    if(! $opt{PICARD_PATH}){ die "ERROR: No PICARD_PATH found in .conf file\n" }
-    if(! $opt{POSTSTATS_THREADS}){ die "ERROR: No POSTSTATS_THREADS found in .conf file\n" }
-    if(! $opt{POSTSTATS_MEM}){ die "ERROR: No POSTSTATS_MEM found in .conf file\n" }
-    if(! $opt{POSTSTATS_QUEUE}){ die "ERROR: No POSTSTATS_THREADS found in .conf file\n" }
-    if(! $opt{GENOME}){ die "ERROR: No GENOME found in .conf file\n" }
+    if(! $opt{PICARD_PATH}){ die "ERROR: No PICARD_PATH found in .ini file\n" }
+    if(! $opt{POSTSTATS_THREADS}){ die "ERROR: No POSTSTATS_THREADS found in .ini file\n" }
+    if(! $opt{POSTSTATS_MEM}){ die "ERROR: No POSTSTATS_MEM found in .ini file\n" }
+    if(! $opt{POSTSTATS_QUEUE}){ die "ERROR: No POSTSTATS_THREADS found in .ini file\n" }
+    if(! $opt{GENOME}){ die "ERROR: No GENOME found in .ini file\n" }
     if(! $opt{OUTPUT_DIR}){ die "ERROR: No OUTPUT_DIR found in .conf file\n" }
-    if(! $opt{MAIL}){ die "ERROR: No MAIL adress specified\n" }
+    if(! $opt{MAIL}){ die "ERROR: No MAIL address specified in .conf file\n" }
     return \%opt;
 }
 

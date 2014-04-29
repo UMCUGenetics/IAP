@@ -88,9 +88,9 @@ sub runAnnotateVariants {
 
     ### Start main bash script
     if (@runningJobs){
-	system "qsub -q $opt{ANNOTATE_QUEUE} -m abe -M $opt{MAIL} -pe threaded $opt{ANNOTATE_THREADS} -o $logDir/VariantAnnotation_$runName.out -e $logDir/VariantAnnotation_$runName.err -N $jobID -hold_jid ".join(",",@runningJobs)." $bashFile";
+	system "qsub -q $opt{ANNOTATE_QUEUE} -m a -M $opt{MAIL} -pe threaded $opt{ANNOTATE_THREADS} -o $logDir/VariantAnnotation_$runName.out -e $logDir/VariantAnnotation_$runName.err -N $jobID -hold_jid ".join(",",@runningJobs)." $bashFile";
     } else {
-	system "qsub -q $opt{ANNOTATE_QUEUE} -m abe -M $opt{MAIL} -pe threaded $opt{ANNOTATE_THREADS} -o $logDir/VariantAnnotation_$runName.out -e $logDir/VariantAnnotation_$runName.err -N $jobID $bashFile";
+	system "qsub -q $opt{ANNOTATE_QUEUE} -m a -M $opt{MAIL} -pe threaded $opt{ANNOTATE_THREADS} -o $logDir/VariantAnnotation_$runName.out -e $logDir/VariantAnnotation_$runName.err -N $jobID $bashFile";
     }
 
     return $jobID;
@@ -105,26 +105,28 @@ sub readConfiguration{
 	$opt{$key} = $configuration->{$key};
     }
     if(! $opt{SNPEFF_PATH}){ die "ERROR: No SNPEFF_PATH found in .ini file\n" }
-    if(! $opt{ANNOTATE_QUEUE}){ die "ERROR: No ANNOTATE_QUEUE found in .conf file\n" }
-    if(! $opt{ANNOTATE_THREADS}){ die "ERROR: No ANNOTATE_THREADS found in .conf file\n" }
-    if(! $opt{ANNOTATE_MEM}){ die "ERROR: No ANNOTATE_MEM found in .conf file\n" }
-    if(! $opt{ANNOTATE_SNPEFF}){ die "ERROR: No ANNOTATE_SNPEFF found in .conf file\n" }
+    if(! $opt{ANNOTATE_QUEUE}){ die "ERROR: No ANNOTATE_QUEUE found in .ini file\n" }
+    if(! $opt{ANNOTATE_THREADS}){ die "ERROR: No ANNOTATE_THREADS found in .ini file\n" }
+    if(! $opt{ANNOTATE_MEM}){ die "ERROR: No ANNOTATE_MEM found in .ini file\n" }
+    if(! $opt{ANNOTATE_SNPEFF}){ die "ERROR: No ANNOTATE_SNPEFF found in .ini file\n" }
     if($opt{ANNOTATE_SNPEFF} eq "yes"){
-	if(! $opt{ANNOTATE_DB}){ die "ERROR: No ANNOTATE_DB found in .conf file\n" }
-	if(! $opt{ANNOTATE_FLAGS}){ die "ERROR: No ANNOTATE_FLAGS found in .conf file\n" }
+	if(! $opt{ANNOTATE_DB}){ die "ERROR: No ANNOTATE_DB found in .ini file\n" }
+	if(! $opt{ANNOTATE_FLAGS}){ die "ERROR: No ANNOTATE_FLAGS found in .ini file\n" }
     }
-    if(! $opt{ANNOTATE_SNPSIFT}){ die "ERROR: No ANNOTATE_SNPSIFT found in .conf file\n" }
+    if(! $opt{ANNOTATE_SNPSIFT}){ die "ERROR: No ANNOTATE_SNPSIFT found in .ini file\n" }
     if($opt{ANNOTATE_SNPSIFT} eq "yes"){
-	if(! $opt{ANNOTATE_DBNSFP}){ die "ERROR: No ANNOTATE_DBNSFP found in .conf file\n" }
-	if(! $opt{ANNOTATE_FIELDS}){ die "ERROR: No ANNOTATE_FIELDS found in .conf file\n" }
+	if(! $opt{ANNOTATE_DBNSFP}){ die "ERROR: No ANNOTATE_DBNSFP found in .ini file\n" }
+	if(! $opt{ANNOTATE_FIELDS}){ die "ERROR: No ANNOTATE_FIELDS found in .ini file\n" }
     }
-    if(! $opt{ANNOTATE_VCFTOOLS}){ die "ERROR: No ANNOTATE_VCFTOOLS found in .conf file\n" }
+    if(! $opt{ANNOTATE_VCFTOOLS}){ die "ERROR: No ANNOTATE_VCFTOOLS found in .ini file\n" }
     if($opt{ANNOTATE_VCFTOOLS} eq "yes"){
-	if(! $opt{ANNOTATE_FREQ}){ die "ERROR: No ANNOTATE_FREQ found in .conf file\n" }
-	if(! $opt{ANNOTATE_DESCR}){ die "ERROR: No ANNOTATE_DESCR found in .conf file\n" }
-	if(! $opt{ANNOTATE_COLUMNS}){ die "ERROR: No ANNOTATE_COLUMNS found in .conf file\n" }
+	if(! $opt{ANNOTATE_FREQ}){ die "ERROR: No ANNOTATE_FREQ found in .ini file\n" }
+	if(! $opt{ANNOTATE_DESCR}){ die "ERROR: No ANNOTATE_DESCR found in .ini file\n" }
+	if(! $opt{ANNOTATE_COLUMNS}){ die "ERROR: No ANNOTATE_COLUMNS found in .ini file\n" }
     }
     if(! $opt{OUTPUT_DIR}){ die "ERROR: No OUTPUT_DIR found in .conf file\n" }
+
+    if(! $opt{MAIL}){die "ERROR: No MAIL address found in .ini file \n" }
 
     return \%opt;
 }
@@ -136,5 +138,4 @@ sub get_job_id {
     return $id;
 }
 ############
-
 1;

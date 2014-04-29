@@ -95,9 +95,9 @@ sub runVariantCalling {
     
     #Start main bash script
     if (@runningJobs){
-	system "qsub -q $opt{CALLING_MASTERQUEUE} -m abe -M $opt{MAIL} -pe threaded $opt{CALLING_MASTERTHREADS} -o $logDir/VariantCaller_$runName.out -e $logDir/VariantCaller_$runName.err -N $jobID -hold_jid ".join(",",@runningJobs)." $bashFile";
+	system "qsub -q $opt{CALLING_MASTERQUEUE} -m a -M $opt{MAIL} -pe threaded $opt{CALLING_MASTERTHREADS} -o $logDir/VariantCaller_$runName.out -e $logDir/VariantCaller_$runName.err -N $jobID -hold_jid ".join(",",@runningJobs)." $bashFile";
     } else {
-	system "qsub -q $opt{CALLING_MASTERQUEUE} -m abe -M $opt{MAIL} -pe threaded $opt{CALLING_MASTERTHREADS} -o $logDir/VariantCaller_$runName.out -e $logDir/VariantCaller_$runName.err -N $jobID $bashFile";
+	system "qsub -q $opt{CALLING_MASTERQUEUE} -m a -M $opt{MAIL} -pe threaded $opt{CALLING_MASTERTHREADS} -o $logDir/VariantCaller_$runName.out -e $logDir/VariantCaller_$runName.err -N $jobID $bashFile";
     }
     
     return $jobID;
@@ -111,22 +111,22 @@ sub readConfiguration{
 	$opt{$key} = $configuration->{$key};
     }
 
-    if(! $opt{QUEUE_PATH}){ die "ERROR: No PICARD_PATH found in .conf file\n" }
-    if(! $opt{CALLING_MASTERQUEUE}){ die "ERROR: No CALLING_MASTERQUEUE found in .conf file\n" }
-    if(! $opt{CALLING_MASTERTHREADS}){ die "ERROR: No CALLING_MASTERTHREADS found in .conf file\n" }
-    if(! $opt{CALLING_QUEUE}){ die "ERROR: No CALLING_QUEUE found in .conf file\n" }
-    if(! $opt{CALLING_THREADS}){ die "ERROR: No CALLING_THREADS found in .conf file\n" }
-    if(! $opt{CALLING_MEM}){ die "ERROR: No CALLING_QUEUE found in .conf file\n" }
-    if(! $opt{CALLING_SCATTER}){ die "ERROR: No CALLING_SCATTER found in .conf file\n" }
-    if(! $opt{CALLING_SCALA}){ die "ERROR: No CALLING_SCALA found in .conf file\n" }
+    if(! $opt{QUEUE_PATH}){ die "ERROR: No PICARD_PATH found in .ini file\n" }
+    if(! $opt{CALLING_MASTERQUEUE}){ die "ERROR: No CALLING_MASTERQUEUE found in .ini file\n" }
+    if(! $opt{CALLING_MASTERTHREADS}){ die "ERROR: No CALLING_MASTERTHREADS found in .ini file\n" }
+    if(! $opt{CALLING_QUEUE}){ die "ERROR: No CALLING_QUEUE found in .ini file\n" }
+    if(! $opt{CALLING_THREADS}){ die "ERROR: No CALLING_THREADS found in .ini file\n" }
+    if(! $opt{CALLING_MEM}){ die "ERROR: No CALLING_QUEUE found in .ini file\n" }
+    if(! $opt{CALLING_SCATTER}){ die "ERROR: No CALLING_SCATTER found in .ini file\n" }
+    if(! $opt{CALLING_SCALA}){ die "ERROR: No CALLING_SCALA found in .ini file\n" }
     if($opt{CALLING_UGMODE}){ 
 	if($opt{CALLING_UGMODE} ne "SNP" and $opt{CALLING_UGMODE} ne "INDEL" and $opt{CALLING_UGMODE} ne "BOTH"){ die "ERROR: UGMODE: $opt{CALLING_UGMODE} does not exist use SNP, INDEL or BOTH\n"}
     }
-    if(! $opt{CALLING_STANDCALLCONF}){ die "ERROR: No CALLING_STANDCALLCONF found in .conf file\n" }
-    if(! $opt{CALLING_STANDEMITCONF}){ die "ERROR: No CALLING_STANDEMITCONF found in .conf file\n" }
-    if(! $opt{GENOME}){ die "ERROR: No GENOME found in .conf file\n" }
+    if(! $opt{CALLING_STANDCALLCONF}){ die "ERROR: No CALLING_STANDCALLCONF found in .ini file\n" }
+    if(! $opt{CALLING_STANDEMITCONF}){ die "ERROR: No CALLING_STANDEMITCONF found in .ini file\n" }
+    if(! $opt{GENOME}){ die "ERROR: No GENOME found in .ini file\n" }
     if(! $opt{OUTPUT_DIR}){ die "ERROR: No OUTPUT_DIR found in .conf file\n" }
-    if(! $opt{MAIL}){ die "ERROR: No MAIL adress specified\n" }
+    if(! $opt{MAIL}){ die "ERROR: No MAIL address specified in .conf file\n" }
     return \%opt;
 }
 

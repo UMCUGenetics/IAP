@@ -23,21 +23,23 @@ interactive() if @ARGV == 0;
 my $iniFile;
 my $outputDir;
 my @rawDataDirs;
+my $mail;
 my $help;
 my $run;
 
 GetOptions ("iniFile=s" => \$iniFile,
 	    "outputDir=s" => \$outputDir,
 	    "rawDataDir=s" => \@rawDataDirs,
+	    "mail=s" => \$mail,
 	    "help" => \$help,
 	    "run" => \$run)
 or die usage();
 
-if ($help || ! $iniFile || ! $outputDir || ! @rawDataDirs ) { usage() }
+if ($help || ! $iniFile || ! $outputDir || ! @rawDataDirs || ! $mail ) { usage() }
 
 ### Non interactive mode ###
 $iniFile = $settingsDir."/".$iniFile;
-createConfig($iniFile,$outputDir,\@rawDataDirs,$run);
+createConfig($iniFile,$outputDir,\@rawDataDirs,$mail,$run);
 
 ### Interactive mode ###
 sub interactive{
@@ -53,17 +55,22 @@ sub interactive{
     
     #Output dir
     print "Output dir: ";
-    chomp($outputDir = <STDIN>); # no tab completion :(
+    chomp($outputDir = <STDIN>); # no tab completion
     if ($outputDir eq "") { die "Please provide a correct output directory." }
     
     #Raw data dir -> add while loop to allow for multiple raw data dirs.
     print "Raw data project dir: ";
-    chomp(my $rawDataDir = <STDIN>); # no tab completion :(
+    chomp(my $rawDataDir = <STDIN>); # no tab completion
     if($rawDataDir eq "") { die "Please provide a correct raw data directory." } #check for existence
     push(@rawDataDirs, $rawDataDir);
     
+    #Output dir
+    print "Mail address: ";
+    chomp($mail = <STDIN>);
+    if ($mail eq "") { die "Please provide a correct mail address." }
+    
     #Create config
-    createConfig($iniFile,$outputDir,\@rawDataDirs,$run);
+    createConfig($iniFile,$outputDir,\@rawDataDirs,$mail,$run);
 }
 
 ### Parse and print available ini files ###
@@ -89,7 +96,8 @@ sub createConfig {
     my $iniFile = $_[0];
     my $outputDir = $_[1];
     my @rawDataDirs = @{$_[2]};
-    my $run = $_[3];
+    my $mail = $_[3];
+    my $run = $_[4];
 
     my $configFile = $outputDir."/settings.config";
 
@@ -101,6 +109,7 @@ sub createConfig {
     print CONFIG "### SETTINGS ###\n";
     print CONFIG "INIFILE\t$iniFile\n";
     print CONFIG "OUTPUT_DIR\t$outputDir\n";
+    print CONFIG "MAIL\t$mail\n";
 
     print CONFIG "\n### FASTQ FILES ###";
     #Find fastq files for each rawDataDir
@@ -125,7 +134,7 @@ sub createConfig {
 sub usage{
     print "Usage: perl illumina_createConfig.pl\n\n";
     print "Advanced usage: \n";
-    print "perl illumina_createConfig.pl -iniFile settings.ini -outputDir /path/to/outputDir -rawDataDir /hiseq/140305_D00267_0081_AH8DB2ADXX/Unaligned/Project_1/ -rawDataDir /hiseq/140305_D00267_0081_AH8DB2ADXX/Unaligned/Project_2 [-run]\n\n";
+    print "perl illumina_createConfig.pl -iniFile settings.ini -outputDir /path/to/outputDir -rawDataDir /hiseq/140305_D00267_0081_AH8DB2ADXX/Unaligned/Project_1/ -rawDataDir /hiseq/140305_D00267_0081_AH8DB2ADXX/Unaligned/Project_2 -mail example\@mail.nl [-run]\n\n";
     print "Available ini files:\n";
     getIniFiles($settingsDir);
     exit;

@@ -47,7 +47,7 @@ sub runPreStats {
 	    print PS "echo \"End PreStats\t\" `date` \"\t$coreName\t\" `uname -n` >> $opt{OUTPUT_DIR}/$sampleName/logs/$sampleName.log\n";
 	    close PS;
 
-	    print QSUB "qsub -pe threaded $opt{PRESTATS_THREADS} -m abe -M $opt{MAIL} -q $opt{PRESTATS_QUEUE} -P $opt{PRESTATS_PROJECT} -o $opt{OUTPUT_DIR}/$sampleName/logs/PreStat_$coreName.out -e $opt{OUTPUT_DIR}/$sampleName/logs/PreStats_$coreName.err -N $preStatsJobId $opt{OUTPUT_DIR}/$sampleName/jobs/$preStatsJobId.sh\n";
+	    print QSUB "qsub -pe threaded $opt{PRESTATS_THREADS} -m a -M $opt{MAIL} -q $opt{PRESTATS_QUEUE} -P $opt{PRESTATS_PROJECT} -o $opt{OUTPUT_DIR}/$sampleName/logs/PreStat_$coreName.out -e $opt{OUTPUT_DIR}/$sampleName/logs/PreStats_$coreName.err -N $preStatsJobId $opt{OUTPUT_DIR}/$sampleName/jobs/$preStatsJobId.sh\n";
 	} else {
 	    warn "\t WARNING: FASTQC report for $input already exists, skipping.\n";
 	}
@@ -64,18 +64,18 @@ sub readConfiguration {
     my %opt;
 
     foreach my $key (keys %{$configuration}){
-	    $opt{$key} = $configuration->{$key}; 
+	$opt{$key} = $configuration->{$key}; 
     }
 
-    if(! $opt{FASTQC_PATH}){ die "ERROR: No FASTQC_PATH found in .conf file\n" }
-    if(! $opt{PRESTATS_THREADS}){ die "ERROR: No PRESTATS_THREADS found in .conf file\n" }
-    if(! $opt{PRESTATS_MEM}){ die "ERROR: No PRESTATS_MEM found in .conf file\n" }
-    if(! $opt{PRESTATS_QUEUE}){ die "ERROR: No PRESTATS_QUEUE found in .conf file\n" }
-    if(! $opt{PRESTATS_PROJECT}){ die "ERROR: No PRESTATS_PROJECT found in .conf file\n" }
-    if(! $opt{CLUSTER_PATH}){ die "ERROR: No CLUSTER_PATH found in .conf file\n" }
+    if(! $opt{FASTQC_PATH}){ die "ERROR: No FASTQC_PATH found in .ini file\n" }
+    if(! $opt{PRESTATS_THREADS}){ die "ERROR: No PRESTATS_THREADS found in .ini file\n" }
+    if(! $opt{PRESTATS_MEM}){ die "ERROR: No PRESTATS_MEM found in .ini file\n" }
+    if(! $opt{PRESTATS_QUEUE}){ die "ERROR: No PRESTATS_QUEUE found in .ini file\n" }
+    if(! $opt{PRESTATS_PROJECT}){ die "ERROR: No PRESTATS_PROJECT found in .ini file\n" }
+    if(! $opt{CLUSTER_PATH}){ die "ERROR: No CLUSTER_PATH found in .ini file\n" }
     if(! $opt{OUTPUT_DIR}){ die "ERROR: No OUTPUT_DIR found in .conf file\n" }
-    if(! $opt{FASTQ}){ die "ERROR: No FASTQ files specified\n" }
-    if(! $opt{MAIL}){ die "ERROR: No MAIL adress specified\n" }
+    if(! $opt{FASTQ}){ die "ERROR: No FASTQ files specified in .conf file\n" }
+    if(! $opt{MAIL}){ die "ERROR: No MAIL address specified in .conf file\n" }
     return \%opt;
 }
 

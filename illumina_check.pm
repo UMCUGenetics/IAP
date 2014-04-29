@@ -117,26 +117,30 @@ sub runCheck {
 	print BASH "fi\n";
     }
 
-    ### Check failed variable
+    ### Check failed variable and mail report
     print BASH "echo \"\">>$logFile\n\n"; ## empty line after stats
     print BASH "if [ \"\$failed\" = true  ]; then\n";
     print BASH "\techo \"One or multiple step(s) of the pipeline failed. \" >>$logFile\n";
+    print BASH "\tmail -s \"IAP FAILED $runName \" $opt{MAIL} < $logFile\n";
     print BASH "else\n";
+    
     print BASH "\techo \"The pipeline completed successfully. \">>$logFile\n";
+    print BASH "\tmail -s \"IAP DONE $runName\" $opt{MAIL} < $logFile\n";
     #remove all tmp folders and empty logs except .done files
     print BASH "\trm -r $opt{OUTPUT_DIR}/tmp\n";
     print BASH "\trm -r $opt{OUTPUT_DIR}/*/tmp\n";
     print BASH "\tfind  $opt{OUTPUT_DIR}/logs -size 0 -not -name \"*.done\" -delete\n"; 
     print BASH "\tfind  $opt{OUTPUT_DIR}/*/logs -size 0 -not -name \"*.done\" -delete\n";
-    ### add remove steps for folders/files
     print BASH "fi\n";
+    
+    
 
     #Start main bash script
     my $logDir = $opt{OUTPUT_DIR}."/logs";
     if (@runningJobs){
-	system "qsub -q $opt{CHECKING_QUEUE} -m abe -M $opt{MAIL} -pe threaded $opt{CHECKING_THREADS} -o /dev/null -e /dev/null -N check_$jobID -hold_jid ".join(",",@runningJobs)." $bashFile";
+	system "qsub -q $opt{CHECKING_QUEUE} -m a -M $opt{MAIL} -pe threaded $opt{CHECKING_THREADS} -o /dev/null -e /dev/null -N check_$jobID -hold_jid ".join(",",@runningJobs)." $bashFile";
     } else {
-	system "qsub -q $opt{CHECKING_QUEUE} -m abe -M $opt{MAIL} -pe threaded $opt{CHECKING_THREADS} -o /dev/null -e /dev/null -N check_$jobID $bashFile";
+	system "qsub -q $opt{CHECKING_QUEUE} -m a -M $opt{MAIL} -pe threaded $opt{CHECKING_THREADS} -o /dev/null -e /dev/null -N check_$jobID $bashFile";
     }
 }
 
@@ -148,10 +152,10 @@ sub readConfiguration{
 	$opt{$key} = $configuration->{$key};
     }
 
-    if(! $opt{CHECKING_QUEUE}){ die "ERROR: No CALLING_QUEUE found in .conf file\n" }
-    if(! $opt{CHECKING_THREADS}){ die "ERROR: No CALLING_THREADS found in .conf file\n" }
+    if(! $opt{CHECKING_QUEUE}){ die "ERROR: No CHECKING_QUEUE found in .conf file\n" }
+    if(! $opt{CHECKING_THREADS}){ die "ERROR: No CHECKING_THREADS found in .ini file\n" }
     if(! $opt{OUTPUT_DIR}){ die "ERROR: No OUTPUT_DIR found in .conf file\n" }
-    if(! $opt{MAIL}){ die "ERROR: No MAIL adress specified\n" }
+    if(! $opt{MAIL}){ die "ERROR: No MAIL address specified in .conf file\n" }
     return \%opt;
 }
 

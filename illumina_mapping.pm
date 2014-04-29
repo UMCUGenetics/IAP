@@ -186,7 +186,7 @@ sub runMapping {
 	print MERGE_SH "echo \"End merge \t\" `date` \"\t$sample\t\" `uname -n` >> $opt{OUTPUT_DIR}/$sample/logs/$sample.log\n\n";
 	close MERGE_SH;
     
-	print $QSUB "qsub -q $opt{MAPPING_QUEUE} -P $opt{MAPPING_PROJECT} -m abe -M $opt{MAIL} -pe threaded $opt{MAPPING_THREADS} -o $opt{OUTPUT_DIR}/$sample/logs/Merge_$sample.out -e $opt{OUTPUT_DIR}/$sample/logs/Merge_$sample.err -N $jobId -hold_jid ".join(",",@jobIds)." $opt{OUTPUT_DIR}/$sample/jobs/$jobId.sh\n\n";
+	print $QSUB "qsub -q $opt{MAPPING_QUEUE} -P $opt{MAPPING_PROJECT} -m a -M $opt{MAIL} -pe threaded $opt{MAPPING_THREADS} -o $opt{OUTPUT_DIR}/$sample/logs/Merge_$sample.out -e $opt{OUTPUT_DIR}/$sample/logs/Merge_$sample.err -N $jobId -hold_jid ".join(",",@jobIds)." $opt{OUTPUT_DIR}/$sample/jobs/$jobId.sh\n\n";
     
     }
 
@@ -302,7 +302,7 @@ sub submitBatchJobs{
 
     close BWA_SH;
 	
-    print $QSUB "qsub -q $opt{MAPPING_QUEUE} -P $opt{MAPPING_PROJECT} -pe threaded $opt{MAPPING_THREADS} -o $opt{OUTPUT_DIR}/$sampleName/logs -e $opt{OUTPUT_DIR}/$sampleName/logs -N $jobId $opt{OUTPUT_DIR}/$sampleName/jobs/$jobId.sh\n\n";
+    print $QSUB "qsub -q $opt{MAPPING_QUEUE} -P $opt{MAPPING_PROJECT} -m a -M $opt{MAIL} -pe threaded $opt{MAPPING_THREADS} -o $opt{OUTPUT_DIR}/$sampleName/logs -e $opt{OUTPUT_DIR}/$sampleName/logs -N $jobId $opt{OUTPUT_DIR}/$sampleName/jobs/$jobId.sh\n\n";
 
 }
 
@@ -351,7 +351,7 @@ sub submitSingleJobs{
     print BWA_SH "echo \"End mapping\t\" `date` \"\t$coreName\t\" `uname -n` >> $opt{OUTPUT_DIR}/$sampleName/logs/$sampleName.log\n\n";
     close BWA_SH;
     
-    print $QSUB "qsub -q $opt{MAPPING_QUEUE} -P $opt{MAPPING_PROJECT} -pe threaded $opt{MAPPING_THREADS} -o $opt{OUTPUT_DIR}/$sampleName/logs/Mapping_$coreName.out -e $opt{OUTPUT_DIR}/$sampleName/logs/Mapping_$coreName.err -N $mappingJobId $opt{OUTPUT_DIR}/$sampleName/jobs/$mappingJobId.sh\n";
+    print $QSUB "qsub -q $opt{MAPPING_QUEUE} -P $opt{MAPPING_PROJECT} -m a -M $opt{MAIL} -pe threaded $opt{MAPPING_THREADS} -o $opt{OUTPUT_DIR}/$sampleName/logs/Mapping_$coreName.out -e $opt{OUTPUT_DIR}/$sampleName/logs/Mapping_$coreName.err -N $mappingJobId $opt{OUTPUT_DIR}/$sampleName/jobs/$mappingJobId.sh\n";
     ###################################
     
     ###############FLAGSTAT AFTER MAPPING JOB###############
@@ -363,7 +363,7 @@ sub submitSingleJobs{
     print FS1_SH "echo \"End Flagstat \t\" `date` \"\t$coreName.bam\t\" `uname -n` >> $opt{OUTPUT_DIR}/$sampleName/logs/$sampleName.log\n\n";
     close FS1_SH;
     
-    print $QSUB "qsub -q $opt{MAPPING_QUEUE} -P $opt{MAPPING_PROJECT} -pe threaded $opt{MAPPING_THREADS} -o $opt{OUTPUT_DIR}/$sampleName/logs/Mapping_$coreName.out -e $opt{OUTPUT_DIR}/$sampleName/logs/Mapping_$coreName.err -N $mappingFSJobId -hold_jid $mappingJobId $opt{OUTPUT_DIR}/$sampleName/jobs/$mappingFSJobId.sh\n";
+    print $QSUB "qsub -q $opt{MAPPING_QUEUE} -P $opt{MAPPING_PROJECT} -m a -M $opt{MAIL} -pe threaded $opt{MAPPING_THREADS} -o $opt{OUTPUT_DIR}/$sampleName/logs/Mapping_$coreName.out -e $opt{OUTPUT_DIR}/$sampleName/logs/Mapping_$coreName.err -N $mappingFSJobId -hold_jid $mappingJobId $opt{OUTPUT_DIR}/$sampleName/jobs/$mappingFSJobId.sh\n";
     ##################################
     
     ###############SORT JOB###############
@@ -376,7 +376,7 @@ sub submitSingleJobs{
     print SORT_SH "echo \"End sort\t\" `date` \"\t$coreName\t\" `uname -n` >> $opt{OUTPUT_DIR}/$sampleName/logs/$sampleName.log\n";
     close SORT_SH;
     
-    print $QSUB "qsub -q $opt{MAPPING_QUEUE} -P $opt{MAPPING_PROJECT} -pe threaded $opt{MAPPING_THREADS} -o $opt{OUTPUT_DIR}/$sampleName/logs/Mapping_$coreName.out -e $opt{OUTPUT_DIR}/$sampleName/logs/Mapping_$coreName.err -N $sortJobId -hold_jid $mappingJobId $opt{OUTPUT_DIR}/$sampleName/jobs/$sortJobId.sh\n";
+    print $QSUB "qsub -q $opt{MAPPING_QUEUE} -P $opt{MAPPING_PROJECT} -m a -M $opt{MAIL} -pe threaded $opt{MAPPING_THREADS} -o $opt{OUTPUT_DIR}/$sampleName/logs/Mapping_$coreName.out -e $opt{OUTPUT_DIR}/$sampleName/logs/Mapping_$coreName.err -N $sortJobId -hold_jid $mappingJobId $opt{OUTPUT_DIR}/$sampleName/jobs/$sortJobId.sh\n";
     ##################################
     
     ###############FLAGSTAT AFTER SORT JOB###############
@@ -388,7 +388,7 @@ sub submitSingleJobs{
     print FS2_SH "echo \"End flagstat\t \" `date` \"\t$coreName\_sorted.bam\t\" `uname -n` >> $opt{OUTPUT_DIR}/$sampleName/logs/$sampleName.log\n\n";
     close FS2_SH;
     
-    print $QSUB "qsub -q $opt{MAPPING_QUEUE} -P $opt{MAPPING_PROJECT} -pe threaded $opt{MAPPING_THREADS} -o $opt{OUTPUT_DIR}/$sampleName/logs/Mapping_$coreName.out -e $opt{OUTPUT_DIR}/$sampleName/logs/Mapping_$coreName.err -N $sortFSJobId -hold_jid $sortJobId $opt{OUTPUT_DIR}/$sampleName/jobs/$sortFSJobId.sh\n";    
+    print $QSUB "qsub -q $opt{MAPPING_QUEUE} -P $opt{MAPPING_PROJECT} -m a -M $opt{MAIL} -pe threaded $opt{MAPPING_THREADS} -o $opt{OUTPUT_DIR}/$sampleName/logs/Mapping_$coreName.out -e $opt{OUTPUT_DIR}/$sampleName/logs/Mapping_$coreName.err -N $sortFSJobId -hold_jid $sortJobId $opt{OUTPUT_DIR}/$sampleName/jobs/$sortFSJobId.sh\n";
     #################################
     
     ###############INDEX JOB###############
@@ -401,7 +401,7 @@ sub submitSingleJobs{
     print INDEX_SH "echo \"End index\t\" `date` \"\t$coreName\_sorted.bam\t\" `uname -n` >> $opt{OUTPUT_DIR}/$sampleName/logs/$sampleName.log\n";
     close INDEX_SH;
     
-    print $QSUB "qsub -q $opt{MAPPING_QUEUE} -P $opt{MAPPING_PROJECT} -pe threaded $opt{MAPPING_THREADS} -o $opt{OUTPUT_DIR}/$sampleName/logs/Mapping_$coreName.out -e $opt{OUTPUT_DIR}/$sampleName/logs/Mapping_$coreName.err -N $indexJobId -hold_jid $sortJobId $opt{OUTPUT_DIR}/$sampleName/jobs/$indexJobId.sh\n";    
+    print $QSUB "qsub -q $opt{MAPPING_QUEUE} -P $opt{MAPPING_PROJECT} -m a -M $opt{MAIL} -pe threaded $opt{MAPPING_THREADS} -o $opt{OUTPUT_DIR}/$sampleName/logs/Mapping_$coreName.out -e $opt{OUTPUT_DIR}/$sampleName/logs/Mapping_$coreName.err -N $indexJobId -hold_jid $sortJobId $opt{OUTPUT_DIR}/$sampleName/jobs/$indexJobId.sh\n";
     ################################
 
     ###############MARKDUP JOB###############
@@ -414,7 +414,7 @@ sub submitSingleJobs{
     print MARKDUP_SH "echo \"End markdup\t\" `date` \"\t$coreName\_sorted.bam\t\" `uname -n` >> $opt{OUTPUT_DIR}/$sampleName/logs/$sampleName.log\n";
     close MARKDUP_SH;
     
-    print $QSUB "qsub -q $opt{MAPPING_QUEUE} -P $opt{MAPPING_PROJECT} -pe threaded $opt{MAPPING_THREADS} -o $opt{OUTPUT_DIR}/$sampleName/logs/Mapping_$coreName.out -e $opt{OUTPUT_DIR}/$sampleName/logs/Mapping_$coreName.err -N $markdupJobId -hold_jid $indexJobId $opt{OUTPUT_DIR}/$sampleName/jobs/$markdupJobId.sh\n";
+    print $QSUB "qsub -q $opt{MAPPING_QUEUE} -P $opt{MAPPING_PROJECT} -m a -M $opt{MAIL} -pe threaded $opt{MAPPING_THREADS} -o $opt{OUTPUT_DIR}/$sampleName/logs/Mapping_$coreName.out -e $opt{OUTPUT_DIR}/$sampleName/logs/Mapping_$coreName.err -N $markdupJobId -hold_jid $indexJobId $opt{OUTPUT_DIR}/$sampleName/jobs/$markdupJobId.sh\n";
     ################################
     
     ###############FLAGSTAT AFTER MARKDUP JOB###############
@@ -426,7 +426,7 @@ sub submitSingleJobs{
     print FS3_SH "echo \"End flagstat\t\" `date` \"\t$coreName\_sorted_dedup.bam\t\" `uname -n` >> $opt{OUTPUT_DIR}/$sampleName/logs/$sampleName.log\n";
     close FS3_SH;
     
-    print $QSUB "qsub -q $opt{MAPPING_QUEUE} -P $opt{MAPPING_PROJECT} -pe threaded $opt{MAPPING_THREADS} -o $opt{OUTPUT_DIR}/$sampleName/logs/Mapping_$coreName.out -e $opt{OUTPUT_DIR}/$sampleName/logs/Mapping_$coreName.err -N $markdupFSJobId -hold_jid $markdupJobId $opt{OUTPUT_DIR}/$sampleName/jobs/$markdupFSJobId.sh\n";
+    print $QSUB "qsub -q $opt{MAPPING_QUEUE} -P $opt{MAPPING_PROJECT} -m a -M $opt{MAIL} -pe threaded $opt{MAPPING_THREADS} -o $opt{OUTPUT_DIR}/$sampleName/logs/Mapping_$coreName.out -e $opt{OUTPUT_DIR}/$sampleName/logs/Mapping_$coreName.err -N $markdupFSJobId -hold_jid $markdupJobId $opt{OUTPUT_DIR}/$sampleName/jobs/$markdupFSJobId.sh\n";
     ###############################
     
     ###############CLEANUP JOB###############
@@ -472,7 +472,7 @@ sub submitSingleJobs{
     print CLEAN_SH "echo \"End cleanup\t\" `date` \"\t $coreName \t\" `uname -n` >> $opt{OUTPUT_DIR}/$sampleName/logs/$sampleName.log\n";
     close CLEAN_SH;
 
-    print $QSUB "qsub -q $opt{MAPPING_QUEUE} -P $opt{MAPPING_PROJECT} -pe threaded $opt{MAPPING_THREADS} -o $opt{OUTPUT_DIR}/$sampleName/logs/Mapping_$coreName.out -e $opt{OUTPUT_DIR}/$sampleName/logs/Mapping_$coreName.err -N $cleanupJobId -hold_jid $mappingFSJobId,$sortFSJobId,$markdupFSJobId $opt{OUTPUT_DIR}/$sampleName/jobs/$cleanupJobId.sh\n\n";
+    print $QSUB "qsub -q $opt{MAPPING_QUEUE} -P $opt{MAPPING_PROJECT} -m a -M $opt{MAIL} -pe threaded $opt{MAPPING_THREADS} -o $opt{OUTPUT_DIR}/$sampleName/logs/Mapping_$coreName.out -e $opt{OUTPUT_DIR}/$sampleName/logs/Mapping_$coreName.err -N $cleanupJobId -hold_jid $mappingFSJobId,$sortFSJobId,$markdupFSJobId $opt{OUTPUT_DIR}/$sampleName/jobs/$cleanupJobId.sh\n\n";
 
 }
 
@@ -484,20 +484,20 @@ sub readConfiguration {
 	$opt{$key} = $configuration->{$key};
     }
     
-    if(! $opt{BWA_PATH}){ die "ERROR: No BWA_PATH found in .conf file\n" }
-    if(! $opt{SAMBAMBA_PATH}){ die "ERROR: No SAMBAMBA_PATH found in .conf file\n" }
-    if(! $opt{SAMTOOLS_PATH}){ die "ERROR: No SAMTOOLS_PATH found in .conf file\n" }
-    if(! $opt{MAPPING_THREADS}){ die "ERROR: No MAPPING_THREADS found in .conf file\n" }
-    if(! $opt{MAPPING_MEM}){ die "ERROR: No MAPPING_MEM found in .conf file\n" }
-    if(! $opt{MAPPING_QUEUE}){ die "ERROR: No MAPPING_QUEUE found in .conf file\n" }
-    if(! $opt{MAPPING_PROJECT}){ die "ERROR: No MAPPING_PROJECT found in .conf file\n" }
-    if(! $opt{MAPPING_MODE}){ die "ERROR: No MAPPING_MODE found in .conf file\n" }
-    if(! $opt{CLUSTER_PATH}){ die "ERROR: No CLUSTER_PATH found in .conf file\n" }
-    if(! $opt{CLUSTER_TMP}){ die "ERROR: No CLUSTER_TMP found in .conf file\n" }
-    if(! $opt{GENOME}){ die "ERROR: No GENOME found in .conf file\n" }
+    if(! $opt{BWA_PATH}){ die "ERROR: No BWA_PATH found in .ini file\n" }
+    if(! $opt{SAMBAMBA_PATH}){ die "ERROR: No SAMBAMBA_PATH found in .ini file\n" }
+    if(! $opt{SAMTOOLS_PATH}){ die "ERROR: No SAMTOOLS_PATH found in .ini file\n" }
+    if(! $opt{MAPPING_THREADS}){ die "ERROR: No MAPPING_THREADS found in .ini file\n" }
+    if(! $opt{MAPPING_MEM}){ die "ERROR: No MAPPING_MEM found in .ini file\n" }
+    if(! $opt{MAPPING_QUEUE}){ die "ERROR: No MAPPING_QUEUE found in .ini file\n" }
+    if(! $opt{MAPPING_PROJECT}){ die "ERROR: No MAPPING_PROJECT found in .ini file\n" }
+    if(! $opt{MAPPING_MODE}){ die "ERROR: No MAPPING_MODE found in .ini file\n" }
+    if(! $opt{CLUSTER_PATH}){ die "ERROR: No CLUSTER_PATH found in .ini file\n" }
+    if(! $opt{CLUSTER_TMP}){ die "ERROR: No CLUSTER_TMP found in .ini file\n" }
+    if(! $opt{GENOME}){ die "ERROR: No GENOME found in .ini file\n" }
     if(! $opt{OUTPUT_DIR}){ die "ERROR: No OUTPUT_DIR found in .conf file\n" }
-    if(! $opt{FASTQ}){ die "ERROR: No FASTQ files specified\n" }
-    if(! $opt{MAIL}){die "ERROR: No MAIL adress found\n" }    
+    if(! $opt{FASTQ}){ die "ERROR: No FASTQ files specified in .conf file\n" }
+    if(! $opt{MAIL}){die "ERROR: No MAIL address found in .conf file \n" }
     return \%opt;
     
 }
