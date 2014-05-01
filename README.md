@@ -1,7 +1,7 @@
-### IAP
+## IAP
 Our Illumina variant calling pipeline.
 
-#### Usage
+### Usage
 Create config:
 ```perl
 perl llumina_createConfig.pl
