@@ -5,7 +5,7 @@
 ###
 ###
 ###Author: R.F.Ernst
-###Latest change: skeleton
+###Latest change: email notification
 ###TODO:
 ##################################################################################################################################################
 
@@ -30,6 +30,7 @@ sub runCheck {
     ### Log file
     my $logFile = "$opt{OUTPUT_DIR}/logs/PipelineCheck.log";
     print BASH "failed=false \n";
+    print BASH "rm $logFile \n";
     print BASH "echo \"Check and cleanup for run: $runName \" >>$logFile\n\n";
 
     ### Check sample steps
@@ -119,13 +120,17 @@ sub runCheck {
 
     ### Check failed variable and mail report
     print BASH "echo \"\">>$logFile\n\n"; ## empty line after stats
-    print BASH "if [ \"\$failed\" = true  ]; then\n";
-    print BASH "\techo \"One or multiple step(s) of the pipeline failed. \" >>$logFile\n";
-    print BASH "\tmail -s \"IAP FAILED $runName \" $opt{MAIL} < $logFile\n";
-    print BASH "else\n";
     
+    ### Pipeline failed
+    print BASH "if [ \"\$failed\" = true  ]\n";
+    print BASH "then\n";
+    print BASH "\techo \"One or multiple step(s) of the pipeline failed. \" >>$logFile\n";
+    print BASH "\tmail -s \"IAP FAILED $runName\" \"$opt{MAIL}\" < $logFile\n";
+    
+    ### Pipeline done
+    print BASH "else\n";
     print BASH "\techo \"The pipeline completed successfully. \">>$logFile\n";
-    print BASH "\tmail -s \"IAP DONE $runName\" $opt{MAIL} < $logFile\n";
+    print BASH "\tmail -s \"IAP DONE $runName\" \"$opt{MAIL}\" < $logFile\n";
     #remove all tmp folders and empty logs except .done files
     print BASH "\trm -r $opt{OUTPUT_DIR}/tmp\n";
     print BASH "\trm -r $opt{OUTPUT_DIR}/*/tmp\n";
@@ -133,7 +138,8 @@ sub runCheck {
     print BASH "\tfind  $opt{OUTPUT_DIR}/*/logs -size 0 -not -name \"*.done\" -delete\n";
     print BASH "fi\n";
     
-    
+    #Sleep to ensure that email is send from cluster.
+    print BASH "sleep 5s \n";
 
     #Start main bash script
     my $logDir = $opt{OUTPUT_DIR}."/logs";
