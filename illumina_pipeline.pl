@@ -9,10 +9,14 @@
 ###TODO:
 ##################################################################################################################################################
 
+#### Load common perl modules ####
 use strict;
 use POSIX qw(tmpnam);
 use Getopt::Long;
+use FindBin;
 
+#### Load pipeline modules ####
+use lib "$FindBin::Bin"; #locates pipeline directory
 use illumina_prestats;
 use illumina_mapping;
 use illumina_poststats;
