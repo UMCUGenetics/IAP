@@ -19,9 +19,10 @@ sub runVariantCalling {
     my $configuration = shift;
     my %opt = %{readConfiguration($configuration)};
     my $runName = (split("/", $opt{OUTPUT_DIR}))[-1];
+    my @sampleBams;
     my @runningJobs;
     my $jobID = "VC_".get_job_id();
-    
+
     ### Skip variant calling if .raw_variants.vcf already exists
     if (-e "$opt{OUTPUT_DIR}/logs/VariantCaller.done"){
 	warn "WARNING: $opt{OUTPUT_DIR}/logs/VariantCaller.done exists, skipping \n";
@@ -55,6 +56,7 @@ sub runVariantCalling {
 	    $sampleBam = "$sample/mapping/".$sample."_dedup.bam";
 	}
 	$command .= "-I $opt{OUTPUT_DIR}/$sampleBam ";
+	push( @sampleBams, $sampleBam);
 	## Running jobs
 	if ( $opt{RUNNING_JOBS}->{$sample} ){
 	    push( @runningJobs, @{$opt{RUNNING_JOBS}->{$sample}} );
@@ -71,9 +73,9 @@ sub runVariantCalling {
 	    $command .= "-ip $opt{CALLING_INTPADDING} ";
 	}
     }
-    
+
     $command .= "-run";
-    
+
     #Create main bash script
     my $bashFile = $opt{OUTPUT_DIR}."/jobs/VariantCalling_".$jobID.".sh";
     my $logDir = $opt{OUTPUT_DIR}."/logs";
@@ -82,17 +84,26 @@ sub runVariantCalling {
     print CALLING_SH "#!/bin/bash\n\n";
     print CALLING_SH "bash $opt{CLUSTER_PATH}/settings.sh\n\n";
     print CALLING_SH "cd $opt{OUTPUT_DIR}/tmp/\n";
-    print CALLING_SH "echo \"Start variant caller\t\" `date` \"\t\" `uname -n` >> $opt{OUTPUT_DIR}/logs/$runName.log\n";
-    print CALLING_SH "$command\n\n";
+    print CALLING_SH "echo \"Start variant caller\t\" `date` \"\t\" `uname -n` >> $opt{OUTPUT_DIR}/logs/$runName.log\n\n";
+    
+    print CALLING_SH "if [ -f ".shift(@sampleBams)." ";
+    foreach my $sampleBam (@sampleBams){
+	print CALLING_SH "-a -f $sampleBam ";
+    }
+    print CALLING_SH "]\n";
+    print CALLING_SH "then\n";
+    print CALLING_SH "\t$command\n";
+    print CALLING_SH "else\n";
+    print CALLING_SH "\techo \"ERROR: One or more input bam files do not exist.\" >&2\n";
+    print CALLING_SH "fi\n\n";
     
     print CALLING_SH "if [ -f $opt{OUTPUT_DIR}/tmp/.$runName\.raw_variants.vcf.done ]\n";
     print CALLING_SH "then\n";
     print CALLING_SH "\tmv $opt{OUTPUT_DIR}/tmp/$runName\.raw_variants.vcf $opt{OUTPUT_DIR}/\n";
     print CALLING_SH "\tmv $opt{OUTPUT_DIR}/tmp/$runName\.raw_variants.vcf.idx $opt{OUTPUT_DIR}/\n";
-    print CALLING_SH "\ttouch $opt{OUTPUT_DIR}/logs/VariantCaller.done \n";
-    print CALLING_SH "\techo \"Finished variant caller\t\" `date` \"\t\" `uname -n` >> $opt{OUTPUT_DIR}/logs/$runName.log\n";
+    print CALLING_SH "\ttouch $opt{OUTPUT_DIR}/logs/VariantCaller.done\n";
     print CALLING_SH "fi\n\n";
-    
+    print CALLING_SH "echo \"Finished variant caller\t\" `date` \"\t\" `uname -n` >> $opt{OUTPUT_DIR}/logs/$runName.log\n";
     #Start main bash script
     if (@runningJobs){
 	system "qsub -q $opt{CALLING_MASTERQUEUE} -m a -M $opt{MAIL} -pe threaded $opt{CALLING_MASTERTHREADS} -o $logDir/VariantCaller_$runName.out -e $logDir/VariantCaller_$runName.err -N $jobID -hold_jid ".join(",",@runningJobs)." $bashFile";

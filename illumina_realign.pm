@@ -145,8 +145,11 @@ sub runRealignment {
 	    print REALIGN_SH "\#!/bin/bash\n\n";
 	    print REALIGN_SH ". $opt{CLUSTER_PATH}/settings.sh\n\n";
 	    print REALIGN_SH "cd $opt{OUTPUT_DIR}/$sample/tmp \n\n";
-	    print REALIGN_SH "echo \"Start indel realignment\t\" `date` \"\t$sample\_dedup.bam\t\" `uname -n` >> ../logs/$sample.log\n";
-	    print REALIGN_SH "java -Djava.io.tmpdir=$opt{OUTPUT_DIR}/$sample/tmp -Xmx".$javaMem."G -jar $opt{QUEUE_PATH}/Queue.jar -R $opt{GENOME} -S $opt{REALIGNMENT_SCALA} -jobQueue $opt{REALIGNMENT_QUEUE} -nt $opt{REALIGNMENT_THREADS} -mem $opt{REALIGNMENT_MEM} -nsc $opt{REALIGNMENT_SCATTER} -mode $opt{REALIGNMENT_MODE} -jobNative \"-pe threaded $opt{REALIGNMENT_THREADS}\" ";
+	    print REALIGN_SH "echo \"Start indel realignment\t\" `date` \"\t$sample\_dedup.bam\t\" `uname -n` >> ../logs/$sample.log\n\n";
+	    
+	    print REALIGN_SH "if [ -f $opt{OUTPUT_DIR}/$sample/mapping/$sample\_dedup.bam ]\n";
+	    print REALIGN_SH "then\n";
+	    print REALIGN_SH "\tjava -Djava.io.tmpdir=$opt{OUTPUT_DIR}/$sample/tmp -Xmx".$javaMem."G -jar $opt{QUEUE_PATH}/Queue.jar -R $opt{GENOME} -S $opt{REALIGNMENT_SCALA} -jobQueue $opt{REALIGNMENT_QUEUE} -nt $opt{REALIGNMENT_THREADS} -mem $opt{REALIGNMENT_MEM} -nsc $opt{REALIGNMENT_SCATTER} -mode $opt{REALIGNMENT_MODE} -jobNative \"-pe threaded $opt{REALIGNMENT_THREADS}\" ";
 	    
 	    if($opt{REALIGNMENT_KNOWN}) {
 		foreach my $knownIndelFile (@knownIndelFiles) {
@@ -154,14 +157,17 @@ sub runRealignment {
 		}
 	    }
 	    print REALIGN_SH "-run -I $opt{OUTPUT_DIR}/$sample/mapping/$sample\_dedup.bam -jobRunner GridEngine\n";
-	    
+	    print REALIGN_SH "else\n";
+	    print REALIGN_SH "echo \"ERROR: $sample\_dedup.bam does not exist.\" >&2\n";
+	    print REALIGN_SH "fi\n\n";
+
 	    print REALIGN_SH "if [ -f $opt{OUTPUT_DIR}/$sample/tmp/$sample\_dedup.realigned.bam ]\n";
 	    print REALIGN_SH "then\n";
 	    print REALIGN_SH "\t$opt{SAMBAMBA_PATH}/sambamba flagstat -t $opt{REALIGNMENT_THREADS} $opt{OUTPUT_DIR}/$sample/tmp/$sample\_dedup.realigned.bam > $opt{OUTPUT_DIR}/$sample/mapping/$sample\_dedup_realigned.flagstat\n";
 	    print REALIGN_SH "\tmv $opt{OUTPUT_DIR}/$sample/tmp/$sample\_dedup.realigned.bam $opt{OUTPUT_DIR}/$sample/mapping/$sample\_dedup_realigned.bam\n";
 	    print REALIGN_SH "\tmv $opt{OUTPUT_DIR}/$sample/tmp/$sample\_dedup.realigned.bai $opt{OUTPUT_DIR}/$sample/mapping/$sample\_dedup_realigned.bai\n";
-	    print REALIGN_SH "fi\n";
-	    
+	    print REALIGN_SH "fi\n\n";
+
 	    print REALIGN_SH "if [ -s $opt{OUTPUT_DIR}/$sample/mapping/$sample\_dedup.flagstat ] && [ -s $opt{OUTPUT_DIR}/$sample/mapping/$sample\_dedup_realigned.flagstat ]\n";
 	    print REALIGN_SH "then\n";
 	    print REALIGN_SH "\tFS1=\`grep -m 1 -P \"\\d+ \" $opt{OUTPUT_DIR}/$sample/mapping/$sample\_dedup.flagstat | awk '{{split(\$0,columns , \"+\")} print columns[1]}'\`\n";
@@ -171,11 +177,12 @@ sub runRealignment {
 	    print REALIGN_SH "\t\ttouch $opt{OUTPUT_DIR}/$sample/logs/Realignment_$sample.done\n";
 	    print REALIGN_SH "\t\tmv $opt{OUTPUT_DIR}/$sample/tmp/IndelRealigner.jobreport.txt $opt{OUTPUT_DIR}/$sample/logs/IndelRealigner.jobreport.txt\n";
 	    print REALIGN_SH "\telse\n";
-	    print REALIGN_SH "\t\techo \"ERROR: $opt{OUTPUT_DIR}/$sample/mapping/$sample\_dedup.flagstat and $opt{OUTPUT_DIR}/$sample/mapping/$sample\_dedup_realigned.flagstat do not have the same read counts\" >>../logs/realign.err\n";
+	    print REALIGN_SH "\t\techo \"ERROR: $opt{OUTPUT_DIR}/$sample/mapping/$sample\_dedup.flagstat and $opt{OUTPUT_DIR}/$sample/mapping/$sample\_dedup_realigned.flagstat do not have the same read counts\" >>../logs/Realignment_$sample.err\n";
 	    print REALIGN_SH "\tfi\n";
 	    print REALIGN_SH "else\n";
-	    print REALIGN_SH "\techo \"ERROR: Either $opt{OUTPUT_DIR}/$sample/mapping/$sample\_dedup.flagstat or $opt{OUTPUT_DIR}/$sample/mapping/$sample\_dedup_realigned.flagstat is empty.\" >> ../logs/realign.err\n";
-	    print REALIGN_SH "fi\n";
+	    print REALIGN_SH "\techo \"ERROR: Either $opt{OUTPUT_DIR}/$sample/mapping/$sample\_dedup.flagstat or $opt{OUTPUT_DIR}/$sample/mapping/$sample\_dedup_realigned.flagstat is empty.\" >> ../logs/Realignment_$sample.err\n";
+	    print REALIGN_SH "fi\n\n";
+	    
 	    print REALIGN_SH "echo \"End indel realignment\t\" `date` \"\t$sample\_dedup.bam\t\" `uname -n` >> ../logs/$sample.log\n"; 
 	    close REALIGN_SH;
 	    

@@ -46,24 +46,35 @@ sub runAnnotateVariants {
     print ANNOTATE_SH "#!/bin/bash\n\n";
     print ANNOTATE_SH "bash $opt{CLUSTER_PATH}/settings.sh\n\n";
     print ANNOTATE_SH "cd $opt{OUTPUT_DIR}/\n\n";
-    print ANNOTATE_SH "echo \"Start variant annotation\t\" `date` \"\t$invcf\t\" `uname -n` >> $opt{OUTPUT_DIR}/logs/$runName.log\n";
+    print ANNOTATE_SH "echo \"Start variant annotation\t\" `date` \"\t$invcf\t\" `uname -n` >> $opt{OUTPUT_DIR}/logs/$runName.log\n\n";
+    
     ### basic eff prediction and annotation
     if($opt{ANNOTATE_SNPEFF} eq "yes"){
 	$outvcf = $invcf;
 	$outvcf =~ s/.vcf/_snpEff.vcf/;
 	$command = "java -Xmx".$opt{ANNOTATE_MEM}."g -jar $opt{SNPEFF_PATH}/snpEff.jar -c $opt{SNPEFF_PATH}/snpEff.config $opt{ANNOTATE_DB} -v $invcf -o gatk $opt{ANNOTATE_FLAGS} > $outvcf";
-	print ANNOTATE_SH "$command\n\n";
+	print ANNOTATE_SH "if [ -f $invcf ]\n";
+	print ANNOTATE_SH "then\n";
+	print ANNOTATE_SH "\t$command\n";
+	print ANNOTATE_SH "else\n";
+	print ANNOTATE_SH "\techo \"ERROR: $invcf does not exist.\" >&2\n";
+	print ANNOTATE_SH "fi\n\n";
 	$invcf = $outvcf;
     }
 
-    #run detailed annotation (sift, polyphen gerp, phyloP
+    #run detailed annotation (sift, polyphen gerp, phyloP)
     if($opt{ANNOTATE_SNPSIFT} eq "yes"){
 	$outvcf = $invcf;
 	$outvcf =~ s/.vcf/_snpSift.vcf/;
 	$command = "java -Xmx".$opt{ANNOTATE_MEM}."g -jar $opt{SNPEFF_PATH}/SnpSift.jar dbnsfp -f $opt{ANNOTATE_FIELDS} -v $opt{ANNOTATE_DBNSFP} $invcf > $outvcf";
-	print ANNOTATE_SH "$command\n";
+	print ANNOTATE_SH "if [ -f $invcf ]\n";
+	print ANNOTATE_SH "then\n";
+	print ANNOTATE_SH "\t$command\n";
+	print ANNOTATE_SH "else\n";
+	print ANNOTATE_SH "\techo \"ERROR: $invcf does not exist.\" >&2\n";
+	print ANNOTATE_SH "fi\n\n";
 	if($opt{ANNOTATE_SNPEFF} eq "yes"){
-	    print ANNOTATE_SH "if [ -f $outvcf ]\nthen\n rm $invcf\nfi\n\n";
+	    print ANNOTATE_SH "if [ -f $outvcf ]\nthen\n\trm $invcf\nfi\n\n";
 	}
 	$invcf = $outvcf;
     }
@@ -73,12 +84,17 @@ sub runAnnotateVariants {
 	$outvcf = $invcf;
 	$outvcf =~ s/.vcf/_GoNL.vcf/;
 	$command = "$opt{VCFTOOLS_PATH}/vcf-annotate -a $opt{ANNOTATE_FREQ} -c $opt{ANNOTATE_COLUMNS} -d $opt{ANNOTATE_DESCR} $invcf > $outvcf";
-	print ANNOTATE_SH "$command\n";
+	print ANNOTATE_SH "if [ -f $invcf ]\n";
+	print ANNOTATE_SH "then\n";
+	print ANNOTATE_SH "\t$command\n";
+	print ANNOTATE_SH "else\n";
+	print ANNOTATE_SH "\techo \"ERROR: $invcf does not exist.\" >&2\n";
+	print ANNOTATE_SH "fi\n\n";
 	if($opt{ANNOTATE_SNPSIFT} eq "yes" || $opt{ANNOTATE_SNPEFF} eq "yes"){
-	    print ANNOTATE_SH "if [ -f $outvcf ]\nthen\n rm $invcf\nfi\n\n";
+	    print ANNOTATE_SH "if [ -f $outvcf ]\nthen\n\trm $invcf\nfi\n\n";
 	}
     }
-    print ANNOTATE_SH "if [ -s $outvcf ]\nthen\n touch $opt{OUTPUT_DIR}/logs/VariantAnnotation.done\nfi\n\n"; ### check whether annotated vcf is not empty
+    print ANNOTATE_SH "if [ -s $outvcf ]\nthen\n\ttouch $opt{OUTPUT_DIR}/logs/VariantAnnotation.done\nfi\n\n"; ### check whether annotated vcf is not empty
     print ANNOTATE_SH "echo \"End variant annotation\t\" `date` \"\t$invcf\t\" `uname -n` >> $opt{OUTPUT_DIR}/logs/$runName.log\n";
     
     ### Process runningjobs

@@ -69,14 +69,20 @@ sub runBaseRecalibration {
 	print BASERECAL_SH "#!/bin/bash\n\n";
 	print BASERECAL_SH "bash $opt{CLUSTER_PATH}/settings.sh\n\n";
 	print BASERECAL_SH "cd $opt{OUTPUT_DIR}/$sample/tmp/\n";
-	print BASERECAL_SH "echo \"Start base recalibration\t\" `date` \"\t$inBam\t\" `uname -n` >> ../logs/$sample.log\n";
-	print BASERECAL_SH "$command\n\n";
+	print BASERECAL_SH "echo \"Start base recalibration\t\" `date` \"\t$inBam\t\" `uname -n` >> ../logs/$sample.log\n\n";
+	
+	print BASERECAL_SH "if [ -f $inBam ]\n";
+	print BASERECAL_SH "then\n";
+	print BASERECAL_SH "\t$command\n";
+	print BASERECAL_SH "else\n";
+	print BASERECAL_SH "\techo \"ERROR: $inBam does not exist.\" >&2\n";
+	print BASERECAL_SH "fi\n\n";
 	
 	### Generate FlagStats if gatk .done file present
 	print BASERECAL_SH "if [ -f $opt{OUTPUT_DIR}/$sample/tmp/.$outBam\.bam.done ]\n";
 	print BASERECAL_SH "then\n";
 	print BASERECAL_SH "\t$opt{SAMBAMBA_PATH}/sambamba flagstat -t $opt{BASERECALIBRATION_THREADS} $opt{OUTPUT_DIR}/$sample/tmp/$outBam\.bam > $opt{OUTPUT_DIR}/$sample/mapping/$outBam\.flagstat\n";
-	print BASERECAL_SH "fi\n";
+	print BASERECAL_SH "fi\n\n";
 	
 	### Check FlagStats and move files if correct else print error
 	print BASERECAL_SH "if [ -s $opt{OUTPUT_DIR}/$sample/mapping/$sample\_dedup.flagstat ] && [ -s $opt{OUTPUT_DIR}/$sample/mapping/$outBam\.flagstat ]\n";
@@ -93,7 +99,7 @@ sub runBaseRecalibration {
 	print BASERECAL_SH "\tfi\n";
 	print BASERECAL_SH "else\n";
 	print BASERECAL_SH "\techo \"ERROR: Either $opt{OUTPUT_DIR}/$sample/mapping/$sample\_dedup.flagstat or $opt{OUTPUT_DIR}/$sample/mapping/$outBam\.flagstat is empty.\" >> ../logs/BaseRecalibration_$sample.err\n";
-	print BASERECAL_SH "fi\n";
+	print BASERECAL_SH "fi\n\n";
 	print BASERECAL_SH "echo \"End base recalibration\t\" `date` \"\t$inBam\t\" `uname -n` >> ../logs/$sample.log\n";
 	close BASERECAL_SH;
 	
