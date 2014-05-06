@@ -89,6 +89,7 @@ sub runCheck {
 	print BASH "\techo \"PostStats: failed \">>$logFile\n";
 	print BASH "\tfailed=true\n";
 	print BASH "fi\n";
+	push( @runningJobs, @{$opt{RUNNING_JOBS}->{'postStats'}} );
     }
     if($opt{VARIANT_CALLING} eq "yes"){
 	$doneFile = $opt{OUTPUT_DIR}."/logs/VariantCaller.done";
