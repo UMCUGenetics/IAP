@@ -56,7 +56,7 @@ sub runVariantCalling {
 	    $sampleBam = "$sample/mapping/".$sample."_dedup.bam";
 	}
 	$command .= "-I $opt{OUTPUT_DIR}/$sampleBam ";
-	push( @sampleBams, $sampleBam);
+	push( @sampleBams, "$opt{OUTPUT_DIR}/$sampleBam");
 	## Running jobs
 	if ( $opt{RUNNING_JOBS}->{$sample} ){
 	    push( @runningJobs, @{$opt{RUNNING_JOBS}->{$sample}} );
