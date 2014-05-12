@@ -69,8 +69,8 @@ sub runVariantCalling {
     }
     if ( $opt{CALLING_TARGETS} ) {
 	$command .= "-L $opt{CALLING_TARGETS} ";
-	if ( $opt{CALLING_INTPADDING} ) {
-	    $command .= "-ip $opt{CALLING_INTPADDING} ";
+	if ( $opt{CALLING_INTERVALPADDING} ) {
+	    $command .= "-ip $opt{CALLING_INTERVALPADDING} ";
 	}
     }
 
