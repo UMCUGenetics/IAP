@@ -13,6 +13,7 @@ package illumina_check;
 
 use strict;
 use POSIX qw(tmpnam);
+use FindBin;
 
 sub runCheck {
     my $configuration = shift;
@@ -31,8 +32,13 @@ sub runCheck {
     my $logFile = "$opt{OUTPUT_DIR}/logs/PipelineCheck.log";
     print BASH "failed=false \n";
     print BASH "rm $logFile \n";
-    print BASH "echo \"Check and cleanup for run: $runName \" >>$logFile\n\n";
-
+    print BASH "echo \"Check and cleanup for run: $runName \" >>$logFile\n";
+    
+    ### pipeline version
+    my $version = `git --git-dir $FindBin::Bin/.git log --tags -n 1 --simplify-by-decoration --pretty=\"format:\%d \%ai\"`;
+    print BASH "echo \"Pipeline version: $version \" >>$logFile\n\n";
+    print BASH "echo \"\">>$logFile\n\n"; ## empty line between samples
+    
     ### Check sample steps
     foreach my $sample (@{$opt{SAMPLES}}){
 	print BASH "echo \"Sample: $sample\" >>$logFile\n";
@@ -73,7 +79,7 @@ sub runCheck {
 	    print BASH "fi\n";
 	}
 	print BASH "echo \"\">>$logFile\n\n"; ## empty line between samples
-	
+
 	## Running jobs
 	if ( $opt{RUNNING_JOBS}->{$sample} ){
 	    push( @runningJobs, @{$opt{RUNNING_JOBS}->{$sample}} );

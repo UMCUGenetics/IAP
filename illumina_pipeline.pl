@@ -88,6 +88,10 @@ if(! $opt{CHECKING}){ die "ERROR: No CHECKING option in .conf file \n" }
 getSamples();
 createOutputDirs();
 
+### Copy ini file to logs dir
+system "cp $opt{INIFILE} $opt{OUTPUT_DIR}/logs";
+
+### Start pipeline components
 if($opt{PRESTATS} eq "yes"){
     print "###SCHEDULING PRESTATS###\n";
     illumina_prestats::runPreStats(\%opt);
