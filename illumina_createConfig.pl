@@ -12,6 +12,7 @@ use strict;
 use Cwd            qw( abs_path );
 use File::Basename qw( dirname );
 use Getopt::Long;
+use File::Path qw(make_path);
 
 ### Variables ###
 my $settingsDir = dirname(abs_path($0))."/settings";
@@ -102,7 +103,7 @@ sub createConfig {
     my $configFile = $outputDir."/settings.config";
 
     if(! -e $outputDir){
-	mkdir($outputDir) or die "Couldn't create directory: $outputDir\n";
+	make_path($outputDir) or die "Couldn't create directory: $outputDir\n";
     }
     # Create settings.config file in outputDir
     open CONFIG, ">$configFile" or die "cannot open file $configFile \n";
