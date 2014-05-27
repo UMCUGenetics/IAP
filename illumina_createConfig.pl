@@ -12,6 +12,7 @@ use strict;
 use Cwd            qw( abs_path );
 use File::Basename qw( dirname );
 use Getopt::Long;
+use File::Path qw(make_path);
 
 ### Variables ###
 my $settingsDir = dirname(abs_path($0))."/settings";
@@ -27,11 +28,11 @@ my $mail;
 my $help;
 my $run;
 
-GetOptions ("iniFile=s" => \$iniFile,
-	    "outputDir=s" => \$outputDir,
-	    "rawDataDir=s" => \@rawDataDirs,
-	    "mail=s" => \$mail,
-	    "help" => \$help,
+GetOptions ("iniFile|i=s" => \$iniFile,
+	    "outputDir|o=s" => \$outputDir,
+	    "rawDataDir|r=s" => \@rawDataDirs,
+	    "mail|m=s" => \$mail,
+	    "help|h" => \$help,
 	    "run" => \$run)
 or die usage();
 
@@ -102,7 +103,7 @@ sub createConfig {
     my $configFile = $outputDir."/settings.config";
 
     if(! -e $outputDir){
-	mkdir($outputDir) or die "Couldn't create directory: $outputDir\n";
+	make_path($outputDir) or die "Couldn't create directory: $outputDir\n";
     }
     # Create settings.config file in outputDir
     open CONFIG, ">$configFile" or die "cannot open file $configFile \n";
@@ -134,7 +135,7 @@ sub createConfig {
 sub usage{
     print "Usage: perl illumina_createConfig.pl\n\n";
     print "Advanced usage: \n";
-    print "perl illumina_createConfig.pl -iniFile settings.ini -outputDir /path/to/outputDir -rawDataDir /hiseq/140305_D00267_0081_AH8DB2ADXX/Unaligned/Project_1/ -rawDataDir /hiseq/140305_D00267_0081_AH8DB2ADXX/Unaligned/Project_2 -mail example\@mail.nl [-run]\n\n";
+    print "perl illumina_createConfig.pl -i|-iniFile settings.ini -o|-outputDir /path/to/outputDir -r|-rawDataDir /hiseq/140305_D00267_0081_AH8DB2ADXX/Unaligned/Project_1/ -r|-rawDataDir /hiseq/140305_D00267_0081_AH8DB2ADXX/Unaligned/Project_2 -m|-mail example\@mail.nl [-run]\n\n";
     print "Available ini files:\n";
     getIniFiles($settingsDir);
     exit;
