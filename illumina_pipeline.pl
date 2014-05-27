@@ -14,6 +14,7 @@ use strict;
 use POSIX qw(tmpnam);
 use Getopt::Long;
 use FindBin;
+use File::Path qw(make_path);
 
 #### Load pipeline modules ####
 use lib "$FindBin::Bin"; #locates pipeline directory
@@ -178,7 +179,7 @@ sub getSamples{
 sub createOutputDirs{
     ### Create main output directories
     if(! -e $opt{OUTPUT_DIR}){
-	mkdir($opt{OUTPUT_DIR}) or die "Couldn't create directory: $opt{OUTPUT_DIR}\n";
+	make_path($opt{OUTPUT_DIR}) or die "Couldn't create directory: $opt{OUTPUT_DIR}\n";
     }
     if(! -e "$opt{OUTPUT_DIR}/QCStats"){
 	mkdir("$opt{OUTPUT_DIR}/QCStats") or die "Couldn't create directory: $opt{OUTPUT_DIR}/QCStats\n";
@@ -188,7 +189,7 @@ sub createOutputDirs{
     }
     if(! -e "$opt{OUTPUT_DIR}/logs"){
 	mkdir("$opt{OUTPUT_DIR}/logs") or die "Couldn't create directory: $opt{OUTPUT_DIR}/logs\n";
-    }    
+    }
     if(! -e "$opt{OUTPUT_DIR}/tmp"){
 	mkdir("$opt{OUTPUT_DIR}/tmp") or die "Couldn't create directory: $opt{OUTPUT_DIR}/tmp\n";
     }
