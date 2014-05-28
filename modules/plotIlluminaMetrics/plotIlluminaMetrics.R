@@ -18,6 +18,7 @@ hsMetrics = FALSE
 if (file.exists(fileName)){
   hsMetrics = TRUE
   summaryTable = read.table(file=fileName, sep="\t", header=TRUE, stringsAsFactors=FALSE)
+  summaryTable$sample = as.character(summaryTable$sample)
   summaryTableMelted = melt(summaryTable[,c('sample','PCT_TARGET_BASES_2X','PCT_TARGET_BASES_10X','PCT_TARGET_BASES_20X','PCT_TARGET_BASES_30X','PCT_TARGET_BASES_40X','PCT_TARGET_BASES_50X','PCT_TARGET_BASES_100X')],id.vars = 1)
 
   #Transpose and write summaryTable

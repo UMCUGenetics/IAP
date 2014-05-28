@@ -36,14 +36,19 @@ if (hsMetrics){
 
 ```{r echo=FALSE, fig.width=11, fig.height=10}
 if (hsMetrics){
-  plot_pctOffBait()
-  plot_meanTargetCov()
+    plot_pctOffBait()
+}
+```   
+
+```{r echo=FALSE, fig.width=11, fig.height=10}
+if (hsMetrics){    
+    plot_meanTargetCov()
 }
 ```
 
 ```{r echo=FALSE, fig.width=20, fig.height=10}
 if (hsMetrics){
-  plot_pctTargetBases()
+    plot_pctTargetBases()
 }
 ```
 
