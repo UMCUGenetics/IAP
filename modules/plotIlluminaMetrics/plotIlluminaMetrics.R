@@ -15,6 +15,7 @@ dir.create("pdfFigures", showWarnings=F) #create output Dir
 #Read in hsmetric table
 fileName = paste(runName,"HSMetric_summary.txt",sep=".")
 hsMetrics = FALSE
+colorSet = GetRandomColorSet(length(samples))
 if (file.exists(fileName)){
   hsMetrics = TRUE
   summaryTable = read.table(file=fileName, sep="\t", header=TRUE, stringsAsFactors=FALSE)
