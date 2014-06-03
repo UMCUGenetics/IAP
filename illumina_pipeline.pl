@@ -111,7 +111,7 @@ if($opt{MAPPING} eq "yes"){
 if($opt{POSTSTATS} eq "yes"){
     print "\n###SCHEDULING POSTSTATS###\n";
     my $postStatsJob = illumina_poststats::runPostStats(\%opt);
-    push (@{$opt{RUNNING_JOBS}->{'postStats'}} , $postStatsJob);
+    $opt{RUNNING_JOBS}->{'postStats'} = $postStatsJob;
 }
 
 if($opt{INDELREALIGNMENT} eq "yes"){

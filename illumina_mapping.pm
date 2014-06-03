@@ -39,7 +39,7 @@ sub runMapping {
 	    my $pairName = $input;
 	    $pairName =~ s/\_R1/\_R2/;
 	    if(exists ($opt{FASTQ}->{$pairName})){
-		$toMap->{$input."-".$pairName} = 1;
+		$toMap->{$input."#".$pairName} = 1;
 	    }else{
 		$toMap->{$input} = 1;
 	    }
@@ -47,7 +47,7 @@ sub runMapping {
 	    my $pairName = $input;
 	    $pairName =~ s/\_R2/\_R1/;
 	    if(exists ($opt{FASTQ}->{$pairName})){
-		$toMap->{$pairName."-".$input} = 1;
+		$toMap->{$pairName."#".$input} = 1;
 	    }else{
 		$toMap->{$input} = 1;
 	    }
@@ -56,7 +56,7 @@ sub runMapping {
 
 
     foreach my $input (keys %{$toMap}){
-	my @files = split("-",$input);
+	my @files = split("#",$input);
 	my $R1 = undef;
         my $R2 = undef;
 	my $coreName = undef;

@@ -33,12 +33,12 @@ sub runCheck {
     print BASH "failed=false \n";
     print BASH "rm $logFile \n";
     print BASH "echo \"Check and cleanup for run: $runName \" >>$logFile\n";
-    
+
     ### pipeline version
     my $version = `git --git-dir $FindBin::Bin/.git log --tags -n 1 --simplify-by-decoration --pretty=\"format:\%d \%ai\"`;
     print BASH "echo \"Pipeline version: $version \" >>$logFile\n\n";
     print BASH "echo \"\">>$logFile\n\n"; ## empty line between samples
-    
+
     ### Check sample steps
     foreach my $sample (@{$opt{SAMPLES}}){
 	print BASH "echo \"Sample: $sample\" >>$logFile\n";
@@ -95,7 +95,9 @@ sub runCheck {
 	print BASH "\techo \"PostStats: failed \">>$logFile\n";
 	print BASH "\tfailed=true\n";
 	print BASH "fi\n";
-	push( @runningJobs, @{$opt{RUNNING_JOBS}->{'postStats'}} );
+	if ( $opt{RUNNING_JOBS}->{'postStats'} ){
+	    push( @runningJobs, $opt{RUNNING_JOBS}->{'postStats'} );
+	}
     }
     if($opt{VARIANT_CALLING} eq "yes"){
 	$doneFile = $opt{OUTPUT_DIR}."/logs/VariantCaller.done";
@@ -127,13 +129,13 @@ sub runCheck {
 
     ### Check failed variable and mail report
     print BASH "echo \"\">>$logFile\n\n"; ## empty line after stats
-    
+
     ### Pipeline failed
     print BASH "if [ \"\$failed\" = true  ]\n";
     print BASH "then\n";
     print BASH "\techo \"One or multiple step(s) of the pipeline failed. \" >>$logFile\n";
     print BASH "\tmail -s \"IAP FAILED $runName\" \"$opt{MAIL}\" < $logFile\n";
-    
+
     ### Pipeline done
     print BASH "else\n";
     print BASH "\techo \"The pipeline completed successfully. \">>$logFile\n";
@@ -144,7 +146,7 @@ sub runCheck {
     print BASH "\tfind  $opt{OUTPUT_DIR}/logs -size 0 -not -name \"*.done\" -delete\n"; 
     print BASH "\tfind  $opt{OUTPUT_DIR}/*/logs -size 0 -not -name \"*.done\" -delete\n";
     print BASH "fi\n";
-    
+
     #Sleep to ensure that email is send from cluster.
     print BASH "sleep 5s \n";
 
@@ -158,7 +160,7 @@ sub runCheck {
 }
 
 sub readConfiguration{
-    my $configuration = shift;	
+    my $configuration = shift;
     my %opt;
 
     foreach my $key (keys %{$configuration}){
