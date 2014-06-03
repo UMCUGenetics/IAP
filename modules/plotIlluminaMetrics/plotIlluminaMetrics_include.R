@@ -13,7 +13,7 @@ suppressMessages(library(brew))
 # Plotting functions
 
 #Custom colorscale used for plotting
-cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7", "#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
 GetRandomColorSet <- function(nsamples) {
   SetTextContrastColor <- function(color) {
     ifelse( mean(col2rgb(color)) > 130, "black", "white")
