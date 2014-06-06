@@ -15,7 +15,7 @@ dir.create("pdfFigures", showWarnings=F) #create output Dir
 #Read in hsmetric table
 fileName = paste(runName,"HSMetric_summary.txt",sep=".")
 hsMetrics = FALSE
-if (length(samples <= length(cbPalette))){
+if (length(samples) <= length(cbPalette)){
   colorSet = cbPalette
 } else {
   colorSet = GetRandomColorSet(length(samples))
