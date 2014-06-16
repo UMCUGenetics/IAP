@@ -21,8 +21,9 @@ sub runMapping {
     my %opt = %{readConfiguration($configuration)};
     
     my $FAI = "$opt{GENOME}\.fai";
-    die "genome $opt{GENOME} does not exists!!\t$!\n" if !-e "$opt{GENOME}.bwt";
-    die "fai file $FAI does not exists!!\n" if !-e $FAI;
+    die "GENOME: $opt{GENOME} does not exists!\n" if !-e "$opt{GENOME}";
+    die "GENOME BWT: $opt{GENOME}.bwt does not exists!\n" if !-e "$opt{GENOME}.bwt";
+    die "GENOME FAI: $FAI does not exists!\n" if !-e $FAI;
     
     my $mainJobID = "$opt{OUTPUT_DIR}/jobs/MapMainJob_".get_job_id().".sh";
 
