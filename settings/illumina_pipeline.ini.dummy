@@ -5,7 +5,6 @@ CLUSTER_TMP	/tmp
 ####DEFAULT TOOL PATHS####
 BWA_PATH	/data_fedor13/common_scripts/bwa/0.7.5a
 SAMBAMBA_PATH	/data_fedor13/common_scripts/sambamba/sambamba_v0.4.5-pre
-SAMTOOLS_PATH	/usr/bin
 QUEUE_PATH	/data_fedor13/common_scripts/gatk/GenomeAnalysisTK-2.8-1-g932cd3a/Queue-2.8-1-g932cd3a
 PICARD_PATH	/data_fedor13/common_scripts/picard/picard-tools-1.98
 FASTQC_PATH	/data_fedor13/common_scripts/fastqc/FastQC_v0.10.1
