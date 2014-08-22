@@ -1,8 +1,9 @@
-package org.broadinstitute.sting.queue.qscripts
+package org.broadinstitute.gatk.queue.qscripts
 
-import org.broadinstitute.sting.queue.QScript
-import org.broadinstitute.sting.queue.extensions.gatk._
-import org.broadinstitute.sting.gatk.walkers.genotyper.GenotypeLikelihoodsCalculationModel
+import org.broadinstitute.gatk.queue.QScript
+import org.broadinstitute.gatk.queue.extensions.gatk._
+import org.broadinstitute.gatk.tools.walkers.genotyper.GenotypeLikelihoodsCalculationModel
+import org.broadinstitute.gatk.tools.walkers.genotyper.OutputMode
 
 class VariantCaller extends QScript {
     // Create an alias 'qscript' to be able to access variables in the VariantCaller.
@@ -67,7 +68,7 @@ class VariantCaller extends QScript {
 	unifiedGenotyper.out = qscript.out + ".raw_variants.vcf"
 
 	if(refcalls == "yes"){
-	    unifiedGenotyper.output_mode = org.broadinstitute.sting.gatk.walkers.genotyper.UnifiedGenotyperEngine.OUTPUT_MODE.EMIT_ALL_CONFIDENT_SITES
+	    unifiedGenotyper.output_mode = OutputMode.EMIT_ALL_CONFIDENT_SITES
 	}
 	
 

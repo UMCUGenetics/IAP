@@ -1,7 +1,8 @@
-package org.broadinstitute.sting.queue.qscripts
+package org.broadinstitute.gatk.queue.qscripts
 
-import org.broadinstitute.sting.queue.QScript
-import org.broadinstitute.sting.queue.extensions.gatk._
+import org.broadinstitute.gatk.queue.QScript
+import org.broadinstitute.gatk.queue.extensions.gatk._
+import htsjdk.variant.variantcontext.VariantContext.Type
 
 class HardFilter extends QScript {
     // Create an alias 'qscript' to be able to access variables in the HardFilter.
@@ -55,8 +56,8 @@ class HardFilter extends QScript {
     def script() {
 	val selectSNP = new SelectVariants with HF_Arguments
 	selectSNP.V = rawVCF
-	selectSNP.selectType :+= org.broadinstitute.variant.variantcontext.VariantContext.Type.SNP
-	selectSNP.selectType :+= org.broadinstitute.variant.variantcontext.VariantContext.Type.NO_VARIATION
+	selectSNP.selectType :+= Type.SNP
+	selectSNP.selectType :+= Type.NO_VARIATION
 	selectSNP.out = qscript.out + ".raw_snps.vcf"
 
 	val SNPfilter = new VariantFiltration with HF_Arguments
@@ -73,7 +74,7 @@ class HardFilter extends QScript {
 
 	val selectINDEL = new SelectVariants with HF_Arguments
 	selectINDEL.V = rawVCF
-	selectINDEL.selectType :+= org.broadinstitute.variant.variantcontext.VariantContext.Type.INDEL
+	selectINDEL.selectType :+= Type.INDEL
 	selectINDEL.out = qscript.out + ".raw_indels.vcf"
 
 	val INDELfilter = new VariantFiltration with HF_Arguments
