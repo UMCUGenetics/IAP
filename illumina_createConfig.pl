@@ -23,24 +23,24 @@ interactive() if @ARGV == 0;
 ### Parse options ###
 my $iniFile;
 my $outputDir;
-my @rawDataDirs;
+my @fastqDirs;
 my $mail;
 my $help;
 my $run;
 
 GetOptions ("iniFile|i=s" => \$iniFile,
 	    "outputDir|o=s" => \$outputDir,
-	    "rawDataDir|r=s" => \@rawDataDirs,
+	    "fastqDir|f=s" => \@fastqDirs,
 	    "mail|m=s" => \$mail,
 	    "help|h" => \$help,
 	    "run" => \$run)
 or die usage();
 
-if ($help || ! $iniFile || ! $outputDir || ! @rawDataDirs || ! $mail ) { usage() }
+if ($help || ! $iniFile || ! $outputDir || ! @fastqDirs || ! $mail ) { usage() }
 
 ### Non interactive mode ###
 $iniFile = $settingsDir."/".$iniFile;
-createConfig($iniFile,$outputDir,\@rawDataDirs,$mail,$run);
+createConfig($iniFile,$outputDir,\@fastqDirs,$mail,$run);
 
 ### Interactive mode ###
 sub interactive{
@@ -63,7 +63,7 @@ sub interactive{
     print "Raw data project dir: ";
     chomp(my $rawDataDir = <STDIN>); # no tab completion
     if($rawDataDir eq "") { die "Please provide a correct raw data directory." } #check for existence
-    push(@rawDataDirs, $rawDataDir);
+    push(@fastqDirs, $rawDataDir);
     
     #Output dir
     print "Mail address: ";
@@ -71,7 +71,7 @@ sub interactive{
     if ($mail eq "") { die "Please provide a correct mail address." }
     
     #Create config
-    createConfig($iniFile,$outputDir,\@rawDataDirs,$mail,$run);
+    createConfig($iniFile,$outputDir,\@fastqDirs,$mail,$run);
 }
 
 ### Parse and print available ini files ###
@@ -96,7 +96,7 @@ sub getIniFiles{
 sub createConfig {
     my $iniFile = $_[0];
     my $outputDir = $_[1];
-    my @rawDataDirs = @{$_[2]};
+    my @fastqDirs = @{$_[2]};
     my $mail = $_[3];
     my $run = $_[4];
 
@@ -114,10 +114,10 @@ sub createConfig {
 
     print CONFIG "\n### FASTQ FILES ###";
     #Find fastq files for each rawDataDir
-    foreach my $rawDataDir (@rawDataDirs){
-	if(! -e $rawDataDir) { die "$rawDataDir does not exist." }
-	print CONFIG "\n# $rawDataDir\n";
-	my @files = glob($rawDataDir."/*{/,}*.fastq.gz");
+    foreach my $fastqDir (@fastqDirs){
+	if(! -e $fastqDir) { die "$fastqDir does not exist." }
+	print CONFIG "\n# $fastqDir\n";
+	my @files = glob($fastqDir."/*{/,}*.fastq.gz");
 	foreach my $file (@files){ print CONFIG "FASTQ\t$file\n" }
     }
 
@@ -135,7 +135,7 @@ sub createConfig {
 sub usage{
     print "Usage: perl illumina_createConfig.pl\n\n";
     print "Advanced usage: \n";
-    print "perl illumina_createConfig.pl -i|-iniFile settings.ini -o|-outputDir /path/to/outputDir -r|-rawDataDir /hiseq/140305_D00267_0081_AH8DB2ADXX/Unaligned/Project_1/ -r|-rawDataDir /hiseq/140305_D00267_0081_AH8DB2ADXX/Unaligned/Project_2 -m|-mail example\@mail.nl [-run]\n\n";
+    print "illumina_createConfig.pl -i|-iniFile settings.ini -o|-outputDir /path/to/outputDir -f|-fastqDir /hiseq/140305_D00267_0081_AH8DB2ADXX/Unaligned/Project_1/ -f|-fastqDir /hiseq/140305_D00267_0081_AH8DB2ADXX/Unaligned/Project_2 -m|-mail example\@mail.nl [-run]\n\n";
     print "Available ini files:\n";
     getIniFiles($settingsDir);
     exit;
