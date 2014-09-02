@@ -18,12 +18,14 @@ use File::Path qw(make_path);
 my $settingsDir = dirname(abs_path($0))."/settings";
 
 ### Check usage ###
-interactive() if @ARGV == 0;
+#interactive() if @ARGV == 0;
 
 ### Parse options ###
 my $iniFile;
 my $outputDir;
 my @fastqDirs;
+my @bamDirs;
+my $vcfFile;
 my $mail;
 my $help;
 my $run;
@@ -31,48 +33,18 @@ my $run;
 GetOptions ("iniFile|i=s" => \$iniFile,
 	    "outputDir|o=s" => \$outputDir,
 	    "fastqDir|f=s" => \@fastqDirs,
+	    "bamDir|b=s" => \@bamDirs,
+	    "vcfFile|v=s" => \$vcfFile,
 	    "mail|m=s" => \$mail,
 	    "help|h" => \$help,
 	    "run" => \$run)
 or die usage();
 
-if ($help || ! $iniFile || ! $outputDir || ! @fastqDirs || ! $mail ) { usage() }
+if ($help || ! $iniFile || ! $outputDir || ! (@fastqDirs || @bamDirs || $vcfFile ) || ! $mail ) { usage() }
 
 ### Non interactive mode ###
 $iniFile = $settingsDir."/".$iniFile;
 createConfig($iniFile,$outputDir,\@fastqDirs,$mail,$run);
-
-### Interactive mode ###
-sub interactive{
-    print "Using interactive mode \n";
-    print "Avaible setting files:\n";
-    my @iniFiles = getIniFiles($settingsDir);
-    
-    # Settings file
-    print "Choose setting file [index]: ";
-    chomp(my $iniIndex = <STDIN>);
-    if ($iniIndex eq "" || ! $iniFiles[$iniIndex] ) { die "Please provide a correct ini index number." }
-    my $iniFile = $settingsDir ."/". $iniFiles[$iniIndex];
-    
-    #Output dir
-    print "Output dir: ";
-    chomp($outputDir = <STDIN>); # no tab completion
-    if ($outputDir eq "") { die "Please provide a correct output directory." }
-    
-    #Raw data dir -> add while loop to allow for multiple raw data dirs.
-    print "Raw data project dir: ";
-    chomp(my $rawDataDir = <STDIN>); # no tab completion
-    if($rawDataDir eq "") { die "Please provide a correct raw data directory." } #check for existence
-    push(@fastqDirs, $rawDataDir);
-    
-    #Output dir
-    print "Mail address: ";
-    chomp($mail = <STDIN>);
-    if ($mail eq "") { die "Please provide a correct mail address." }
-    
-    #Create config
-    createConfig($iniFile,$outputDir,\@fastqDirs,$mail,$run);
-}
 
 ### Parse and print available ini files ###
 sub getIniFiles{
@@ -112,17 +84,35 @@ sub createConfig {
     print CONFIG "OUTPUT_DIR\t$outputDir\n";
     print CONFIG "MAIL\t$mail\n";
 
-    print CONFIG "\n### FASTQ FILES ###";
-    #Find fastq files for each rawDataDir
-    foreach my $fastqDir (@fastqDirs){
-	if(! -e $fastqDir) { die "$fastqDir does not exist." }
-	print CONFIG "\n# $fastqDir\n";
-	my @files = glob($fastqDir."/*{/,}*.fastq.gz");
-	foreach my $file (@files){ print CONFIG "FASTQ\t$file\n" }
+    if(@fastqDirs){
+	print CONFIG "\n### FASTQ FILES ###\n";
+	#Find fastq files for each rawDataDir
+	foreach my $fastqDir (@fastqDirs){
+	    if(! -e $fastqDir) { die "$fastqDir does not exist." }
+	    print CONFIG "# $fastqDir\n";
+	    my @fastqFiles = glob($fastqDir."/*{/,}*.fastq.gz");
+	    foreach my $fastqFile (@fastqFiles){ print CONFIG "FASTQ\t$fastqFile\n" }
+	}
+    }
+
+    if(@bamDirs){
+	print CONFIG "\n### BAM FILES###\n";
+	foreach my $bamDir (@bamDirs){
+	    if(! -e $bamDir) { die "$bamDir does not exist." }
+	    print CONFIG "# $bamDir\n";
+	    my @bamFiles = glob($bamDir."/*{/,}*.bam");
+	    foreach my $bamFile (@bamFiles){ print CONFIG "BAM\t$bamFile\n" }
+	}
+    }
+
+    if($vcfFile){
+	print CONFIG "\n### VCF FILE###\n";
+	if(! -e $vcfFile) { die "$vcfFile does not exist." }
+	print CONFIG "VCF\t$vcfFile\n"
     }
 
     close CONFIG;
-    
+
     ###Run pipeline if -run is specified 
     if($run) {
 	### run pipeline
@@ -141,3 +131,34 @@ sub usage{
     exit;
 }
 
+### Interactive mode ###
+sub interactive{
+    print "Using interactive mode \n";
+    print "Avaible setting files:\n";
+    my @iniFiles = getIniFiles($settingsDir);
+
+    # Settings file
+    print "Choose setting file [index]: ";
+    chomp(my $iniIndex = <STDIN>);
+    if ($iniIndex eq "" || ! $iniFiles[$iniIndex] ) { die "Please provide a correct ini index number." }
+    my $iniFile = $settingsDir ."/". $iniFiles[$iniIndex];
+
+    #Output dir
+    print "Output dir: ";
+    chomp($outputDir = <STDIN>); # no tab completion
+    if ($outputDir eq "") { die "Please provide a correct output directory." }
+
+    #Raw data dir -> add while loop to allow for multiple raw data dirs.
+    print "Raw data project dir: ";
+    chomp(my $rawDataDir = <STDIN>); # no tab completion
+    if($rawDataDir eq "") { die "Please provide a correct raw data directory." } #check for existence
+    push(@fastqDirs, $rawDataDir);
+
+    #Output dir
+    print "Mail address: ";
+    chomp($mail = <STDIN>);
+    if ($mail eq "") { die "Please provide a correct mail address." }
+
+    #Create config
+    createConfig($iniFile,$outputDir,\@fastqDirs,$mail,$run);
+}
