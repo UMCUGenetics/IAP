@@ -60,7 +60,7 @@ while(<CONFIGURATION>){
 	}
 	close INI;
     #parse other config attributes
-    } elsif($key eq 'FASTQ') {
+    } elsif($key eq 'FASTQ' || $key eq 'BAM') {
         $opt{$key}->{$val} = 1;
     } else {
         $opt{$key} = $val;
@@ -74,7 +74,7 @@ close CONFIGURATION;
 ### Check config file
 if(! $opt{INIFILE}){ die "ERROR: No INIFILE found in .conf file\n" }
 if(! $opt{OUTPUT_DIR}){ die "ERROR: No OUTPUT_DIR found in .conf file\n" }
-if(! $opt{FASTQ}){ die "ERROR: No FASTQ files specified\n" }
+if(! ($opt{FASTQ} || $opt{BAM} || $opt{VCF}) ){ die "ERROR: No FASTQ/BAM/VCF files specified\n" }
 if(! $opt{PRESTATS}){ die "ERROR: No PRESTATS option in .conf file \n" }
 if(! $opt{MAPPING}){ die "ERROR: No MAPPING option in .conf file \n" }
 if(! $opt{POSTSTATS}){ die "ERROR: No POSTSTATS option in .conf file \n" }
@@ -85,9 +85,21 @@ if(! $opt{FILTER_VARIANTS}){ die "ERROR: No FILTER_VARIANTS option in .conf file
 if(! $opt{ANNOTATE_VARIANTS}){ die "ERROR: No ANNOTATE_VARIANTS option in .conf file \n" }
 if(! $opt{CHECKING}){ die "ERROR: No CHECKING option in .conf file \n" }
 
-###Read samples from FASTQ's
+###Parse samples from FASTQ or BAM files
 getSamples();
 createOutputDirs();
+
+### Symlink bam files
+if ( $opt{BAM} ) {
+    foreach my $input (keys %{$opt{BAM}}){
+	my $bamFile = (split("/", $input))[-1];
+	my $sampleName = (split("_", $bamFile))[0];
+	print "\n$sampleName\n";
+	symlink("$input","$opt{OUTPUT_DIR}/$sampleName/mapping/$sampleName\_dedup.bam");
+	symlink("$input.bai","$opt{OUTPUT_DIR}/$sampleName/mapping/$sampleName\_dedup.bam.bai");
+    }
+}
+
 
 ### Copy ini file to logs dir
 system "cp $opt{INIFILE} $opt{OUTPUT_DIR}/logs";
@@ -101,7 +113,7 @@ if($opt{PRESTATS} eq "yes"){
 if($opt{MAPPING} eq "yes"){
     print "\n###SCHEDULING MAPPING###\n";
     my $mappingJobs = illumina_mapping::runMapping(\%opt);
-    
+
     foreach my $sample (keys %{$mappingJobs}){
 	push (@{$opt{RUNNING_JOBS}->{$sample}} , $mappingJobs->{$sample});
     }
@@ -168,11 +180,25 @@ if($opt{CHECKING} eq "yes"){
 ############ SUBROUTINES  ############
 sub getSamples{
     my %samples;
-    foreach my $input (keys %{$opt{FASTQ}}){
-	my $fastqFile = (split("/", $input))[-1];
-	my $sampleName =  (split("_", $fastqFile))[0];
-	$samples{$sampleName} ++;
+
+    #parse fastq files
+    if ($opt{FASTQ}){
+	foreach my $input (keys %{$opt{FASTQ}}){
+	    my $fastqFile = (split("/", $input))[-1];
+	    my $sampleName = (split("_", $fastqFile))[0];
+	    $samples{$sampleName} ++;
+	}
     }
+
+    #parse bam files
+    if ($opt{BAM}){
+	foreach my $input (keys %{$opt{BAM}}){
+	    my $bamFile = (split("/", $input))[-1];
+	    my $sampleName = (split("_", $bamFile))[0];
+	    $samples{$sampleName} ++;
+	}
+    }
+    
     @{$opt{SAMPLES}} = keys(%samples);
 }
 
