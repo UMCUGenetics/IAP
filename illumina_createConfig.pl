@@ -44,7 +44,7 @@ if ($help || ! $iniFile || ! $outputDir || ! (@fastqDirs || @bamDirs || $vcfFile
 
 ### Non interactive mode ###
 $iniFile = $settingsDir."/".$iniFile;
-createConfig($iniFile,$outputDir,\@fastqDirs,$mail,$run);
+createConfig($iniFile,$outputDir,\@fastqDirs,\@bamDirs,$vcfFile,$mail,$run);
 
 ### Parse and print available ini files ###
 sub getIniFiles{
@@ -69,8 +69,10 @@ sub createConfig {
     my $iniFile = $_[0];
     my $outputDir = $_[1];
     my @fastqDirs = @{$_[2]};
-    my $mail = $_[3];
-    my $run = $_[4];
+    my @bamDirs = @{$_[3]};
+    my $vcfFile = $_[4];
+    my $mail = $_[5];
+    my $run = $_[6];
 
     my $configFile = $outputDir."/settings.config";
 
@@ -101,7 +103,10 @@ sub createConfig {
 	    if(! -e $bamDir) { die "$bamDir does not exist." }
 	    print CONFIG "# $bamDir\n";
 	    my @bamFiles = glob($bamDir."/*{/,}*.bam");
-	    foreach my $bamFile (@bamFiles){ print CONFIG "BAM\t$bamFile\n" }
+	    foreach my $bamFile (@bamFiles){
+		if (! -e "$bamFile.bai") { die "ERROR: $bamFile.bai does not exist please create an index for $bamFile" }
+		print CONFIG "BAM\t$bamFile\n"
+	    }
 	}
     }
 
@@ -125,7 +130,7 @@ sub createConfig {
 sub usage{
     print "Usage: perl illumina_createConfig.pl\n\n";
     print "Advanced usage: \n";
-    print "illumina_createConfig.pl -i|-iniFile settings.ini -o|-outputDir /path/to/outputDir -f|-fastqDir /hiseq/140305_D00267_0081_AH8DB2ADXX/Unaligned/Project_1/ -f|-fastqDir /hiseq/140305_D00267_0081_AH8DB2ADXX/Unaligned/Project_2 -m|-mail example\@mail.nl [-run]\n\n";
+    print "illumina_createConfig.pl -i|-iniFile settings.ini -o|-outputDir /path/to/outputDir -f|-fastqDir /hiseq/140305_D00267_0081_AH8DB2ADXX/Unaligned/Project_1 -b|-bamDir /path/to/bam/folder -v|-vcfFile /path/to/vcfFile.vcf -m|-mail example\@mail.nl [-run]\n\n";
     print "Available ini files:\n";
     getIniFiles($settingsDir);
     exit;
