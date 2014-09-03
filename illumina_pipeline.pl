@@ -89,17 +89,7 @@ if(! $opt{CHECKING}){ die "ERROR: No CHECKING option in .conf file \n" }
 getSamples();
 createOutputDirs();
 
-### Symlink bam files
-if ( $opt{BAM} ) {
-    foreach my $input (keys %{$opt{BAM}}){
-	my $bamFile = (split("/", $input))[-1];
-	my $sampleName = (split("_", $bamFile))[0];
-	print "\n$sampleName\n";
-	symlink("$input","$opt{OUTPUT_DIR}/$sampleName/mapping/$sampleName\_dedup.bam");
-	symlink("$input.bai","$opt{OUTPUT_DIR}/$sampleName/mapping/$sampleName\_dedup.bam.bai");
-    }
-}
-
+### Prepare bam files
 
 ### Copy ini file to logs dir
 system "cp $opt{INIFILE} $opt{OUTPUT_DIR}/logs";
@@ -119,6 +109,16 @@ if($opt{MAPPING} eq "yes"){
     }
 
 }
+
+if ( $opt{BAM} ) {
+    print "\n###SCHEDULING BAM PREP###\n";
+    my $bamPrepJobs = illumina_mapping::runBamPrep(\%opt);
+    
+    foreach my $sample (keys %{$bamPrepJobs}){
+	push (@{$opt{RUNNING_JOBS}->{$sample}} , $bamPrepJobs->{$sample});
+    }
+}
+
 
 if($opt{POSTSTATS} eq "yes"){
     print "\n###SCHEDULING POSTSTATS###\n";
@@ -194,7 +194,8 @@ sub getSamples{
     if ($opt{BAM}){
 	foreach my $input (keys %{$opt{BAM}}){
 	    my $bamFile = (split("/", $input))[-1];
-	    my $sampleName = (split("_", $bamFile))[0];
+	    my $sampleName = $bamFile;
+	    $sampleName =~ s/\.bam//g;
 	    $samples{$sampleName} ++;
 	}
     }
@@ -250,9 +251,6 @@ END
     exit;
 }
 
-
-=cut
-############
 sub get_job_id {
    my $id = tmpnam(); 
       $id=~s/\/tmp\/file//;
