@@ -478,7 +478,7 @@ sub runBamPrep {
 	my $sample = $bamFile;
 	$sample =~ s/\.bam//g;
 
-	symlink("$input","$opt{OUTPUT_DIR}/$sample/mapping/$sample\_dedup.bam");
+	symlink($input,"$opt{OUTPUT_DIR}/$sample/mapping/$sample\_dedup.bam");
 	
 	#index and flagstat
 	my $jobId = "PrepBam_$sample\_".get_job_id();

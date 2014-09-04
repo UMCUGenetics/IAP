@@ -89,69 +89,73 @@ if(! $opt{CHECKING}){ die "ERROR: No CHECKING option in .conf file \n" }
 getSamples();
 createOutputDirs();
 
-### Prepare bam files
-
 ### Copy ini file to logs dir
 system "cp $opt{INIFILE} $opt{OUTPUT_DIR}/logs";
 
 ### Start pipeline components
-if($opt{PRESTATS} eq "yes"){
-    print "###SCHEDULING PRESTATS###\n";
-    illumina_prestats::runPreStats(\%opt);
-}
-
-if($opt{MAPPING} eq "yes"){
-    print "\n###SCHEDULING MAPPING###\n";
-    my $mappingJobs = illumina_mapping::runMapping(\%opt);
-
-    foreach my $sample (keys %{$mappingJobs}){
-	push (@{$opt{RUNNING_JOBS}->{$sample}} , $mappingJobs->{$sample});
+if(! ($opt{BAM} || $opt{VCF}) ){
+    if($opt{PRESTATS} eq "yes"){
+	print "###SCHEDULING PRESTATS###\n";
+	illumina_prestats::runPreStats(\%opt);
     }
 
-}
+    if($opt{MAPPING} eq "yes"){
+	print "\n###SCHEDULING MAPPING###\n";
+	my $mappingJobs = illumina_mapping::runMapping(\%opt);
 
-if ( $opt{BAM} ) {
+	foreach my $sample (keys %{$mappingJobs}){
+	    push (@{$opt{RUNNING_JOBS}->{$sample}} , $mappingJobs->{$sample});
+	}
+
+    }
+} elsif ( $opt{BAM} ) {
     print "\n###SCHEDULING BAM PREP###\n";
     my $bamPrepJobs = illumina_mapping::runBamPrep(\%opt);
-    
+
     foreach my $sample (keys %{$bamPrepJobs}){
 	push (@{$opt{RUNNING_JOBS}->{$sample}} , $bamPrepJobs->{$sample});
     }
 }
 
-
-if($opt{POSTSTATS} eq "yes"){
-    print "\n###SCHEDULING POSTSTATS###\n";
-    my $postStatsJob = illumina_poststats::runPostStats(\%opt);
-    $opt{RUNNING_JOBS}->{'postStats'} = $postStatsJob;
-}
-
-if($opt{INDELREALIGNMENT} eq "yes"){
-    print "\n###SCHEDULING INDELREALIGNMENT###\n";
-    my $realignJobs = illumina_realign::runRealignment(\%opt);
-    
-    foreach my $sample (keys %{$realignJobs}){
-	push (@{$opt{RUNNING_JOBS}->{$sample}} , $realignJobs->{$sample});
+if (! $opt{VCF} ){
+    if($opt{POSTSTATS} eq "yes"){
+	print "\n###SCHEDULING POSTSTATS###\n";
+	my $postStatsJob = illumina_poststats::runPostStats(\%opt);
+	$opt{RUNNING_JOBS}->{'postStats'} = $postStatsJob;
     }
-}
 
-if($opt{BASEQUALITYRECAL} eq "yes"){
-    print "\n###SCHEDULING BASERECALIBRATION###\n";
-    my %baseRecalJobs = illumina_baseRecal::runBaseRecalibration(\%opt);
+    if($opt{INDELREALIGNMENT} eq "yes"){
+	print "\n###SCHEDULING INDELREALIGNMENT###\n";
+	my $realignJobs = illumina_realign::runRealignment(\%opt);
     
-    foreach my $sample (keys %baseRecalJobs){
-	push (@{$opt{RUNNING_JOBS}->{$sample}} , $baseRecalJobs{$sample});
+	foreach my $sample (keys %{$realignJobs}){
+	    push (@{$opt{RUNNING_JOBS}->{$sample}} , $realignJobs->{$sample});
+	}
     }
-    
-}
 
-if($opt{VARIANT_CALLING} eq "yes"){
-    print "\n###SCHEDULING VARIANT CALLING####\n";
-    my $VCJob = illumina_calling::runVariantCalling(\%opt);
+    if($opt{BASEQUALITYRECAL} eq "yes"){
+	print "\n###SCHEDULING BASERECALIBRATION###\n";
+	my %baseRecalJobs = illumina_baseRecal::runBaseRecalibration(\%opt);
     
-    foreach my $sample (@{$opt{SAMPLES}}){
-	push (@{$opt{RUNNING_JOBS}->{$sample}} , $VCJob);
+	foreach my $sample (keys %baseRecalJobs){
+	    push (@{$opt{RUNNING_JOBS}->{$sample}} , $baseRecalJobs{$sample});
+	}
+    
     }
+
+    if($opt{VARIANT_CALLING} eq "yes"){
+	print "\n###SCHEDULING VARIANT CALLING####\n";
+	my $VCJob = illumina_calling::runVariantCalling(\%opt);
+    
+	foreach my $sample (@{$opt{SAMPLES}}){
+	    push (@{$opt{RUNNING_JOBS}->{$sample}} , $VCJob);
+	}
+    }
+} elsif ( $opt{VCF} ) {
+    print "\n###RUNNING VCF PREP###\n";
+    my $vcfPrepName = illumina_calling::runVcfPrep(\%opt);
+    
+    @{$opt{SAMPLES}} = ($vcfPrepName);
 }
 
 if($opt{FILTER_VARIANTS} eq "yes"){
