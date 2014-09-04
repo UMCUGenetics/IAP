@@ -130,7 +130,7 @@ sub createConfig {
 sub usage{
     print "Usage: perl illumina_createConfig.pl\n\n";
     print "Advanced usage: \n";
-    print "illumina_createConfig.pl -i|-iniFile settings.ini -o|-outputDir /path/to/outputDir -f|-fastqDir /hiseq/140305_D00267_0081_AH8DB2ADXX/Unaligned/Project_1 -b|-bamDir /path/to/bam/folder -v|-vcfFile /path/to/vcfFile.vcf -m|-mail example\@mail.nl [-run]\n\n";
+    print "illumina_createConfig.pl -i|-iniFile settings.ini -o|-outputDir /path/to/outputDir (-f|-fastqDir /fastqFolder OR -b|-bamDir /bamFolder OR -v|-vcfFile vcfFile.vcf) -m|-mail example\@mail.nl [-run]\n\n";
     print "Available ini files:\n";
     getIniFiles($settingsDir);
     exit;
