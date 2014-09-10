@@ -14,7 +14,6 @@ package illumina_calling;
 use strict;
 use POSIX qw(tmpnam);
 
-
 sub runVariantCalling {
     my $configuration = shift;
     my %opt = %{readConfiguration($configuration)};
@@ -112,6 +111,16 @@ sub runVariantCalling {
     }
     
     return $jobID;
+}
+
+sub runVcfPrep {
+    my $configuration = shift;
+    my %opt = %{readConfiguration($configuration)};
+    my $runName = (split("/", $opt{OUTPUT_DIR}))[-1];
+
+    symlink($opt{VCF},"$opt{OUTPUT_DIR}/$runName.raw_variants.vcf");
+    
+    return $runName;
 }
 
 sub readConfiguration{

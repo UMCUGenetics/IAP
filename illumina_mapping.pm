@@ -468,6 +468,35 @@ sub submitSingleJobs{
 
 }
 
+sub runBamPrep {
+    my $configuration = shift;
+    my %opt = %{readConfiguration($configuration)};
+
+    my $jobIds = {};
+    foreach my $input (keys %{$opt{BAM}}){
+	my $bamFile = (split("/", $input))[-1];
+	my $sample = $bamFile;
+	$sample =~ s/\.bam//g;
+
+	symlink($input,"$opt{OUTPUT_DIR}/$sample/mapping/$sample\_dedup.bam");
+	
+	#index and flagstat
+	my $jobId = "PrepBam_$sample\_".get_job_id();
+	open BAM_SH,">$opt{OUTPUT_DIR}/$sample/jobs/$jobId.sh" or die "Couldn't create $opt{OUTPUT_DIR}/$sample/jobs/$jobId.sh\n";
+	print BAM_SH "cd $opt{OUTPUT_DIR}/$sample/\n";
+	print BAM_SH "$opt{SAMBAMBA_PATH}/sambamba index -t $opt{MAPPING_THREADS} mapping/$sample\_dedup.bam\n";
+	print BAM_SH "$opt{SAMBAMBA_PATH}/sambamba flagstat -t $opt{MAPPING_THREADS} mapping/$sample\_dedup.bam > mapping/$sample\_dedup.flagstat\n";
+	close BAM_SH;
+	
+	system "qsub -q $opt{MAPPING_QUEUE} -P $opt{MAPPING_PROJECT} -m a -M $opt{MAIL} -pe threaded $opt{MAPPING_THREADS} -o $opt{OUTPUT_DIR}/$sample/logs/PrepBam_$sample.out -e $opt{OUTPUT_DIR}/$sample/logs/PrepBam_$sample.err -N $jobId $opt{OUTPUT_DIR}/$sample/jobs/$jobId.sh";
+	
+	$jobIds->{$sample} = $jobId;
+    }
+    return $jobIds;
+}
+
+
+############
 sub readConfiguration {
     my $configuration = shift;
     my %opt;
@@ -487,13 +516,11 @@ sub readConfiguration {
     if(! $opt{CLUSTER_TMP}){ die "ERROR: No CLUSTER_TMP found in .ini file\n" }
     if(! $opt{GENOME}){ die "ERROR: No GENOME found in .ini file\n" }
     if(! $opt{OUTPUT_DIR}){ die "ERROR: No OUTPUT_DIR found in .conf file\n" }
-    if(! $opt{FASTQ}){ die "ERROR: No FASTQ files specified in .conf file\n" }
+    if(! ($opt{FASTQ} || $opt{BAM}) ){ die "ERROR: No FASTQ or BAM files specified in .conf file\n" }
     if(! $opt{MAIL}){die "ERROR: No MAIL address found in .conf file \n" }
     return \%opt;
-    
 }
 
-############
 sub get_job_id {
    my $id = tmpnam();
       $id=~s/\/tmp\/file//;
