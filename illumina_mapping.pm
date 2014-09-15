@@ -97,11 +97,11 @@ sub runMapping {
 
 	if($opt{MAPPING_MODE} eq 'batch'){
 	
-	    submitBatchJobs(\%opt,$QSUB,$samples, $sampleName, $coreName, $R1, $R2);
+	    submitBatchJobs(\%opt,$QSUB,$samples, $sampleName, $coreName, $R1, $R2, $flowcellID);
 	
 	}elsif($opt{MAPPING_MODE} eq 'single'){
 	    
-	    submitSingleJobs(\%opt,$QSUB, $samples, $sampleName, $coreName, $R1, $R2);
+	    submitSingleJobs(\%opt,$QSUB, $samples, $sampleName, $coreName, $R1, $R2, $flowcellID);
 	
 	}
 	
@@ -202,10 +202,10 @@ sub runMapping {
 
 sub submitBatchJobs{
     
-    my ($opt,$QSUB ,$samples, $sampleName, $coreName, $R1, $R2) = @_;
+    my ($opt,$QSUB ,$samples, $sampleName, $coreName, $R1, $R2, $flowcellID) = @_;
     my %opt = %$opt;
     my $jobId = "Map_$coreName\_".get_job_id();
-    my ($RG_PL, $RG_ID, $RG_LB, $RG_SM) = ('ILLUMINA', $coreName, $sampleName, $sampleName);
+    my ($RG_PL, $RG_ID, $RG_LB, $RG_SM, $RG_PU) = ('ILLUMINA', $coreName, $sampleName, $sampleName, $flowcellID);
     
     push(@{$samples->{$sampleName}}, {'jobId'=>$jobId, 'file'=>"$opt{OUTPUT_DIR}/$sampleName/mapping/$coreName\_sorted_dedup.bam"});
     
@@ -305,9 +305,9 @@ sub submitBatchJobs{
 
 sub submitSingleJobs{
 
-    my ($opt,$QSUB ,$samples, $sampleName, $coreName, $R1, $R2) = @_;
+    my ($opt,$QSUB ,$samples, $sampleName, $coreName, $R1, $R2, $flowcellID) = @_;
     my %opt = %$opt;
-    my ($RG_PL, $RG_ID, $RG_LB, $RG_SM) = ('ILLUMINA', $coreName, $sampleName, $sampleName);
+    my ($RG_PL, $RG_ID, $RG_LB, $RG_SM, $RG_PU) = ('ILLUMINA', $coreName, $sampleName, $sampleName, $flowcellID);
     
     my $mappingJobId = "Map_$coreName\_".get_job_id();
     my $mappingFSJobId = "MapFS_$coreName\_".get_job_id();
