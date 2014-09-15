@@ -90,7 +90,7 @@ sub runMapping {
 	$coreName =~ s/\_R1//;
 	$coreName =~ s/\_R2//;
     
-	my ($RG_PL, $RG_ID, $RG_LB, $RG_SM) = ('ILLUMINA_HISEQ', $coreName, $sampleName, $sampleName);
+	my ($RG_PL, $RG_ID, $RG_LB, $RG_SM) = ('ILLUMINA', $coreName, $sampleName, $sampleName);
 	
 	
 	print "Creating $opt{OUTPUT_DIR}/$sampleName/mapping/$coreName\_sorted_dedup.bam with:\n";
@@ -205,7 +205,7 @@ sub submitBatchJobs{
     my ($opt,$QSUB ,$samples, $sampleName, $coreName, $R1, $R2) = @_;
     my %opt = %$opt;
     my $jobId = "Map_$coreName\_".get_job_id();
-    my ($RG_PL, $RG_ID, $RG_LB, $RG_SM) = ('ILLUMINA_HISEQ', $coreName, $sampleName, $sampleName);
+    my ($RG_PL, $RG_ID, $RG_LB, $RG_SM) = ('ILLUMINA', $coreName, $sampleName, $sampleName);
     
     push(@{$samples->{$sampleName}}, {'jobId'=>$jobId, 'file'=>"$opt{OUTPUT_DIR}/$sampleName/mapping/$coreName\_sorted_dedup.bam"});
     
@@ -307,7 +307,7 @@ sub submitSingleJobs{
 
     my ($opt,$QSUB ,$samples, $sampleName, $coreName, $R1, $R2) = @_;
     my %opt = %$opt;
-    my ($RG_PL, $RG_ID, $RG_LB, $RG_SM) = ('ILLUMINA_HISEQ', $coreName, $sampleName, $sampleName);
+    my ($RG_PL, $RG_ID, $RG_LB, $RG_SM) = ('ILLUMINA', $coreName, $sampleName, $sampleName);
     
     my $mappingJobId = "Map_$coreName\_".get_job_id();
     my $mappingFSJobId = "MapFS_$coreName\_".get_job_id();
