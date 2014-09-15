@@ -245,6 +245,9 @@ sub createOutputDirs{
 	if(! -e "$opt{OUTPUT_DIR}/$sample/tmp"){
     	    mkdir("$opt{OUTPUT_DIR}/$sample/tmp") or die "Couldn't create directory: $opt{OUTPUT_DIR}/$sample/tmp\n";
 	}
+	if(! -e "$opt{OUTPUT_DIR}/$sample/variants"){
+    	    mkdir("$opt{OUTPUT_DIR}/$sample/variants") or die "Couldn't create directory: $opt{OUTPUT_DIR}/$sample/variants\n";
+	}
     }
 }
 
