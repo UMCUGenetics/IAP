@@ -72,7 +72,10 @@ sub runVariantCalling {
 	    $command .= "-ip $opt{CALLING_INTERVALPADDING} ";
 	}
     }
-
+    ### retry option
+    if($opt{QUEUE_RETRY} eq 'yes'){
+	$command  .= "-retry 1 ";
+    }
     $command .= "-run";
 
     #Create main bash script
@@ -144,6 +147,7 @@ sub readConfiguration{
     }
     if(! $opt{CALLING_STANDCALLCONF}){ die "ERROR: No CALLING_STANDCALLCONF found in .ini file\n" }
     if(! $opt{CALLING_STANDEMITCONF}){ die "ERROR: No CALLING_STANDEMITCONF found in .ini file\n" }
+    if(! $opt{QUEUE_RETRY}){ die "ERROR: No QUEUE_RETRY found in .ini file\n" }
     if(! $opt{GENOME}){ die "ERROR: No GENOME found in .ini file\n" }
     if(! $opt{OUTPUT_DIR}){ die "ERROR: No OUTPUT_DIR found in .conf file\n" }
     if(! $opt{MAIL}){ die "ERROR: No MAIL address specified in .conf file\n" }
