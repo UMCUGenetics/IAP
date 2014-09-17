@@ -65,7 +65,11 @@ sub runFilterVariants {
 	    $command .= "-indelFilterName $INDELFilterNames[$i] -indelFilterExpression \"$INDELFilterExprs[$i]\" ";
 	}
     }
-
+    ### retry option
+    if($opt{QUEUE_RETRY} eq 'yes'){
+        $command  .= "-retry 1 ";
+    }
+    
     $command .= "-run";
 
     ### Create main bash script
@@ -151,6 +155,7 @@ sub readConfiguration{
 	if(! $opt{FILTER_INDELNAME}){ die "ERROR: No FILTER_INDELNAME found in .ini file\n" }
 	if(! $opt{FILTER_INDELEXPR}){ die "ERROR: No FILTER_INDELEXPR found in .ini file\n" }
     }
+    if(! $opt{QUEUE_RETRY}){ die "ERROR: No QUEUE_RETRY found in .ini file\n" }
     if(! $opt{GENOME}){ die "ERROR: No GENOME found in .ini file\n" }
     if(! $opt{OUTPUT_DIR}){ die "ERROR: No OUTPUT_DIR found in .conf file\n" }
     if(! $opt{MAIL}){die "ERROR: No MAIL address specified in .conf file\n"}
