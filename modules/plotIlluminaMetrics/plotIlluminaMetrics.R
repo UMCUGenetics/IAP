@@ -12,14 +12,16 @@ samples = args[3:length(args)]
 source(paste(rootDir,"plotIlluminaMetrics_include.R",sep="/"))
 dir.create("pdfFigures", showWarnings=F) #create output Dir
 
-#Read in hsmetric table
-fileName = paste(runName,"HSMetric_summary.txt",sep=".")
-hsMetrics = FALSE
+### Set colorscale
 if (length(samples) <= length(cbPalette)){
   colorSet = cbPalette
 } else {
   colorSet = GetRandomColorSet(length(samples))
 }
+
+#Read in hsmetric table
+fileName = paste(runName,"HSMetric_summary.txt",sep=".")
+hsMetrics = FALSE
 if (file.exists(fileName)){
   hsMetrics = TRUE
   summaryTable = read.table(file=fileName, sep="\t", header=TRUE, stringsAsFactors=FALSE)
@@ -43,6 +45,21 @@ if (file.exists(fileName)){
   ggsave(paste(pdfOut,"_pctTargetBases.pdf", sep=""), pctTargetBases, dpi = 300, width=20, height=10)
 }
 
+#Read in WGSMetric table
+fileName = paste(runName,"WGSMetric_summary.txt",sep=".")
+wgsMetrics = FALSE
+if (file.exists(fileName)){
+  wgsMetrics = TRUE
+  summaryTable = read.table(file=fileName, sep="\t", header=TRUE, stringsAsFactors=FALSE)
+  summaryTable$sample = as.character(summaryTable$sample)
+  #summaryTableMelted = melt(summaryTable[,c('sample',)],id.vars = 1)
+  
+  #Transpose and write summaryTable
+  summaryTableT = t(summaryTable)
+  colnames(summaryTableT) = summaryTableT[1,]
+  write.table(summaryTableT, file=paste(runName,"WGSMetric_summary.transposed.txt", sep="."), col.names=FALSE, na="", quote=FALSE, sep="\t")
+}
+  
 #Plot metrics to pdf files.
 for(i in 1:length(samples)) {
   samplePath = paste(samples[i],"QCStats",samples[i],sep="/")

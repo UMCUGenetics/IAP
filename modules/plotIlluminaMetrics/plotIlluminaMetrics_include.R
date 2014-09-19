@@ -57,6 +57,17 @@ plot_quality_distribution_metrics <- function(){
           plot.title = element_text(size=15, face ="bold"))
 }
 
+plot_wgs_metrics <- function(){
+  ggplot(wgsMetrics_sample.table, aes(x=coverage, y=count)) + 
+    geom_bar(stat="identity", width=1, fill="#0072B2") +
+    xlab("Coverage") + ylab("Count") +
+    scale_fill_manual(name="", values=colorSet)+
+    ggtitle(paste("Coverage histogram", samples[i], sep=" ")) +
+    theme(axis.title = element_text(face="bold", size=15),
+          axis.text = element_text(size=15),
+          plot.title = element_text(size=15, face ="bold"))
+}
+
 plot_pctOffBait <- function(){
   ggplot(summaryTable, aes(x=sample, y=PCT_OFF_BAIT, fill=sample)) + 
     geom_bar(stat="identity") +
