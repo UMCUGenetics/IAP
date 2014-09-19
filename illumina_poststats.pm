@@ -89,6 +89,8 @@ sub runPostStats {
 	    system "qsub -q $opt{POSTSTATS_QUEUE} -m a -M $opt{MAIL} -pe threaded $opt{POSTSTATS_THREADS} -o $logDir/PostStats_$runName.out -e $logDir/PostStats_$runName.err -N $jobID $bashFile";
 	    return $jobID;
 	}
+    } else {
+	print "WARNING: $opt{OUTPUT_DIR}/logs/PostStats.done exists, skipping\n";
     }
 }
 
