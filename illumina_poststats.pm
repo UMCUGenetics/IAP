@@ -54,7 +54,7 @@ sub runPostStats {
 		push(@runningJobs, $jobID);
 	    }
 	} else {
-	    unless (-e .$picardOut.$sample."_WGSMetrics.txt"){
+	    unless (-e $picardOut.$sample."_WGSMetrics.txt"){
 		$command = $picard."/CollectWgsMetrics.jar R=$opt{GENOME} OUTPUT=".$picardOut.$sample."_WGSMetrics.txt INPUT=$bam MINIMUM_MAPPING_QUALITY=1 COVERAGE_CAP=$opt{POSTSTATS_COVERAGECAP}";
 		$jobID = bashAndSubmit($command,$sample,\%opt);
 		push(@runningJobs, $jobID);
@@ -74,7 +74,7 @@ sub runPostStats {
 	print OUT "cd $opt{OUTPUT_DIR}\n";
 	print OUT "echo \"Start poststats\t\" `date` \"\t\" `uname -n` >> $opt{OUTPUT_DIR}/logs/$runName.log\n";
 	print OUT "$command\n";
-	print OUT "mv *HSMetric_summary* QCStats/ \n";
+	print OUT "mv *Metric_summary* QCStats/ \n";
 	print OUT "mv *picardMetrics* QCStats/ \n";
 	print OUT "mv figure/ QCStats/ \n\n";
 	print OUT "if [ -f QCStats/*.picardMetrics.pdf -a -f QCStats/*.picardMetrics.html ]\nthen\n";

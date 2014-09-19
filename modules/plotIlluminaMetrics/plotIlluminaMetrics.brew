@@ -40,9 +40,9 @@
 
 <% } %>
 \pagebreak
-<% if (hsMetrics){ %>
-\section*{Hybrid selection specific metrics}
 
+<% if (hsMetrics){ %>
+\section*{Coverage statistics}
 Bait interval file = <%= cat(gsub("_","\\_",tail(strsplit(unique(summaryTable$baitIntervals),"/")[[1]],n=1), fixed=TRUE)) %> \\
 Target interval file = <%= cat(gsub("_","\\_",tail(strsplit(unique(summaryTable$targetIntervals),"/")[[1]],n=1), fixed=TRUE)) %>
 
@@ -65,9 +65,14 @@ Target interval file = <%= cat(gsub("_","\\_",tail(strsplit(unique(summaryTable$
 \pagebreak
 
 \begin{landscape}
-  \section*{Hybrid selection specific metrics summary table}
   <%= include_tbl(tableName=summaryTableT[c(6:(nrow(summaryTableT)-3)), ,drop=FALSE]) %>
 \end{landscape}
+<% } %>
 
+<% if (wgsMetrics){ %>
+\begin{landscape}
+  \section*{Coverage statistics}
+  <%= include_tbl(tableName=summaryTableT[c(6:(nrow(summaryTableT))), ,drop=FALSE]) %>
+\end{landscape}
 <% } %>
 \end{document}
