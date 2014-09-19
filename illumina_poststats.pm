@@ -46,9 +46,16 @@ sub runPostStats {
 	}
 
 	### Calculate HSMetrics -> only if target/bait file are present.
+	### Calculate WGSMetrics if no target/bait files are present.
 	if ( ($opt{POSTSTATS_TARGETS}) && ($opt{POSTSTATS_BAITS}) ) {
 	    unless (-e $picardOut.$sample."_HSMetrics.txt"){
 		$command = $picard."/CalculateHsMetrics.jar R=$opt{GENOME} OUTPUT=".$picardOut.$sample."_HSMetrics.txt INPUT=$bam BAIT_INTERVALS=$opt{POSTSTATS_BAITS} TARGET_INTERVALS=$opt{POSTSTATS_TARGETS} METRIC_ACCUMULATION_LEVEL=SAMPLE";
+		$jobID = bashAndSubmit($command,$sample,\%opt);
+		push(@runningJobs, $jobID);
+	    }
+	} else {
+	    unless (-e .$picardOut.$sample."_WGSMetrics.txt"){
+		$command = $picard."/CollectWgsMetrics.jar R=$opt{GENOME} OUTPUT=".$picardOut.$sample."_WGSMetrics.txt INPUT=$bam MINIMUM_MAPPING_QUALITY=1 COVERAGE_CAP=$opt{POSTSTATS_COVERAGECAP}";
 		$jobID = bashAndSubmit($command,$sample,\%opt);
 		push(@runningJobs, $jobID);
 	    }
@@ -97,6 +104,9 @@ sub readConfiguration{
     if(! $opt{POSTSTATS_THREADS}){ die "ERROR: No POSTSTATS_THREADS found in .ini file\n" }
     if(! $opt{POSTSTATS_MEM}){ die "ERROR: No POSTSTATS_MEM found in .ini file\n" }
     if(! $opt{POSTSTATS_QUEUE}){ die "ERROR: No POSTSTATS_THREADS found in .ini file\n" }
+    if(! ($opt{POSTSTATS_TARGETS}) && ! ($opt{POSTSTATS_BAITS}) ) {
+	if(! $opt{POSTSTATS_COVERAGECAP}){ die "ERROR: No POSTSTATS_COVERAGECAP found in .ini file\n" }
+    }
     if(! $opt{GENOME}){ die "ERROR: No GENOME found in .ini file\n" }
     if(! $opt{OUTPUT_DIR}){ die "ERROR: No OUTPUT_DIR found in .conf file\n" }
     if(! $opt{MAIL}){ die "ERROR: No MAIL address specified in .conf file\n" }
