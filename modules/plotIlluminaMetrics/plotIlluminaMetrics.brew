@@ -72,7 +72,7 @@ Target interval file = <%= cat(gsub("_","\\_",tail(strsplit(unique(summaryTable$
 <% if (wgsMetrics){ %>
 \begin{landscape}
   \section*{Coverage statistics}
-  <%= include_tbl(tableName=summaryTableT[c(6:(nrow(summaryTableT))), ,drop=FALSE]) %>
+  <%= include_tbl(tableName=summaryTableT[c(3:(nrow(summaryTableT))), ,drop=FALSE]) %>
 \end{landscape}
 <% } %>
 \end{document}
