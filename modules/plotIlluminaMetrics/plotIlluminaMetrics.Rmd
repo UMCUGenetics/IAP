@@ -58,13 +58,13 @@ if (hsMetrics){
 
 } else if (wgsMetrics){
   print(xtable(summaryTableT[c(6:(nrow(summaryTableT))),]),type='html')
-  for(i in 1:length(samples)) {
-    samplePath = paste(samples[i],"QCStats",samples[i],sep="/")
-    wd_sample = paste(workingDir, samplePath, sep="/")
-    wgsMetrics_sample = paste(wd_sample,"_WGSMetrics.txt", sep="")
-    wgsMetrics_sample.table = read.table(file=wgsMetrics_sample, skip=10, head=TRUE)
+  #for(i in 1:length(samples)) {
+    #samplePath = paste(samples[i],"QCStats",samples[i],sep="/")
+    #wd_sample = paste(workingDir, samplePath, sep="/")
+    #wgsMetrics_sample = paste(wd_sample,"_WGSMetrics.txt", sep="")
+    #wgsMetrics_sample.table = read.table(file=wgsMetrics_sample, skip=10, head=TRUE)
     
-    print(plot_wgs_metrics())
-  }
+    #print(plot_wgs_metrics())
+  #}
 }
 ```
