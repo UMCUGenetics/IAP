@@ -58,7 +58,10 @@ sub runBaseRecalibration {
 	    @knownFiles = split('\t', $opt{BASERECALIBRATION_KNOWN});
 	    foreach my $knownFile (@knownFiles) { $command .= "-knownSites $knownFile "; }
 	}
-	
+	### retry option
+	if($opt{QUEUE_RETRY} eq 'yes'){
+	    $command  .= "-retry 1 ";
+	}
 	$command .= "-run";
 
 	### Create bash script
@@ -132,6 +135,7 @@ sub readConfiguration{
     if(! $opt{BASERECALIBRATION_SCALA}){ die "ERROR: No BASERECALIBRATION_SCALA found in .ini file\n" }
     if(! $opt{BASERECALIBRATION_SCATTER}){ die "ERROR: No BASERECALIBRATION_SCATTER found in .ini file\n" }
     if(! $opt{CLUSTER_PATH}){ die "ERROR: No CLUSTER_PATH found in .ini file\n" }
+    if(! $opt{QUEUE_RETRY}){ die "ERROR: No QUEUE_RETRY found in .ini file\n" }
     if(! $opt{GENOME}){ die "ERROR: No GENOME found in .ini file\n" }
     if(! $opt{OUTPUT_DIR}){ die "ERROR: No OUTPUT_DIR found in .conf file\n" }
     if(! $opt{SAMPLES}){ die "ERROR: No SAMPLES found\n" }

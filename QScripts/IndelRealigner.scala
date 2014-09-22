@@ -1,8 +1,8 @@
-package org.broadinstitute.sting.queue.qscripts
+package org.broadinstitute.gatk.queue.qscripts
 
-import org.broadinstitute.sting.queue.QScript
-import org.broadinstitute.sting.queue.extensions.gatk._
-import org.broadinstitute.sting.queue.function.ListWriterFunction
+import org.broadinstitute.gatk.queue.QScript
+import org.broadinstitute.gatk.queue.extensions.gatk._
+import org.broadinstitute.gatk.queue.function.ListWriterFunction
 
 class Realigner extends QScript {
     // Create an alias 'qscript' to be able to access variables in the Realigner.

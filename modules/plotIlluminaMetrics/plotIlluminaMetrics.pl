@@ -16,9 +16,8 @@ my $rootDir = dirname(abs_path($0));
 my $runDir = abs_path();
 my $runName = (split("/", $runDir))[-1];
 
-### Setup variables
+### Parse HSMetrics files if present
 my @files = grep -f, <*/QCStats/*HSMetrics\.txt>;
-
 if ( scalar(@files) != 0 ) {
     my $fileName = $runName.".HSMetric_summary.txt";
     open(SUMFILE, ">", $fileName) || die ("Can't create $fileName");
@@ -54,6 +53,35 @@ if ( scalar(@files) != 0 ) {
 	print SUMFILE $sample ."\t". $samplePath ."\t". $baitIntervals ."\t". $targetIntervals ."\t". $line;
     }
 }
+
+### Parse WGSMetrics files if present
+@files = grep -f, <*/QCStats/*WGSMetrics\.txt>;
+if ( scalar(@files) != 0 ) {
+    my $fileName = $runName.".WGSMetric_summary.txt";
+    open(SUMFILE, ">", $fileName) || die ("Can't create $fileName");
+    my $printedHeader = 0;
+    
+    print "Parsing WGSMetric files \n";
+    foreach my $file (@files) {
+	print "\t Parsing: ". $file . "\n";
+	open(FILE, $file) || die ("Can't open $file");
+    
+    #Processing headerlines -> beginning with # or empty lines.
+        while(<FILE> =~ /(^\s*#)(.*)/ || <FILE> eq "") {}
+        
+        my $tableHeader =  <FILE>;
+	unless ($printedHeader) { #print table header once.
+	    print SUMFILE "sample \t samplePath \t". $tableHeader; 
+	    $printedHeader = 1;
+	}
+	
+	my $line = <FILE>; #grep statistics, here we assume one row with statistics.
+	my $sample = (split("/",$file))[0];
+	my $samplePath = (split("_",$file))[0];
+	print SUMFILE $sample ."\t". $samplePath ."\t". $line;
+    }
+}
+
 
 ### Run R plot script and markdown to generate pdf
 system "Rscript $rootDir/plotIlluminaMetrics.R ".$rootDir." ". $runName." ".join(" ",@samples);

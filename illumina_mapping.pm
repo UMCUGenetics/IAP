@@ -5,7 +5,7 @@
 ###using sambamba merge. Aside from mapping the script also runs sambamba flagstat on each *dedup.bam file.
 ###
 ###Author: S.W.Boymans
-###Latest change: temporary replacement of sambamba view with samtools view because of picard errors.
+###Latest change: removed temporary replacement of sambamba view with samtools view because of picard errors.
 ###
 ###
 ##################################################################################################################################################
@@ -21,8 +21,9 @@ sub runMapping {
     my %opt = %{readConfiguration($configuration)};
     
     my $FAI = "$opt{GENOME}\.fai";
-    die "genome $opt{GENOME} does not exists!!\t$!\n" if !-e "$opt{GENOME}.bwt";
-    die "fai file $FAI does not exists!!\n" if !-e $FAI;
+    die "GENOME: $opt{GENOME} does not exists!\n" if !-e "$opt{GENOME}";
+    die "GENOME BWT: $opt{GENOME}.bwt does not exists!\n" if !-e "$opt{GENOME}.bwt";
+    die "GENOME FAI: $FAI does not exists!\n" if !-e $FAI;
     
     my $mainJobID = "$opt{OUTPUT_DIR}/jobs/MapMainJob_".get_job_id().".sh";
 
@@ -89,18 +90,18 @@ sub runMapping {
 	$coreName =~ s/\_R1//;
 	$coreName =~ s/\_R2//;
     
-	my ($RG_PL, $RG_ID, $RG_LB, $RG_SM) = ('ILLUMINA_HISEQ', $coreName, $sampleName, $sampleName);
+	my ($RG_PL, $RG_ID, $RG_LB, $RG_SM) = ('ILLUMINA', $coreName, $sampleName, $sampleName);
 	
 	
 	print "Creating $opt{OUTPUT_DIR}/$sampleName/mapping/$coreName\_sorted_dedup.bam with:\n";
 
 	if($opt{MAPPING_MODE} eq 'batch'){
 	
-	    submitBatchJobs(\%opt,$QSUB,$samples, $sampleName, $coreName, $R1, $R2);
+	    submitBatchJobs(\%opt,$QSUB,$samples, $sampleName, $coreName, $R1, $R2, $flowcellID);
 	
 	}elsif($opt{MAPPING_MODE} eq 'single'){
 	    
-	    submitSingleJobs(\%opt,$QSUB, $samples, $sampleName, $coreName, $R1, $R2);
+	    submitSingleJobs(\%opt,$QSUB, $samples, $sampleName, $coreName, $R1, $R2, $flowcellID);
 	
 	}
 	
@@ -201,10 +202,10 @@ sub runMapping {
 
 sub submitBatchJobs{
     
-    my ($opt,$QSUB ,$samples, $sampleName, $coreName, $R1, $R2) = @_;
+    my ($opt,$QSUB ,$samples, $sampleName, $coreName, $R1, $R2, $flowcellID) = @_;
     my %opt = %$opt;
     my $jobId = "Map_$coreName\_".get_job_id();
-    my ($RG_PL, $RG_ID, $RG_LB, $RG_SM) = ('ILLUMINA_HISEQ', $coreName, $sampleName, $sampleName);
+    my ($RG_PL, $RG_ID, $RG_LB, $RG_SM, $RG_PU) = ('ILLUMINA', $coreName, $sampleName, $sampleName, $flowcellID);
     
     push(@{$samples->{$sampleName}}, {'jobId'=>$jobId, 'file'=>"$opt{OUTPUT_DIR}/$sampleName/mapping/$coreName\_sorted_dedup.bam"});
     
@@ -222,14 +223,10 @@ sub submitBatchJobs{
     
     if($R2){
         print "\t$R1\n\t$R2\n";
-        #temporary replacement of sambamba view with samtools view because of picard errors.
-        #print BWA_SH "$opt{BWA_PATH}/bwa mem -t $opt{MAPPING_THREADS} -c 100 -M -R \"\@RG\tID:$RG_ID\tSM:$RG_SM\tPL:$RG_PL\tLB:$RG_LB\" $opt{GENOME} $R1 $R2 2>>$opt{OUTPUT_DIR}/$sampleName/logs/$coreName\_bwa_log | $opt{SAMBAMBA_PATH}/sambamba view -t $opt{MAPPING_THREADS} --format=bam -S -o $coreName.bam /dev/stdin\n";
-	print BWA_SH "$opt{BWA_PATH}/bwa mem -t $opt{MAPPING_THREADS} -c 100 -M -R \"\@RG\tID:$RG_ID\tSM:$RG_SM\tPL:$RG_PL\tLB:$RG_LB\" $opt{GENOME} $R1 $R2 2>>$opt{OUTPUT_DIR}/$sampleName/logs/$coreName\_bwa_log | $opt{SAMTOOLS_PATH}/samtools view -b -S -o $coreName.bam -\n";
+        print BWA_SH "$opt{BWA_PATH}/bwa mem -t $opt{MAPPING_THREADS} -c 100 -M -R \"\@RG\tID:$RG_ID\tSM:$RG_SM\tPL:$RG_PL\tLB:$RG_LB\tPU:$RG_PU\" $opt{GENOME} $R1 $R2 2>>$opt{OUTPUT_DIR}/$sampleName/logs/$coreName\_bwa_log | $opt{SAMBAMBA_PATH}/sambamba view -t $opt{MAPPING_THREADS} --format=bam -S -o $coreName.bam /dev/stdin\n";
     }else{
         print "\t$R1\n";
-        #temporary replacement of sambamba view with samtools view because of picard errors.
-        #print BWA_SH "$opt{BWA_PATH}/bwa mem -t $opt{MAPPING_THREADS} -c 100 -M -R \"\@RG\tID:$RG_ID\tSM:$RG_SM\tPL:$RG_PL\tLB:$RG_LB\" $opt{GENOME} $R1 2>>$opt{OUTPUT_DIR}/$sampleName/logs/$coreName\_bwa_log | $opt{SAMBAMBA_PATH}/sambamba view -t $opt{MAPPING_THREADS} --format=bam -S -o $coreName.bam /dev/stdin\n";
-	print BWA_SH "$opt{BWA_PATH}/bwa mem -t $opt{MAPPING_THREADS} -c 100 -M -R \"\@RG\tID:$RG_ID\tSM:$RG_SM\tPL:$RG_PL\tLB:$RG_LB\" $opt{GENOME} $R1 2>>$opt{OUTPUT_DIR}/$sampleName/logs/$coreName\_bwa_log | $opt{SAMTOOLS_PATH}/samtools view -b -S -o $coreName.bam -\n";
+        print BWA_SH "$opt{BWA_PATH}/bwa mem -t $opt{MAPPING_THREADS} -c 100 -M -R \"\@RG\tID:$RG_ID\tSM:$RG_SM\tPL:$RG_PL\tLB:$RG_LB\tPU:$RG_PU\" $opt{GENOME} $R1 2>>$opt{OUTPUT_DIR}/$sampleName/logs/$coreName\_bwa_log | $opt{SAMBAMBA_PATH}/sambamba view -t $opt{MAPPING_THREADS} --format=bam -S -o $coreName.bam /dev/stdin\n";
     }
     print BWA_SH "echo \"End mapping\t\" `date` \"\t$coreName\t\" `uname -n` >> $opt{OUTPUT_DIR}/$sampleName/logs/$sampleName.log\n\n";
     print BWA_SH "echo \"Start flagstat\t\" `date` \"\t$coreName.bam\t\" `uname -n` >> $opt{OUTPUT_DIR}/$sampleName/logs/$sampleName.log\n";
@@ -308,9 +305,9 @@ sub submitBatchJobs{
 
 sub submitSingleJobs{
 
-    my ($opt,$QSUB ,$samples, $sampleName, $coreName, $R1, $R2) = @_;
+    my ($opt,$QSUB ,$samples, $sampleName, $coreName, $R1, $R2, $flowcellID) = @_;
     my %opt = %$opt;
-    my ($RG_PL, $RG_ID, $RG_LB, $RG_SM) = ('ILLUMINA_HISEQ', $coreName, $sampleName, $sampleName);
+    my ($RG_PL, $RG_ID, $RG_LB, $RG_SM, $RG_PU) = ('ILLUMINA', $coreName, $sampleName, $sampleName, $flowcellID);
     
     my $mappingJobId = "Map_$coreName\_".get_job_id();
     my $mappingFSJobId = "MapFS_$coreName\_".get_job_id();
@@ -337,15 +334,10 @@ sub submitSingleJobs{
     
     if($R2){
         print "\t$R1\n\t$R2\n";
-        #temporary replacement of sambamba view with samtools view because of picard errors.
-        #print BWA_SH "$opt{BWA_PATH}/bwa mem -t $opt{MAPPING_THREADS} -c 100 -M -R \"\@RG\tID:$RG_ID\tSM:$RG_SM\tPL:$RG_PL\tLB:$RG_LB\" $opt{GENOME} $R1 $R2 2>>$opt{OUTPUT_DIR}/$sampleName/logs/$coreName\_bwa_log | $opt{SAMBAMBA_PATH}/sambamba view -t $opt{MAPPING_THREADS} --format=bam -S -o $coreName.bam /dev/stdin\n";
-	#print BWA_SH "$opt{BWA_PATH}/bwa mem -t $opt{MAPPING_THREADS} -c 100 -M -R \"\@RG\tID:$RG_ID\tSM:$RG_SM\tPL:$RG_PL\tLB:$RG_LB\" $opt{GENOME} $R1 $R2 2>>$opt{OUTPUT_DIR}/$sampleName/logs/$coreName\_bwa_log | $opt{SAMTOOLS_PATH}/samtools view -b -S -o $coreName.bam -\n";
-	print BWA_SH "$opt{BWA_PATH}/bwa mem -t $opt{MAPPING_THREADS} -c 100 -M -R \"\@RG\tID:$RG_ID\tSM:$RG_SM\tPL:$RG_PL\tLB:$RG_LB\" $opt{GENOME} $R1 $R2 2>>$opt{OUTPUT_DIR}/$sampleName/logs/Mapping_$coreName.err | $opt{SAMTOOLS_PATH}/samtools view -b -S -o $coreName.bam -\n";
+        print BWA_SH "$opt{BWA_PATH}/bwa mem -t $opt{MAPPING_THREADS} -c 100 -M -R \"\@RG\tID:$RG_ID\tSM:$RG_SM\tPL:$RG_PL\tLB:$RG_LB\tPU:$RG_PU\" $opt{GENOME} $R1 $R2 2>>$opt{OUTPUT_DIR}/$sampleName/logs/$coreName\_bwa_log | $opt{SAMBAMBA_PATH}/sambamba view -t $opt{MAPPING_THREADS} --format=bam -S -o $coreName.bam /dev/stdin\n";
     }else{
         print "\t$R1\n";
-	#temporary replacement of sambamba view with samtools view because of picard errors.
-        #print BWA_SH "$opt{BWA_PATH}/bwa mem -t $opt{MAPPING_THREADS} -c 100 -M -R \"\@RG\tID:$RG_ID\tSM:$RG_SM\tPL:$RG_PL\tLB:$RG_LB\" $opt{GENOME} $R1 2>>$opt{OUTPUT_DIR}/$sampleName/logs/$coreName\_bwa_log | $opt{SAMBAMBA_PATH}/sambamba view -t $opt{MAPPING_THREADS} --format=bam -S -o $coreName.bam /dev/stdin\n";
-	print BWA_SH "$opt{BWA_PATH}/bwa mem -t $opt{MAPPING_THREADS} -c 100 -M -R \"\@RG\tID:$RG_ID\tSM:$RG_SM\tPL:$RG_PL\tLB:$RG_LB\" $opt{GENOME} $R1 2>>$opt{OUTPUT_DIR}/$sampleName/logs/Mapping_$coreName.err | $opt{SAMTOOLS_PATH}/samtools view -b -S -o $coreName.bam -\n";
+        print BWA_SH "$opt{BWA_PATH}/bwa mem -t $opt{MAPPING_THREADS} -c 100 -M -R \"\@RG\tID:$RG_ID\tSM:$RG_SM\tPL:$RG_PL\tLB:$RG_LB\tPU:$RG_PU\" $opt{GENOME} $R1 2>>$opt{OUTPUT_DIR}/$sampleName/logs/$coreName\_bwa_log | $opt{SAMBAMBA_PATH}/sambamba view -t $opt{MAPPING_THREADS} --format=bam -S -o $coreName.bam /dev/stdin\n";
     }
 
     print BWA_SH "echo \"End mapping\t\" `date` \"\t$coreName\t\" `uname -n` >> $opt{OUTPUT_DIR}/$sampleName/logs/$sampleName.log\n\n";
@@ -476,6 +468,35 @@ sub submitSingleJobs{
 
 }
 
+sub runBamPrep {
+    my $configuration = shift;
+    my %opt = %{readConfiguration($configuration)};
+
+    my $jobIds = {};
+    foreach my $input (keys %{$opt{BAM}}){
+	my $bamFile = (split("/", $input))[-1];
+	my $sample = $bamFile;
+	$sample =~ s/\.bam//g;
+
+	symlink($input,"$opt{OUTPUT_DIR}/$sample/mapping/$sample\_dedup.bam");
+	
+	#index and flagstat
+	my $jobId = "PrepBam_$sample\_".get_job_id();
+	open BAM_SH,">$opt{OUTPUT_DIR}/$sample/jobs/$jobId.sh" or die "Couldn't create $opt{OUTPUT_DIR}/$sample/jobs/$jobId.sh\n";
+	print BAM_SH "cd $opt{OUTPUT_DIR}/$sample/\n";
+	print BAM_SH "$opt{SAMBAMBA_PATH}/sambamba index -t $opt{MAPPING_THREADS} mapping/$sample\_dedup.bam\n";
+	print BAM_SH "$opt{SAMBAMBA_PATH}/sambamba flagstat -t $opt{MAPPING_THREADS} mapping/$sample\_dedup.bam > mapping/$sample\_dedup.flagstat\n";
+	close BAM_SH;
+	
+	system "qsub -q $opt{MAPPING_QUEUE} -P $opt{MAPPING_PROJECT} -m a -M $opt{MAIL} -pe threaded $opt{MAPPING_THREADS} -o $opt{OUTPUT_DIR}/$sample/logs/PrepBam_$sample.out -e $opt{OUTPUT_DIR}/$sample/logs/PrepBam_$sample.err -N $jobId $opt{OUTPUT_DIR}/$sample/jobs/$jobId.sh";
+	
+	$jobIds->{$sample} = $jobId;
+    }
+    return $jobIds;
+}
+
+
+############
 sub readConfiguration {
     my $configuration = shift;
     my %opt;
@@ -486,7 +507,6 @@ sub readConfiguration {
     
     if(! $opt{BWA_PATH}){ die "ERROR: No BWA_PATH found in .ini file\n" }
     if(! $opt{SAMBAMBA_PATH}){ die "ERROR: No SAMBAMBA_PATH found in .ini file\n" }
-    if(! $opt{SAMTOOLS_PATH}){ die "ERROR: No SAMTOOLS_PATH found in .ini file\n" }
     if(! $opt{MAPPING_THREADS}){ die "ERROR: No MAPPING_THREADS found in .ini file\n" }
     if(! $opt{MAPPING_MEM}){ die "ERROR: No MAPPING_MEM found in .ini file\n" }
     if(! $opt{MAPPING_QUEUE}){ die "ERROR: No MAPPING_QUEUE found in .ini file\n" }
@@ -496,13 +516,11 @@ sub readConfiguration {
     if(! $opt{CLUSTER_TMP}){ die "ERROR: No CLUSTER_TMP found in .ini file\n" }
     if(! $opt{GENOME}){ die "ERROR: No GENOME found in .ini file\n" }
     if(! $opt{OUTPUT_DIR}){ die "ERROR: No OUTPUT_DIR found in .conf file\n" }
-    if(! $opt{FASTQ}){ die "ERROR: No FASTQ files specified in .conf file\n" }
+    if(! ($opt{FASTQ} || $opt{BAM}) ){ die "ERROR: No FASTQ or BAM files specified in .conf file\n" }
     if(! $opt{MAIL}){die "ERROR: No MAIL address found in .conf file \n" }
     return \%opt;
-    
 }
 
-############
 sub get_job_id {
    my $id = tmpnam();
       $id=~s/\/tmp\/file//;

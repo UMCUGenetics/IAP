@@ -51,8 +51,12 @@ sub runRealignment {
 	
 	if($opt{REALIGNMENT_KNOWN}) {
 	    foreach my $knownIndelFile (@knownIndelFiles) {
-		print REALIGN_SH "-known $knownIndelFile "
+		print REALIGN_SH "-known $knownIndelFile ";
 	    }
+	}
+	
+	if($opt{QUEUE_RETRY} eq 'yes'){
+	    print REALIGN_SH "-retry 1 ";
 	}
 	
 	open CLEAN_SH, ">$opt{OUTPUT_DIR}/jobs/$cleanupJobId.sh" or die "Couldn't create $opt{OUTPUT_DIR}/jobs/$cleanupJobId.sh\n";
@@ -156,6 +160,11 @@ sub runRealignment {
 		    print REALIGN_SH "-known $knownIndelFile ";
 		}
 	    }
+	    
+	    if($opt{QUEUE_RETRY} eq 'yes'){
+		print REALIGN_SH "-retry 1 ";
+	    }
+	    
 	    print REALIGN_SH "-run -I $opt{OUTPUT_DIR}/$sample/mapping/$sample\_dedup.bam -jobRunner GridEngine\n";
 	    print REALIGN_SH "else\n";
 	    print REALIGN_SH "echo \"ERROR: $sample\_dedup.bam does not exist.\" >&2\n";
@@ -222,6 +231,7 @@ sub readConfiguration{
     if(! $opt{REALIGNMENT_SCALA}){ die "ERROR: No REALIGNMENT_SCALA found in .ini file\n" }
     if(! $opt{REALIGNMENT_SCATTER}){ die "ERROR: No REALIGNMENT_SCATTER found in .ini file\n" }
     if(! $opt{REALIGNMENT_MODE}){ die "ERROR: No REALIGNMENT_MODE found in .ini file\n" }
+    if(! $opt{QUEUE_RETRY}){ die "ERROR: No QUEUE_RETRY found in .ini file\n" }
     if(! $opt{CLUSTER_PATH}){ die "ERROR: No CLUSTER_PATH found in .ini file\n" }
     if(! $opt{GENOME}){ die "ERROR: No GENOME found in .ini file\n" }
     if(! $opt{OUTPUT_DIR}){ die "ERROR: No OUTPUT_DIR found in .conf file\n" }

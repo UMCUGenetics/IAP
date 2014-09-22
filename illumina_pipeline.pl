@@ -60,7 +60,7 @@ while(<CONFIGURATION>){
 	}
 	close INI;
     #parse other config attributes
-    } elsif($key eq 'FASTQ') {
+    } elsif($key eq 'FASTQ' || $key eq 'BAM') {
         $opt{$key}->{$val} = 1;
     } else {
         $opt{$key} = $val;
@@ -74,7 +74,7 @@ close CONFIGURATION;
 ### Check config file
 if(! $opt{INIFILE}){ die "ERROR: No INIFILE found in .conf file\n" }
 if(! $opt{OUTPUT_DIR}){ die "ERROR: No OUTPUT_DIR found in .conf file\n" }
-if(! $opt{FASTQ}){ die "ERROR: No FASTQ files specified\n" }
+if(! ($opt{FASTQ} || $opt{BAM} || $opt{VCF}) ){ die "ERROR: No FASTQ/BAM/VCF files specified\n" }
 if(! $opt{PRESTATS}){ die "ERROR: No PRESTATS option in .conf file \n" }
 if(! $opt{MAPPING}){ die "ERROR: No MAPPING option in .conf file \n" }
 if(! $opt{POSTSTATS}){ die "ERROR: No POSTSTATS option in .conf file \n" }
@@ -85,7 +85,7 @@ if(! $opt{FILTER_VARIANTS}){ die "ERROR: No FILTER_VARIANTS option in .conf file
 if(! $opt{ANNOTATE_VARIANTS}){ die "ERROR: No ANNOTATE_VARIANTS option in .conf file \n" }
 if(! $opt{CHECKING}){ die "ERROR: No CHECKING option in .conf file \n" }
 
-###Read samples from FASTQ's
+###Parse samples from FASTQ or BAM files
 getSamples();
 createOutputDirs();
 
@@ -93,53 +93,69 @@ createOutputDirs();
 system "cp $opt{INIFILE} $opt{OUTPUT_DIR}/logs";
 
 ### Start pipeline components
-if($opt{PRESTATS} eq "yes"){
-    print "###SCHEDULING PRESTATS###\n";
-    illumina_prestats::runPreStats(\%opt);
-}
-
-if($opt{MAPPING} eq "yes"){
-    print "\n###SCHEDULING MAPPING###\n";
-    my $mappingJobs = illumina_mapping::runMapping(\%opt);
-    
-    foreach my $sample (keys %{$mappingJobs}){
-	push (@{$opt{RUNNING_JOBS}->{$sample}} , $mappingJobs->{$sample});
+if(! ($opt{BAM} || $opt{VCF}) ){
+    if($opt{PRESTATS} eq "yes"){
+	print "###SCHEDULING PRESTATS###\n";
+	illumina_prestats::runPreStats(\%opt);
     }
 
-}
+    if($opt{MAPPING} eq "yes"){
+	print "\n###SCHEDULING MAPPING###\n";
+	my $mappingJobs = illumina_mapping::runMapping(\%opt);
 
-if($opt{POSTSTATS} eq "yes"){
-    print "\n###SCHEDULING POSTSTATS###\n";
-    my $postStatsJob = illumina_poststats::runPostStats(\%opt);
-    $opt{RUNNING_JOBS}->{'postStats'} = $postStatsJob;
-}
+	foreach my $sample (keys %{$mappingJobs}){
+	    push (@{$opt{RUNNING_JOBS}->{$sample}} , $mappingJobs->{$sample});
+	}
 
-if($opt{INDELREALIGNMENT} eq "yes"){
-    print "\n###SCHEDULING INDELREALIGNMENT###\n";
-    my $realignJobs = illumina_realign::runRealignment(\%opt);
-    
-    foreach my $sample (keys %{$realignJobs}){
-	push (@{$opt{RUNNING_JOBS}->{$sample}} , $realignJobs->{$sample});
+    }
+} elsif ( $opt{BAM} ) {
+    print "\n###SCHEDULING BAM PREP###\n";
+    my $bamPrepJobs = illumina_mapping::runBamPrep(\%opt);
+
+    foreach my $sample (keys %{$bamPrepJobs}){
+	push (@{$opt{RUNNING_JOBS}->{$sample}} , $bamPrepJobs->{$sample});
     }
 }
 
-if($opt{BASEQUALITYRECAL} eq "yes"){
-    print "\n###SCHEDULING BASERECALIBRATION###\n";
-    my %baseRecalJobs = illumina_baseRecal::runBaseRecalibration(\%opt);
-    
-    foreach my $sample (keys %baseRecalJobs){
-	push (@{$opt{RUNNING_JOBS}->{$sample}} , $baseRecalJobs{$sample});
+if (! $opt{VCF} ){
+    if($opt{POSTSTATS} eq "yes"){
+	print "\n###SCHEDULING POSTSTATS###\n";
+	my $postStatsJob = illumina_poststats::runPostStats(\%opt);
+	$opt{RUNNING_JOBS}->{'postStats'} = $postStatsJob;
     }
-    
-}
 
-if($opt{VARIANT_CALLING} eq "yes"){
-    print "\n###SCHEDULING VARIANT CALLING####\n";
-    my $VCJob = illumina_calling::runVariantCalling(\%opt);
+    if($opt{INDELREALIGNMENT} eq "yes"){
+	print "\n###SCHEDULING INDELREALIGNMENT###\n";
+	my $realignJobs = illumina_realign::runRealignment(\%opt);
     
-    foreach my $sample (@{$opt{SAMPLES}}){
-	push (@{$opt{RUNNING_JOBS}->{$sample}} , $VCJob);
+	foreach my $sample (keys %{$realignJobs}){
+	    push (@{$opt{RUNNING_JOBS}->{$sample}} , $realignJobs->{$sample});
+	}
     }
+
+    if($opt{BASEQUALITYRECAL} eq "yes"){
+	print "\n###SCHEDULING BASERECALIBRATION###\n";
+	my %baseRecalJobs = illumina_baseRecal::runBaseRecalibration(\%opt);
+    
+	foreach my $sample (keys %baseRecalJobs){
+	    push (@{$opt{RUNNING_JOBS}->{$sample}} , $baseRecalJobs{$sample});
+	}
+    
+    }
+
+    if($opt{VARIANT_CALLING} eq "yes"){
+	print "\n###SCHEDULING VARIANT CALLING####\n";
+	my $VCJob = illumina_calling::runVariantCalling(\%opt);
+    
+	foreach my $sample (@{$opt{SAMPLES}}){
+	    push (@{$opt{RUNNING_JOBS}->{$sample}} , $VCJob);
+	}
+    }
+} elsif ( $opt{VCF} ) {
+    print "\n###RUNNING VCF PREP###\n";
+    my $vcfPrepName = illumina_calling::runVcfPrep(\%opt);
+    
+    @{$opt{SAMPLES}} = ($vcfPrepName);
 }
 
 if($opt{FILTER_VARIANTS} eq "yes"){
@@ -168,11 +184,26 @@ if($opt{CHECKING} eq "yes"){
 ############ SUBROUTINES  ############
 sub getSamples{
     my %samples;
-    foreach my $input (keys %{$opt{FASTQ}}){
-	my $fastqFile = (split("/", $input))[-1];
-	my $sampleName =  (split("_", $fastqFile))[0];
-	$samples{$sampleName} ++;
+
+    #parse fastq files
+    if ($opt{FASTQ}){
+	foreach my $input (keys %{$opt{FASTQ}}){
+	    my $fastqFile = (split("/", $input))[-1];
+	    my $sampleName = (split("_", $fastqFile))[0];
+	    $samples{$sampleName} ++;
+	}
     }
+
+    #parse bam files
+    if ($opt{BAM}){
+	foreach my $input (keys %{$opt{BAM}}){
+	    my $bamFile = (split("/", $input))[-1];
+	    my $sampleName = $bamFile;
+	    $sampleName =~ s/\.bam//g;
+	    $samples{$sampleName} ++;
+	}
+    }
+    
     @{$opt{SAMPLES}} = keys(%samples);
 }
 
@@ -214,6 +245,9 @@ sub createOutputDirs{
 	if(! -e "$opt{OUTPUT_DIR}/$sample/tmp"){
     	    mkdir("$opt{OUTPUT_DIR}/$sample/tmp") or die "Couldn't create directory: $opt{OUTPUT_DIR}/$sample/tmp\n";
 	}
+	if(! -e "$opt{OUTPUT_DIR}/$sample/variants"){
+    	    mkdir("$opt{OUTPUT_DIR}/$sample/variants") or die "Couldn't create directory: $opt{OUTPUT_DIR}/$sample/variants\n";
+	}
     }
 }
 
@@ -224,9 +258,6 @@ END
     exit;
 }
 
-
-=cut
-############
 sub get_job_id {
    my $id = tmpnam(); 
       $id=~s/\/tmp\/file//;

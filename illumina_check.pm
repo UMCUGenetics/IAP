@@ -41,45 +41,46 @@ sub runCheck {
 
     ### Check sample steps
     foreach my $sample (@{$opt{SAMPLES}}){
-	print BASH "echo \"Sample: $sample\" >>$logFile\n";
-	if($opt{PRESTATS} eq "yes"){
-	    $doneFile = $opt{OUTPUT_DIR}."/$sample/logs/PreStats_$sample.done";
-	    print BASH "if [ -f $doneFile ]; then\n";
-	    print BASH "\techo \"\t PreStats: done \" >>$logFile\n";
-	    print BASH "else\n";
-	    print BASH "\techo \"\t PreStats: failed \">>$logFile\n";
-	    print BASH "\tfailed=true\n";
-	    print BASH "fi\n";
+	if(! $opt{VCF}) {
+	    print BASH "echo \"Sample: $sample\" >>$logFile\n";
+	    if($opt{PRESTATS} eq "yes" && ! $opt{BAM}){
+		$doneFile = $opt{OUTPUT_DIR}."/$sample/logs/PreStats_$sample.done";
+		print BASH "if [ -f $doneFile ]; then\n";
+		print BASH "\techo \"\t PreStats: done \" >>$logFile\n";
+		print BASH "else\n";
+		print BASH "\techo \"\t PreStats: failed \">>$logFile\n";
+		print BASH "\tfailed=true\n";
+		print BASH "fi\n";
+	    }
+	    if($opt{MAPPING} eq "yes" && ! $opt{BAM}){
+		$doneFile = $opt{OUTPUT_DIR}."/$sample/logs/Mapping_$sample.done";
+		print BASH "if [ -f $doneFile ]; then\n";
+		print BASH "\techo \"\t Mapping: done \" >>$logFile\n";
+		print BASH "else\n";
+		print BASH "\techo \"\t Mapping: failed \">>$logFile\n";
+		print BASH "\tfailed=true\n";
+		print BASH "fi\n";
+	    }
+	    if($opt{INDELREALIGNMENT} eq "yes"){
+		$doneFile = $opt{OUTPUT_DIR}."/$sample/logs/Realignment_$sample.done";
+		print BASH "if [ -f $doneFile ]; then\n";
+		print BASH "\techo \"\t IndelRealignment: done \" >>$logFile\n";
+		print BASH "else\n";
+		print BASH "\techo \"\t IndelRealignment: failed \">>$logFile\n";
+		print BASH "\tfailed=true\n";
+		print BASH "fi\n";
+	    }
+	    if($opt{BASEQUALITYRECAL} eq "yes"){
+		$doneFile = $opt{OUTPUT_DIR}."/$sample/logs/BaseRecalibration_$sample.done";
+		print BASH "if [ -f $doneFile ]; then\n";
+		print BASH "\techo \"\t BaseRecalibration: done \" >>$logFile\n";
+		print BASH "else\n";
+		print BASH "\techo \"\t BaseRecalibration: failed \">>$logFile\n";
+		print BASH "\tfailed=true\n";
+		print BASH "fi\n";
+	    }
+	    print BASH "echo \"\">>$logFile\n\n"; ## empty line between samples
 	}
-	if($opt{MAPPING} eq "yes"){
-	    $doneFile = $opt{OUTPUT_DIR}."/$sample/logs/Mapping_$sample.done";
-	    print BASH "if [ -f $doneFile ]; then\n";
-	    print BASH "\techo \"\t Mapping: done \" >>$logFile\n";
-	    print BASH "else\n";
-	    print BASH "\techo \"\t Mapping: failed \">>$logFile\n";
-	    print BASH "\tfailed=true\n";
-	    print BASH "fi\n";
-	}
-	if($opt{INDELREALIGNMENT} eq "yes"){
-	    $doneFile = $opt{OUTPUT_DIR}."/$sample/logs/Realignment_$sample.done";
-	    print BASH "if [ -f $doneFile ]; then\n";
-	    print BASH "\techo \"\t IndelRealignment: done \" >>$logFile\n";
-	    print BASH "else\n";
-	    print BASH "\techo \"\t IndelRealignment: failed \">>$logFile\n";
-	    print BASH "\tfailed=true\n";
-	    print BASH "fi\n";
-	}
-	if($opt{BASEQUALITYRECAL} eq "yes"){
-	    $doneFile = $opt{OUTPUT_DIR}."/$sample/logs/BaseRecalibration_$sample.done";
-	    print BASH "if [ -f $doneFile ]; then\n";
-	    print BASH "\techo \"\t BaseRecalibration: done \" >>$logFile\n";
-	    print BASH "else\n";
-	    print BASH "\techo \"\t BaseRecalibration: failed \">>$logFile\n";
-	    print BASH "\tfailed=true\n";
-	    print BASH "fi\n";
-	}
-	print BASH "echo \"\">>$logFile\n\n"; ## empty line between samples
-
 	## Running jobs
 	if ( $opt{RUNNING_JOBS}->{$sample} ){
 	    push( @runningJobs, @{$opt{RUNNING_JOBS}->{$sample}} );
@@ -87,7 +88,7 @@ sub runCheck {
     }
 
     ### Check run steps
-    if($opt{POSTSTATS} eq "yes"){
+    if($opt{POSTSTATS} eq "yes" && ! $opt{VCF}){
 	$doneFile = $opt{OUTPUT_DIR}."/logs/PostStats.done";
 	print BASH "if [ -f $doneFile ]; then\n";
 	print BASH "\techo \"PostStats: done \" >>$logFile\n";
@@ -99,7 +100,7 @@ sub runCheck {
 	    push( @runningJobs, $opt{RUNNING_JOBS}->{'postStats'} );
 	}
     }
-    if($opt{VARIANT_CALLING} eq "yes"){
+    if($opt{VARIANT_CALLING} eq "yes" && ! $opt{VCF}){
 	$doneFile = $opt{OUTPUT_DIR}."/logs/VariantCaller.done";
 	print BASH "if [ -f $doneFile ]; then\n";
 	print BASH "\techo \"VariantCaller: done \" >>$logFile\n";
