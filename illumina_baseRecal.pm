@@ -56,7 +56,10 @@ sub runBaseRecalibration {
 	my @knownFiles;
 	if($opt{BASERECALIBRATION_KNOWN}) {
 	    @knownFiles = split('\t', $opt{BASERECALIBRATION_KNOWN});
-	    foreach my $knownFile (@knownFiles) { $command .= "-knownSites $knownFile "; }
+	    foreach my $knownFile (@knownFiles) {
+		if(! -e $knownFile){ die"ERROR: $knownFile does not exist\n" }
+		else { $command .= "-knownSites $knownFile " }
+	    }
 	}
 	### retry option
 	if($opt{QUEUE_RETRY} eq 'yes'){
@@ -80,13 +83,13 @@ sub runBaseRecalibration {
 	print BASERECAL_SH "else\n";
 	print BASERECAL_SH "\techo \"ERROR: $inBam does not exist.\" >&2\n";
 	print BASERECAL_SH "fi\n\n";
-	
+
 	### Generate FlagStats if gatk .done file present
 	print BASERECAL_SH "if [ -f $opt{OUTPUT_DIR}/$sample/tmp/.$outBam\.bam.done ]\n";
 	print BASERECAL_SH "then\n";
 	print BASERECAL_SH "\t$opt{SAMBAMBA_PATH}/sambamba flagstat -t $opt{BASERECALIBRATION_THREADS} $opt{OUTPUT_DIR}/$sample/tmp/$outBam\.bam > $opt{OUTPUT_DIR}/$sample/mapping/$outBam\.flagstat\n";
 	print BASERECAL_SH "fi\n\n";
-	
+
 	### Check FlagStats and move files if correct else print error
 	print BASERECAL_SH "if [ -s $opt{OUTPUT_DIR}/$sample/mapping/$sample\_dedup.flagstat ] && [ -s $opt{OUTPUT_DIR}/$sample/mapping/$outBam\.flagstat ]\n";
 	print BASERECAL_SH "then\n";
@@ -137,6 +140,7 @@ sub readConfiguration{
     if(! $opt{CLUSTER_PATH}){ die "ERROR: No CLUSTER_PATH found in .ini file\n" }
     if(! $opt{QUEUE_RETRY}){ die "ERROR: No QUEUE_RETRY found in .ini file\n" }
     if(! $opt{GENOME}){ die "ERROR: No GENOME found in .ini file\n" }
+    elsif(! -e $opt{GENOME}){ die"ERROR: $opt{GENOME} does not exist\n"}
     if(! $opt{OUTPUT_DIR}){ die "ERROR: No OUTPUT_DIR found in .conf file\n" }
     if(! $opt{SAMPLES}){ die "ERROR: No SAMPLES found\n" }
     if(! $opt{MAIL}){ die "ERROR: No MAIL address specified in .conf file\n" }

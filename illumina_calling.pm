@@ -147,8 +147,11 @@ sub readConfiguration{
     }
     if(! $opt{CALLING_STANDCALLCONF}){ die "ERROR: No CALLING_STANDCALLCONF found in .ini file\n" }
     if(! $opt{CALLING_STANDEMITCONF}){ die "ERROR: No CALLING_STANDEMITCONF found in .ini file\n" }
+    if( $opt{CALLING_TARGETS} && ! -e $opt{CALLING_TARGETS}) { die"ERROR: $opt{CALLING_TARGETS} does not exist\n" }
+    if( $opt{CALLING_DBSNP} && ! -e $opt{CALLING_DBSNP}) { die"ERROR: $opt{CALLING_DBSNP} does not exist\n" }
     if(! $opt{QUEUE_RETRY}){ die "ERROR: No QUEUE_RETRY found in .ini file\n" }
     if(! $opt{GENOME}){ die "ERROR: No GENOME found in .ini file\n" }
+    elsif(! -e $opt{GENOME}){ die"ERROR: $opt{GENOME} does not exist\n"}
     if(! $opt{OUTPUT_DIR}){ die "ERROR: No OUTPUT_DIR found in .conf file\n" }
     if(! $opt{MAIL}){ die "ERROR: No MAIL address specified in .conf file\n" }
     return \%opt;

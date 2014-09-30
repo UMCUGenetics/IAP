@@ -109,6 +109,8 @@ sub readConfiguration{
     if(! ($opt{POSTSTATS_TARGETS}) && ! ($opt{POSTSTATS_BAITS}) ) {
 	if(! $opt{POSTSTATS_COVERAGECAP}){ die "ERROR: No POSTSTATS_COVERAGECAP found in .ini file\n" }
     }
+    if( $opt{POSTSTATS_TARGETS} && ! -e $opt{POSTSTATS_TARGETS}) { die"ERROR: $opt{POSTSTATS_TARGETS} does not exist\n" }
+    if( $opt{POSTSTATS_BAITS} && ! -e $opt{POSTSTATS_BAITS}) { die"ERROR: $opt{POSTSTATS_BAITS} does not exist\n" }
     if(! $opt{GENOME}){ die "ERROR: No GENOME found in .ini file\n" }
     if(! $opt{OUTPUT_DIR}){ die "ERROR: No OUTPUT_DIR found in .conf file\n" }
     if(! $opt{MAIL}){ die "ERROR: No MAIL address specified in .conf file\n" }
