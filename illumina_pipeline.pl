@@ -101,8 +101,9 @@ if(! ($opt{BAM} || $opt{VCF}) ){
 
     if($opt{MAPPING} eq "yes"){
 	print "\n###SCHEDULING MAPPING###\n";
-	my $mappingJobs = illumina_mapping::runMapping(\%opt);
-
+	my ($mappingJobs, $opt_ref) = illumina_mapping::runMapping(\%opt);
+	%opt = %$opt_ref;
+	print "\n\n$opt{BAM_FILES}\n\n";
 	foreach my $sample (keys %{$mappingJobs}){
 	    push (@{$opt{RUNNING_JOBS}->{$sample}} , $mappingJobs->{$sample});
 	}
@@ -110,8 +111,9 @@ if(! ($opt{BAM} || $opt{VCF}) ){
     }
 } elsif ( $opt{BAM} ) {
     print "\n###SCHEDULING BAM PREP###\n";
-    my $bamPrepJobs = illumina_mapping::runBamPrep(\%opt);
-
+    my ($bamPrepJobs, $opt_ref) = illumina_mapping::runBamPrep(\%opt);
+    %opt = %$opt_ref;
+    
     foreach my $sample (keys %{$bamPrepJobs}){
 	push (@{$opt{RUNNING_JOBS}->{$sample}} , $bamPrepJobs->{$sample});
     }
