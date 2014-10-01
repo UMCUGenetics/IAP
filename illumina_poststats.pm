@@ -27,7 +27,7 @@ sub runPostStats {
     
     ### Run Picard for each sample
     foreach my $sample (@{$opt{SAMPLES}}){
-	my $bam = $opt{OUTPUT_DIR}."/".$sample."/mapping/".$sample."_dedup.bam";
+	my $bam = "$opt{OUTPUT_DIR}/$sample/mapping/$opt{BAM_FILES}->{$sample}";
 	my $picardOut = $opt{OUTPUT_DIR}."/".$sample."/QCStats/";
 	my $command;
 	
@@ -139,7 +139,7 @@ sub bashAndSubmit {
     print OUT "cd $opt{OUTPUT_DIR}\n";
     print OUT "$command\n";
     
-    if ( $opt{RUNNING_JOBS}->{$sample} ){
+    if ( @{$opt{RUNNING_JOBS}->{$sample}} ){
 	system "qsub -q $opt{POSTSTATS_QUEUE} -pe threaded $opt{POSTSTATS_THREADS} -o $logDir/PostStats_$sample.out -e $logDir/PostStats_$sample.err -N $jobID -hold_jid ".join(",",@{$opt{RUNNING_JOBS}->{$sample} })." $bashFile";
     } else {
 	system "qsub -q $opt{POSTSTATS_QUEUE} -pe threaded $opt{POSTSTATS_THREADS} -o $logDir/PostStats_$sample.out -e $logDir/PostStats_$sample.err -N $jobID $bashFile";

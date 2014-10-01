@@ -92,9 +92,11 @@ sub runMapping {
     
 	my ($RG_PL, $RG_ID, $RG_LB, $RG_SM) = ('ILLUMINA', $coreName, $sampleName, $sampleName);
 	
-	
-	print "Creating $opt{OUTPUT_DIR}/$sampleName/mapping/$coreName\_sorted_dedup.bam with:\n";
-
+	if($opt{MAPPING_MARKDUP} eq "yes"){
+	    print "Creating $opt{OUTPUT_DIR}/$sampleName/mapping/$coreName\_sorted_dedup.bam with:\n";
+	}elsif($opt{MAPPING_MARKDUP} eq "no"){
+	    print "Creating $opt{OUTPUT_DIR}/$sampleName/mapping/$coreName\_sorted.bam with:\n";
+	}
 	if($opt{MAPPING_MODE} eq 'batch'){
 	
 	    submitBatchJobs(\%opt,$QSUB,$samples, $sampleName, $coreName, $R1, $R2, $flowcellID);
@@ -108,9 +110,6 @@ sub runMapping {
 
     }
 
-
-    my $mergeJobs = {};
-    $opt{BAM_FILES} = {};
     print "\n";
     #Create a merging joblist for every sample
     foreach my $sample (keys %{$samples}){
@@ -123,10 +122,10 @@ sub runMapping {
 	    push(@jobIds, $chunk->{'jobId'});
 	}
 	if($opt{MAPPING_MARKDUP} eq "yes"){
-	    $opt{BAM_FILES}->{$sample} = "$opt{OUTPUT_DIR}/$sample/mapping/$sample.dedup.bam";
+	    $opt{BAM_FILES}->{$sample} = "$sample\_dedup.bam";
 	    print "Creating $opt{BAM_FILES}->{$sample}\n";
 	}elsif($opt{MAPPING_MARKDUP} eq "no"){
-	    $opt{BAM_FILES}->{$sample} = "$opt{OUTPUT_DIR}/$sample/mapping/$sample.bam";
+	    $opt{BAM_FILES}->{$sample} = "$sample.bam";
 	    print "Creating $opt{BAM_FILES}->{$sample}\n";
 	}
 	###Skip mapping if dedup.done file already exists
@@ -136,7 +135,8 @@ sub runMapping {
         }
 	
 	my $jobId = "Merge_$sample\_".get_job_id();
-	$mergeJobs->{$sample} = $jobId;
+	push(@{$opt{RUNNING_JOBS}->{$sample}}, $jobId);
+
 	open MERGE_SH,">$opt{OUTPUT_DIR}/$sample/jobs/$jobId.sh" or die "Couldn't create $opt{OUTPUT_DIR}/$sample/jobs/$jobId.sh\n";
 	print MERGE_SH "\#!/bin/sh\n\n";
 	print MERGE_SH "cd $opt{OUTPUT_DIR}/$sample\n";
@@ -161,11 +161,11 @@ sub runMapping {
 	
 	if($opt{MAPPING_MARKDUP} eq "yes"){
 	    print MERGE_SH "\t$opt{SAMBAMBA_PATH}/sambamba merge -t $opt{MAPPING_THREADS} mapping/$sample\_dedup.bam ".join(" ",@bamList)." 1>>$opt{OUTPUT_DIR}/$sample/logs/Merge_$sample.out 2>>$opt{OUTPUT_DIR}/$sample/logs/Merge_$sample.err\n";
-	    print MERGE_SH "\t$opt{SAMBAMBA_PATH}/sambamba index -t $opt{MAPPING_THREADS} mapping/$sample\_dedup.bam\n";
+	    print MERGE_SH "\t$opt{SAMBAMBA_PATH}/sambamba index -t $opt{MAPPING_THREADS} mapping/$sample\_dedup.bam mapping/$sample\_dedup.bai\n";
 	    print MERGE_SH "\t$opt{SAMBAMBA_PATH}/sambamba flagstat -t $opt{MAPPING_THREADS} mapping/$sample\_dedup.bam > mapping/$sample\_dedup.flagstat\n";
 	}elsif($opt{MAPPING_MARKDUP} eq "no"){
 	    print MERGE_SH "\t$opt{SAMBAMBA_PATH}/sambamba merge -t $opt{MAPPING_THREADS} mapping/$sample.bam ".join(" ",@bamList)." 1>>$opt{OUTPUT_DIR}/$sample/logs/Merge_$sample.out 2>>$opt{OUTPUT_DIR}/$sample/logs/Merge_$sample.err\n";
-	    print MERGE_SH "\t$opt{SAMBAMBA_PATH}/sambamba index -t $opt{MAPPING_THREADS} mapping/$sample.bam\n";
+	    print MERGE_SH "\t$opt{SAMBAMBA_PATH}/sambamba index -t $opt{MAPPING_THREADS} mapping/$sample.bam mapping/$sample.bai\n";
 	    print MERGE_SH "\t$opt{SAMBAMBA_PATH}/sambamba flagstat -t $opt{MAPPING_THREADS} mapping/$sample.bam > mapping/$sample.flagstat\n";
 	}
 	print MERGE_SH "fi\n\n";
@@ -226,13 +226,10 @@ sub runMapping {
     
     }
 
-    
     close $QSUB;
-    
 
     system("sh $mainJobID");
-    
-    return ($mergeJobs, \%opt);
+    return \%opt;
 }
 
 sub submitBatchJobs{
@@ -242,8 +239,11 @@ sub submitBatchJobs{
     my $jobId = "Map_$coreName\_".get_job_id();
     my ($RG_PL, $RG_ID, $RG_LB, $RG_SM, $RG_PU) = ('ILLUMINA', $coreName, $sampleName, $sampleName, $flowcellID);
     
-    push(@{$samples->{$sampleName}}, {'jobId'=>$jobId, 'file'=>"$opt{OUTPUT_DIR}/$sampleName/mapping/$coreName\_sorted_dedup.bam"});
-    
+    if($opt{MAPPING_MARKDUP} eq "yes"){
+	push(@{$samples->{$sampleName}}, {'jobId'=>$jobId, 'file'=>"$opt{OUTPUT_DIR}/$sampleName/mapping/$coreName\_sorted_dedup.bam"});
+    }elsif($opt{MAPPING_MARKDUP} eq "no"){
+	push(@{$samples->{$sampleName}}, {'jobId'=>$jobId, 'file'=>"$opt{OUTPUT_DIR}/$sampleName/mapping/$coreName\_sorted.bam"});
+    }
     ###Skip mapping if coreName_sorted_dedup.done file already exists
     if (-e "$opt{OUTPUT_DIR}/$sampleName/mapping/$coreName.done"){
         warn "\tWARNING: $opt{OUTPUT_DIR}/$sampleName/mapping/$coreName.done exists, skipping\n";
@@ -282,13 +282,14 @@ sub submitBatchJobs{
     print BWA_SH "echo \"End index\t\" `date` \"\t$coreName\_sorted.bam\t\" `uname -n` >> $opt{OUTPUT_DIR}/$sampleName/logs/$sampleName.log\n";
     
     ### MarkDup
-    print BWA_SH "echo \"Start markdup\t\" `date` \"\t$coreName\_sorted.bam\t\" `uname -n` >> $opt{OUTPUT_DIR}/$sampleName/logs/$sampleName.log\n";
-    print BWA_SH "$opt{SAMBAMBA_PATH}/sambamba markdup -t $opt{MAPPING_THREADS} $coreName\_sorted.bam $coreName\_sorted_dedup.bam 1>>$opt{OUTPUT_DIR}/$sampleName/logs/$coreName\_dedup.log 2>>$opt{OUTPUT_DIR}/$sampleName/logs/$coreName\_dedup.err\n";
-    print BWA_SH "echo \"End markdup\t\" `date` \"\t$coreName\_sorted.bam\t\" `uname -n` >> $opt{OUTPUT_DIR}/$sampleName/logs/$sampleName.log\n";
-    print BWA_SH "echo \"Start flagstat\t\" `date` \"\t$coreName\_sorted_dedup.bam\t\" `uname -n` >> $opt{OUTPUT_DIR}/$sampleName/logs/$sampleName.log\n";
-    print BWA_SH "$opt{SAMBAMBA_PATH}/sambamba flagstat -t $opt{MAPPING_THREADS} $coreName\_sorted_dedup.bam > $coreName\_sorted_dedup.flagstat\n";
-    print BWA_SH "echo \"End flagstat\t\" `date` \"\t$coreName\_sorted_dedup.bam\t\" `uname -n` >> $opt{OUTPUT_DIR}/$sampleName/logs/$sampleName.log\n";
-    
+    if($opt{MAPPING_MARKDUP} eq "yes"){
+	print BWA_SH "echo \"Start markdup\t\" `date` \"\t$coreName\_sorted.bam\t\" `uname -n` >> $opt{OUTPUT_DIR}/$sampleName/logs/$sampleName.log\n";
+	print BWA_SH "$opt{SAMBAMBA_PATH}/sambamba markdup -t $opt{MAPPING_THREADS} $coreName\_sorted.bam $coreName\_sorted_dedup.bam 1>>$opt{OUTPUT_DIR}/$sampleName/logs/$coreName\_dedup.log 2>>$opt{OUTPUT_DIR}/$sampleName/logs/$coreName\_dedup.err\n";
+	print BWA_SH "echo \"End markdup\t\" `date` \"\t$coreName\_sorted.bam\t\" `uname -n` >> $opt{OUTPUT_DIR}/$sampleName/logs/$sampleName.log\n";
+	print BWA_SH "echo \"Start flagstat\t\" `date` \"\t$coreName\_sorted_dedup.bam\t\" `uname -n` >> $opt{OUTPUT_DIR}/$sampleName/logs/$sampleName.log\n";
+	print BWA_SH "$opt{SAMBAMBA_PATH}/sambamba flagstat -t $opt{MAPPING_THREADS} $coreName\_sorted_dedup.bam > $coreName\_sorted_dedup.flagstat\n";
+	print BWA_SH "echo \"End flagstat\t\" `date` \"\t$coreName\_sorted_dedup.bam\t\" `uname -n` >> $opt{OUTPUT_DIR}/$sampleName/logs/$sampleName.log\n";
+    }
     ### Check and clean
     print BWA_SH "echo \"Start cleanup\t\" `date` \"\t $coreName \t\" `uname -n` >> $opt{OUTPUT_DIR}/$sampleName/logs/$sampleName.log\n";
     print BWA_SH "rm -f $opt{OUTPUT_DIR}/$sampleName/logs/$coreName\_cleanup.err\n"; #rm old error file
@@ -306,28 +307,34 @@ sub submitBatchJobs{
     print BWA_SH "\techo \"ERROR: Either $coreName.flagstat or $coreName\_sorted.flagstat is empty.\" >> $opt{OUTPUT_DIR}/$sampleName/logs/$coreName\_cleanup.err\n";
     print BWA_SH "fi\n\n";
     
-    print BWA_SH "if [ -s $coreName\_sorted.flagstat ] && [ -s $coreName\_sorted_dedup.flagstat ]\n";
-    print BWA_SH "then\n";
-    print BWA_SH "\tFS1=\`grep -m 1 -P \"\\d+ \" $coreName\_sorted.flagstat | awk '{{split(\$0,columns , \"+\")} print columns[1]}'\`\n";
-    print BWA_SH "\tFS2=\`grep -m 1 -P \"\\d+ \" $coreName\_sorted_dedup.flagstat | awk '{{split(\$0,columns , \"+\")} print columns[1]}'\`\n";
-    print BWA_SH "\tif [ \$FS1 -eq \$FS2 ]\n";
-    print BWA_SH "\tthen\n";
-    print BWA_SH "\t\trm $coreName\_sorted.bam\n";
-    print BWA_SH "\t\trm $coreName\_sorted.bai\n";
-    print BWA_SH "\telse\n";
-    print BWA_SH "\t\techo \"ERROR: $coreName\_sorted.flagstat and $coreName\_sorted_dedup.flagstat do not have the same read counts\" >> $opt{OUTPUT_DIR}/$sampleName/logs/$coreName\_cleanup.err\n";
-    print BWA_SH "\tfi\n";
-    print BWA_SH "else\n";
-    print BWA_SH "\techo \"ERROR: Either $coreName\_sorted.flagstat or $coreName\_sorted_dedup.flagstat is empty.\" >> $opt{OUTPUT_DIR}/$sampleName/logs/$coreName\_cleanup.err\n";
-    print BWA_SH "fi\n\n";
-
+    if($opt{MAPPING_MARKDUP} eq "yes"){
+	print BWA_SH "if [ -s $coreName\_sorted.flagstat ] && [ -s $coreName\_sorted_dedup.flagstat ]\n";
+	print BWA_SH "then\n";
+	print BWA_SH "\tFS1=\`grep -m 1 -P \"\\d+ \" $coreName\_sorted.flagstat | awk '{{split(\$0,columns , \"+\")} print columns[1]}'\`\n";
+	print BWA_SH "\tFS2=\`grep -m 1 -P \"\\d+ \" $coreName\_sorted_dedup.flagstat | awk '{{split(\$0,columns , \"+\")} print columns[1]}'\`\n";
+	print BWA_SH "\tif [ \$FS1 -eq \$FS2 ]\n";
+	print BWA_SH "\tthen\n";
+	print BWA_SH "\t\trm $coreName\_sorted.bam\n";
+	print BWA_SH "\t\trm $coreName\_sorted.bai\n";
+	print BWA_SH "\telse\n";
+	print BWA_SH "\t\techo \"ERROR: $coreName\_sorted.flagstat and $coreName\_sorted_dedup.flagstat do not have the same read counts\" >> $opt{OUTPUT_DIR}/$sampleName/logs/$coreName\_cleanup.err\n";
+	print BWA_SH "\tfi\n";
+	print BWA_SH "else\n";
+	print BWA_SH "\techo \"ERROR: Either $coreName\_sorted.flagstat or $coreName\_sorted_dedup.flagstat is empty.\" >> $opt{OUTPUT_DIR}/$sampleName/logs/$coreName\_cleanup.err\n";
+	print BWA_SH "fi\n\n";
+    }
+    
     print BWA_SH "if [ ! -s $opt{OUTPUT_DIR}/$sampleName/logs/$coreName\_cleanup.err ]\n";
     print BWA_SH "then\n";
     print BWA_SH "\ttouch $opt{OUTPUT_DIR}/$sampleName/mapping/$coreName.done\n";
     print BWA_SH "fi\n\n";
 
     print BWA_SH "mv -f $opt{CLUSTER_TMP}/$jobId/* $opt{OUTPUT_DIR}/$sampleName/mapping/\n";
-    print BWA_SH "if [ -f $opt{OUTPUT_DIR}/$sampleName/mapping/$coreName\_sorted_dedup.bam ];then\n";
+    if($opt{MAPPING_MARKDUP} eq "yes"){
+	print BWA_SH "if [ -f $opt{OUTPUT_DIR}/$sampleName/mapping/$coreName\_sorted_dedup.bam ];then\n";
+    }elsif($opt{MAPPING_MARKDUP} eq "no"){
+	print BWA_SH "if [ -f $opt{OUTPUT_DIR}/$sampleName/mapping/$coreName\_sorted.bam ];then\n";
+    }
     print BWA_SH "\trm -r $opt{CLUSTER_TMP}/$jobId/\n";
     print BWA_SH "fi\n";
     print BWA_SH "echo \"End cleanup\t\" `date` \"\t $coreName \t\" `uname -n` >> $opt{OUTPUT_DIR}/$sampleName/logs/$sampleName.log\n";
@@ -513,28 +520,28 @@ sub submitSingleJobs{
 sub runBamPrep {
     my $configuration = shift;
     my %opt = %{readConfiguration($configuration)};
-    $opt{BAM_FILES} = {}
     my $jobIds = {};
     foreach my $input (keys %{$opt{BAM}}){
 	my $bamFile = (split("/", $input))[-1];
 	my $sample = $bamFile;
 	$sample =~ s/\.bam//g;
-	$opt{BAM_FILES}->{$sample} = "$opt{OUTPUT_DIR}/$sample/mapping/$sample.bam"
-	symlink($input,$opt{BAM_FILES}->{$sample});
+	$opt{BAM_FILES}->{$sample} = "$sample.bam";
+	symlink($input,"$opt{OUTPUT_DIR}/$sample/mapping/$opt{BAM_FILES}->{$sample}");
 	
 	#index and flagstat
 	my $jobId = "PrepBam_$sample\_".get_job_id();
 	open BAM_SH,">$opt{OUTPUT_DIR}/$sample/jobs/$jobId.sh" or die "Couldn't create $opt{OUTPUT_DIR}/$sample/jobs/$jobId.sh\n";
 	print BAM_SH "cd $opt{OUTPUT_DIR}/$sample/\n";
-	print BAM_SH "$opt{SAMBAMBA_PATH}/sambamba index -t $opt{MAPPING_THREADS} mapping/$sample.bam\n";
+	print BAM_SH "$opt{SAMBAMBA_PATH}/sambamba index -t $opt{MAPPING_THREADS} mapping/$sample.bam mapping/$sample.bai\n";
 	print BAM_SH "$opt{SAMBAMBA_PATH}/sambamba flagstat -t $opt{MAPPING_THREADS} mapping/$sample.bam > mapping/$sample.flagstat\n";
 	close BAM_SH;
 	
 	system "qsub -q $opt{MAPPING_QUEUE} -P $opt{MAPPING_PROJECT} -m a -M $opt{MAIL} -pe threaded $opt{MAPPING_THREADS} -o $opt{OUTPUT_DIR}/$sample/logs/PrepBam_$sample.out -e $opt{OUTPUT_DIR}/$sample/logs/PrepBam_$sample.err -N $jobId $opt{OUTPUT_DIR}/$sample/jobs/$jobId.sh";
 	
-	$jobIds->{$sample} = $jobId;
+	push(@{$opt{RUNNING_JOBS}->{$sample}}, $jobId);
+	
     }
-    return ($jobIds, \%opt);
+    return \%opt;
 }
 
 
