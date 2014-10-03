@@ -157,6 +157,7 @@ sub readConfiguration{
     }
     if(! $opt{QUEUE_RETRY}){ die "ERROR: No QUEUE_RETRY found in .ini file\n" }
     if(! $opt{GENOME}){ die "ERROR: No GENOME found in .ini file\n" }
+    elsif(! -e $opt{GENOME}){ die"ERROR: $opt{GENOME} does not exist\n"}
     if(! $opt{OUTPUT_DIR}){ die "ERROR: No OUTPUT_DIR found in .conf file\n" }
     if(! $opt{MAIL}){die "ERROR: No MAIL address specified in .conf file\n"}
 

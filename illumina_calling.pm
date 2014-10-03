@@ -25,7 +25,7 @@ sub runVariantCalling {
     ### Skip variant calling if .raw_variants.vcf already exists
     if (-e "$opt{OUTPUT_DIR}/logs/VariantCaller.done"){
 	warn "WARNING: $opt{OUTPUT_DIR}/logs/VariantCaller.done exists, skipping \n";
-	return $jobID;
+	return \%opt;
     }
     
     ### Build Queue command
@@ -44,20 +44,20 @@ sub runVariantCalling {
 
     ### Add all bams
     foreach my $sample (@{$opt{SAMPLES}}){
-	my $sampleBam;
-        if ($opt{INDELREALIGNMENT} eq "yes" and $opt{BASEQUALITYRECAL} eq "yes") {
-	    $sampleBam = "$sample/mapping/".$sample."_dedup_realigned_recalibrated.bam";
-	} elsif ($opt{INDELREALIGNMENT} eq "yes" and $opt{BASEQUALITYRECAL} eq "no") {
-	    $sampleBam = "$sample/mapping/".$sample."_dedup_realigned.bam";
-	} elsif ($opt{INDELREALIGNMENT} eq "no" and $opt{BASEQUALITYRECAL} eq "yes") {
-	    $sampleBam = "$sample/mapping/".$sample."_dedup_recalibrated.bam";
-	} elsif ($opt{INDELREALIGNMENT} eq "no" and $opt{BASEQUALITYRECAL} eq "no") {
-	    $sampleBam = "$sample/mapping/".$sample."_dedup.bam";
-	}
-	$command .= "-I $opt{OUTPUT_DIR}/$sampleBam ";
-	push( @sampleBams, "$opt{OUTPUT_DIR}/$sampleBam");
+	my $sampleBam = "$opt{OUTPUT_DIR}/$sample/mapping/$opt{BAM_FILES}->{$sample}";
+        #if ($opt{INDELREALIGNMENT} eq "yes" and $opt{BASEQUALITYRECAL} eq "yes") {
+	#    $sampleBam = "$sample/mapping/".$sample."_dedup_realigned_recalibrated.bam";
+	#} elsif ($opt{INDELREALIGNMENT} eq "yes" and $opt{BASEQUALITYRECAL} eq "no") {
+	#    $sampleBam = "$sample/mapping/".$sample."_dedup_realigned.bam";
+	#} elsif ($opt{INDELREALIGNMENT} eq "no" and $opt{BASEQUALITYRECAL} eq "yes") {
+	#    $sampleBam = "$sample/mapping/".$sample."_dedup_recalibrated.bam";
+	#} elsif ($opt{INDELREALIGNMENT} eq "no" and $opt{BASEQUALITYRECAL} eq "no") {
+	#    $sampleBam = "$sample/mapping/".$sample."_dedup.bam";
+	#}
+	$command .= "-I $sampleBam ";
+	push( @sampleBams, $sampleBam);
 	## Running jobs
-	if ( $opt{RUNNING_JOBS}->{$sample} ){
+	if ( @{$opt{RUNNING_JOBS}->{$sample}} ){
 	    push( @runningJobs, @{$opt{RUNNING_JOBS}->{$sample}} );
 	}
     }
@@ -106,6 +106,7 @@ sub runVariantCalling {
     print CALLING_SH "\ttouch $opt{OUTPUT_DIR}/logs/VariantCaller.done\n";
     print CALLING_SH "fi\n\n";
     print CALLING_SH "echo \"Finished variant caller\t\" `date` \"\t\" `uname -n` >> $opt{OUTPUT_DIR}/logs/$runName.log\n";
+    
     #Start main bash script
     if (@runningJobs){
 	system "qsub -q $opt{CALLING_MASTERQUEUE} -m a -M $opt{MAIL} -pe threaded $opt{CALLING_MASTERTHREADS} -o $logDir/VariantCaller_$runName.out -e $logDir/VariantCaller_$runName.err -N $jobID -hold_jid ".join(",",@runningJobs)." $bashFile";
@@ -113,7 +114,12 @@ sub runVariantCalling {
 	system "qsub -q $opt{CALLING_MASTERQUEUE} -m a -M $opt{MAIL} -pe threaded $opt{CALLING_MASTERTHREADS} -o $logDir/VariantCaller_$runName.out -e $logDir/VariantCaller_$runName.err -N $jobID $bashFile";
     }
     
-    return $jobID;
+    ### Store jobID
+    foreach my $sample (@{$opt{SAMPLES}}){
+	push (@{$opt{RUNNING_JOBS}->{$sample}} , $jobID);
+    }
+    
+    return \%opt;
 }
 
 sub runVcfPrep {
@@ -122,8 +128,9 @@ sub runVcfPrep {
     my $runName = (split("/", $opt{OUTPUT_DIR}))[-1];
 
     symlink($opt{VCF},"$opt{OUTPUT_DIR}/$runName.raw_variants.vcf");
+    @{$opt{SAMPLES}} = ($runName);
     
-    return $runName;
+    return \%opt;
 }
 
 sub readConfiguration{
@@ -147,8 +154,11 @@ sub readConfiguration{
     }
     if(! $opt{CALLING_STANDCALLCONF}){ die "ERROR: No CALLING_STANDCALLCONF found in .ini file\n" }
     if(! $opt{CALLING_STANDEMITCONF}){ die "ERROR: No CALLING_STANDEMITCONF found in .ini file\n" }
+    if( $opt{CALLING_TARGETS} && ! -e $opt{CALLING_TARGETS}) { die"ERROR: $opt{CALLING_TARGETS} does not exist\n" }
+    if( $opt{CALLING_DBSNP} && ! -e $opt{CALLING_DBSNP}) { die"ERROR: $opt{CALLING_DBSNP} does not exist\n" }
     if(! $opt{QUEUE_RETRY}){ die "ERROR: No QUEUE_RETRY found in .ini file\n" }
     if(! $opt{GENOME}){ die "ERROR: No GENOME found in .ini file\n" }
+    elsif(! -e $opt{GENOME}){ die"ERROR: $opt{GENOME} does not exist\n"}
     if(! $opt{OUTPUT_DIR}){ die "ERROR: No OUTPUT_DIR found in .conf file\n" }
     if(! $opt{MAIL}){ die "ERROR: No MAIL address specified in .conf file\n" }
     return \%opt;

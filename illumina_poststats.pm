@@ -27,7 +27,7 @@ sub runPostStats {
     
     ### Run Picard for each sample
     foreach my $sample (@{$opt{SAMPLES}}){
-	my $bam = $opt{OUTPUT_DIR}."/".$sample."/mapping/".$sample."_dedup.bam";
+	my $bam = "$opt{OUTPUT_DIR}/$sample/mapping/$opt{BAM_FILES}->{$sample}";
 	my $picardOut = $opt{OUTPUT_DIR}."/".$sample."/QCStats/";
 	my $command;
 	
@@ -109,6 +109,8 @@ sub readConfiguration{
     if(! ($opt{POSTSTATS_TARGETS}) && ! ($opt{POSTSTATS_BAITS}) ) {
 	if(! $opt{POSTSTATS_COVERAGECAP}){ die "ERROR: No POSTSTATS_COVERAGECAP found in .ini file\n" }
     }
+    if( $opt{POSTSTATS_TARGETS} && ! -e $opt{POSTSTATS_TARGETS}) { die"ERROR: $opt{POSTSTATS_TARGETS} does not exist\n" }
+    if( $opt{POSTSTATS_BAITS} && ! -e $opt{POSTSTATS_BAITS}) { die"ERROR: $opt{POSTSTATS_BAITS} does not exist\n" }
     if(! $opt{GENOME}){ die "ERROR: No GENOME found in .ini file\n" }
     if(! $opt{OUTPUT_DIR}){ die "ERROR: No OUTPUT_DIR found in .conf file\n" }
     if(! $opt{MAIL}){ die "ERROR: No MAIL address specified in .conf file\n" }
@@ -137,7 +139,7 @@ sub bashAndSubmit {
     print OUT "cd $opt{OUTPUT_DIR}\n";
     print OUT "$command\n";
     
-    if ( $opt{RUNNING_JOBS}->{$sample} ){
+    if ( @{$opt{RUNNING_JOBS}->{$sample}} ){
 	system "qsub -q $opt{POSTSTATS_QUEUE} -pe threaded $opt{POSTSTATS_THREADS} -o $logDir/PostStats_$sample.out -e $logDir/PostStats_$sample.err -N $jobID -hold_jid ".join(",",@{$opt{RUNNING_JOBS}->{$sample} })." $bashFile";
     } else {
 	system "qsub -q $opt{POSTSTATS_QUEUE} -pe threaded $opt{POSTSTATS_THREADS} -o $logDir/PostStats_$sample.out -e $logDir/PostStats_$sample.err -N $jobID $bashFile";

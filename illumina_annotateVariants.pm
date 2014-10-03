@@ -134,12 +134,15 @@ sub readConfiguration{
     if(! $opt{ANNOTATE_SNPSIFT}){ die "ERROR: No ANNOTATE_SNPSIFT found in .ini file\n" }
     if($opt{ANNOTATE_SNPSIFT} eq "yes"){
 	if(! $opt{ANNOTATE_DBNSFP}){ die "ERROR: No ANNOTATE_DBNSFP found in .ini file\n" }
+	elsif( $opt{ANNOTATE_DBNSFP} && ! -e $opt{ANNOTATE_DBNSFP}) { die"ERROR: $opt{ANNOTATE_DBNSFP} does not exist\n" }
 	if(! $opt{ANNOTATE_FIELDS}){ die "ERROR: No ANNOTATE_FIELDS found in .ini file\n" }
     }
     if(! $opt{ANNOTATE_VCFTOOLS}){ die "ERROR: No ANNOTATE_VCFTOOLS found in .ini file\n" }
     if($opt{ANNOTATE_VCFTOOLS} eq "yes"){
 	if(! $opt{ANNOTATE_FREQ}){ die "ERROR: No ANNOTATE_FREQ found in .ini file\n" }
+	elsif( $opt{ANNOTATE_FREQ} && ! -e $opt{ANNOTATE_FREQ}) { die"ERROR: $opt{ANNOTATE_FREQ} does not exist\n" }
 	if(! $opt{ANNOTATE_DESCR}){ die "ERROR: No ANNOTATE_DESCR found in .ini file\n" }
+	elsif( $opt{ANNOTATE_DESCR} && ! -e $opt{ANNOTATE_DESCR}) { die"ERROR: $opt{ANNOTATE_DESCR} does not exist\n" }
 	if(! $opt{ANNOTATE_COLUMNS}){ die "ERROR: No ANNOTATE_COLUMNS found in .ini file\n" }
     }
     if(! $opt{OUTPUT_DIR}){ die "ERROR: No OUTPUT_DIR found in .conf file\n" }

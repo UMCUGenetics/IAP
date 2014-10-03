@@ -37,6 +37,7 @@ my $configurationFile;
 
 %opt = (
     'RUNNING_JOBS'		=> {}, #do not use in .conf or .ini
+    'BAM_FILES'			=> {}, #do not use in .conf or .ini
     'SAMPLES'			=> undef #do not use in .conf or .ini
 );
 
@@ -93,6 +94,9 @@ createOutputDirs();
 system "cp $opt{INIFILE} $opt{OUTPUT_DIR}/logs";
 
 ### Start pipeline components
+my $opt_ref;
+
+### Mapping or bam input
 if(! ($opt{BAM} || $opt{VCF}) ){
     if($opt{PRESTATS} eq "yes"){
 	print "###SCHEDULING PRESTATS###\n";
@@ -101,22 +105,17 @@ if(! ($opt{BAM} || $opt{VCF}) ){
 
     if($opt{MAPPING} eq "yes"){
 	print "\n###SCHEDULING MAPPING###\n";
-	my $mappingJobs = illumina_mapping::runMapping(\%opt);
-
-	foreach my $sample (keys %{$mappingJobs}){
-	    push (@{$opt{RUNNING_JOBS}->{$sample}} , $mappingJobs->{$sample});
-	}
-
+	$opt_ref = illumina_mapping::runMapping(\%opt);
+	%opt = %$opt_ref;
     }
+
 } elsif ( $opt{BAM} ) {
     print "\n###SCHEDULING BAM PREP###\n";
-    my $bamPrepJobs = illumina_mapping::runBamPrep(\%opt);
-
-    foreach my $sample (keys %{$bamPrepJobs}){
-	push (@{$opt{RUNNING_JOBS}->{$sample}} , $bamPrepJobs->{$sample});
-    }
+    $opt_ref = illumina_mapping::runBamPrep(\%opt);
+    %opt = %$opt_ref;
 }
 
+### Post mapping
 if (! $opt{VCF} ){
     if($opt{POSTSTATS} eq "yes"){
 	print "\n###SCHEDULING POSTSTATS###\n";
@@ -126,38 +125,30 @@ if (! $opt{VCF} ){
 
     if($opt{INDELREALIGNMENT} eq "yes"){
 	print "\n###SCHEDULING INDELREALIGNMENT###\n";
-	my $realignJobs = illumina_realign::runRealignment(\%opt);
-    
-	foreach my $sample (keys %{$realignJobs}){
-	    push (@{$opt{RUNNING_JOBS}->{$sample}} , $realignJobs->{$sample});
-	}
+	$opt_ref = illumina_realign::runRealignment(\%opt);
+	%opt = %$opt_ref;
     }
 
     if($opt{BASEQUALITYRECAL} eq "yes"){
 	print "\n###SCHEDULING BASERECALIBRATION###\n";
-	my %baseRecalJobs = illumina_baseRecal::runBaseRecalibration(\%opt);
-    
-	foreach my $sample (keys %baseRecalJobs){
-	    push (@{$opt{RUNNING_JOBS}->{$sample}} , $baseRecalJobs{$sample});
-	}
-    
+	$opt_ref = illumina_baseRecal::runBaseRecalibration(\%opt);
+	%opt = %$opt_ref;
     }
-
+    
+### Variant Caller or vcf input
     if($opt{VARIANT_CALLING} eq "yes"){
 	print "\n###SCHEDULING VARIANT CALLING####\n";
-	my $VCJob = illumina_calling::runVariantCalling(\%opt);
-    
-	foreach my $sample (@{$opt{SAMPLES}}){
-	    push (@{$opt{RUNNING_JOBS}->{$sample}} , $VCJob);
-	}
+	$opt_ref = illumina_calling::runVariantCalling(\%opt);
+	%opt = %$opt_ref;
     }
+
 } elsif ( $opt{VCF} ) {
     print "\n###RUNNING VCF PREP###\n";
-    my $vcfPrepName = illumina_calling::runVcfPrep(\%opt);
-    
-    @{$opt{SAMPLES}} = ($vcfPrepName);
+    $opt_ref = illumina_calling::runVcfPrep(\%opt);
+    %opt = %$opt_ref;
 }
 
+### Post variant caller
 if($opt{FILTER_VARIANTS} eq "yes"){
     print "\n###SCHEDULING VARIANT FILTRATION####\n";
     my $FVJob = illumina_filterVariants::runFilterVariants(\%opt);
@@ -191,16 +182,18 @@ sub getSamples{
 	    my $fastqFile = (split("/", $input))[-1];
 	    my $sampleName = (split("_", $fastqFile))[0];
 	    $samples{$sampleName} ++;
+	    @{$opt{RUNNING_JOBS}->{$sampleName}} = ();
 	}
     }
 
     #parse bam files
-    if ($opt{BAM}){
+    elsif ($opt{BAM}){
 	foreach my $input (keys %{$opt{BAM}}){
 	    my $bamFile = (split("/", $input))[-1];
 	    my $sampleName = $bamFile;
 	    $sampleName =~ s/\.bam//g;
 	    $samples{$sampleName} ++;
+	    @{$opt{RUNNING_JOBS}->{$sampleName}} = ();
 	}
     }
     
@@ -245,9 +238,9 @@ sub createOutputDirs{
 	if(! -e "$opt{OUTPUT_DIR}/$sample/tmp"){
     	    mkdir("$opt{OUTPUT_DIR}/$sample/tmp") or die "Couldn't create directory: $opt{OUTPUT_DIR}/$sample/tmp\n";
 	}
-	if(! -e "$opt{OUTPUT_DIR}/$sample/variants"){
-    	    mkdir("$opt{OUTPUT_DIR}/$sample/variants") or die "Couldn't create directory: $opt{OUTPUT_DIR}/$sample/variants\n";
-	}
+	#if(! -e "$opt{OUTPUT_DIR}/$sample/variants"){
+    	#    mkdir("$opt{OUTPUT_DIR}/$sample/variants") or die "Couldn't create directory: $opt{OUTPUT_DIR}/$sample/variants\n";
+	#}
     }
 }
 
