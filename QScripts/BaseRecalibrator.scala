@@ -70,7 +70,7 @@ class Realigner extends QScript {
 	// Apply the recalibration to your sequence data
 	printReads.input_file :+= bamFile
 	printReads.BQSR = baseRecalibrator.out
-	printReads.out = swapExt(bamFile, ".bam", "_recalibrated.bam")
+	printReads.out = swapExt(bamFile, "bam", "recalibrated.bam")
 
 	printReads.scatterCount = numScatters
 	printReads.nct = numCPUThreads
