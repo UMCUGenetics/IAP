@@ -114,7 +114,7 @@ sub runFilterVariants {
     print FILTER_SH "echo \"End variant filter\t\" `date` \"\t$runName.raw_variants.vcf\t\" `uname -n` >> $opt{OUTPUT_DIR}/logs/$runName.log\n";
     ### Process runningjobs
     foreach my $sample (@{$opt{SAMPLES}}){
-	if(exists $opt{RUNNING_JOBS}->{$sample}) {
+	if( exists $opt{RUNNING_JOBS}->{$sample} && @{$opt{RUNNING_JOBS}->{$sample}} ) {
 	    push(@runningJobs, join(",",@{$opt{RUNNING_JOBS}->{$sample}}));
 	}
     }

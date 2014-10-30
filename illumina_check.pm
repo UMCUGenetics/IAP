@@ -82,7 +82,7 @@ sub runCheck {
 	    print BASH "echo \"\">>$logFile\n\n"; ## empty line between samples
 	}
 	## Running jobs
-	if ( $opt{RUNNING_JOBS}->{$sample} ){
+	if ( @{$opt{RUNNING_JOBS}->{$sample}} ){
 	    push( @runningJobs, @{$opt{RUNNING_JOBS}->{$sample}} );
 	}
     }
