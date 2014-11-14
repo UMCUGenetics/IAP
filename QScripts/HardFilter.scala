@@ -3,6 +3,7 @@ package org.broadinstitute.gatk.queue.qscripts
 import org.broadinstitute.gatk.queue.QScript
 import org.broadinstitute.gatk.queue.extensions.gatk._
 import htsjdk.variant.variantcontext.VariantContext.Type
+import org.broadinstitute.gatk.utils.variant.GATKVariantContextUtils
 
 class HardFilter extends QScript {
     // Create an alias 'qscript' to be able to access variables in the HardFilter.
@@ -88,6 +89,7 @@ class HardFilter extends QScript {
 	CombineVars.V :+= SNPfilter.out
 	CombineVars.V :+= INDELfilter.out
 	CombineVars.out = qscript.out + ".filtered_variants.vcf"
+	CombineVars.assumeIdenticalSamples = true
 
 	if (filterMode == "SNP" || filterMode == "BOTH") { add(selectSNP, SNPfilter) }
 	if (filterMode == "INDEL" || filterMode == "BOTH") { add(selectINDEL, INDELfilter) }
