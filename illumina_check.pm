@@ -146,7 +146,8 @@ sub runCheck {
     print BASH "\trm -r $opt{OUTPUT_DIR}/*/tmp\n";
     print BASH "\tfind $opt{OUTPUT_DIR}/logs -size 0 -not -name \"*.done\" -delete\n"; 
     print BASH "\tfind $opt{OUTPUT_DIR}/*/logs -size 0 -not -name \"*.done\" -delete\n";
-
+    print BASH "fi\n";
+    
     #Sleep to ensure that email is send from cluster.
     print BASH "sleep 5s \n";
 
