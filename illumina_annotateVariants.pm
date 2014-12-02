@@ -66,7 +66,7 @@ sub runAnnotateVariants {
     if($opt{ANNOTATE_SNPSIFT} eq "yes"){
 	$outvcf = $invcf;
 	$outvcf =~ s/.vcf/_snpSift.vcf/;
-	$command = "java -Xmx".$opt{ANNOTATE_MEM}."g -jar $opt{SNPEFF_PATH}/SnpSift.jar dbnsfp -f $opt{ANNOTATE_FIELDS} -v $opt{ANNOTATE_DBNSFP} $invcf > $outvcf";
+	$command = "java -Xmx".$opt{ANNOTATE_MEM}."g -jar $opt{SNPEFF_PATH}/SnpSift.jar dbnsfp -v -f $opt{ANNOTATE_FIELDS} -db $opt{ANNOTATE_DBNSFP} $invcf > $outvcf";
 	print ANNOTATE_SH "if [ -f $invcf ]\n";
 	print ANNOTATE_SH "then\n";
 	print ANNOTATE_SH "\t$command\n";
