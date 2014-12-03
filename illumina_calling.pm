@@ -45,15 +45,7 @@ sub runVariantCalling {
     ### Add all bams
     foreach my $sample (@{$opt{SAMPLES}}){
 	my $sampleBam = "$opt{OUTPUT_DIR}/$sample/mapping/$opt{BAM_FILES}->{$sample}";
-        #if ($opt{INDELREALIGNMENT} eq "yes" and $opt{BASEQUALITYRECAL} eq "yes") {
-	#    $sampleBam = "$sample/mapping/".$sample."_dedup_realigned_recalibrated.bam";
-	#} elsif ($opt{INDELREALIGNMENT} eq "yes" and $opt{BASEQUALITYRECAL} eq "no") {
-	#    $sampleBam = "$sample/mapping/".$sample."_dedup_realigned.bam";
-	#} elsif ($opt{INDELREALIGNMENT} eq "no" and $opt{BASEQUALITYRECAL} eq "yes") {
-	#    $sampleBam = "$sample/mapping/".$sample."_dedup_recalibrated.bam";
-	#} elsif ($opt{INDELREALIGNMENT} eq "no" and $opt{BASEQUALITYRECAL} eq "no") {
-	#    $sampleBam = "$sample/mapping/".$sample."_dedup.bam";
-	#}
+
 	$command .= "-I $sampleBam ";
 	push( @sampleBams, $sampleBam);
 	## Running jobs
@@ -72,6 +64,10 @@ sub runVariantCalling {
 	    $command .= "-ip $opt{CALLING_INTERVALPADDING} ";
 	}
     }
+    if ( $opt{CALLING_PLOIDY} ) {
+	$command .= "-ploidy $opt{CALLING_PLOIDY} ";
+    }
+    
     ### retry option
     if($opt{QUEUE_RETRY} eq 'yes'){
 	$command  .= "-retry 1 ";

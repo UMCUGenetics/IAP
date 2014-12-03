@@ -104,7 +104,9 @@ sub createConfig {
 	    print CONFIG "# $bamDir\n";
 	    my @bamFiles = glob($bamDir."/*{/,}*.bam");
 	    foreach my $bamFile (@bamFiles){
-		if (! -e "$bamFile.bai") { die "ERROR: $bamFile.bai does not exist please create an index for $bamFile" }
+		my $baiFile = $bamFile;
+		$baiFile =~ s/\.bam/.bai/;
+		if (! (-e $baiFile || -e "$bamFile.bai")) { die "ERROR: $bamFile.bai or $baiFile does not exist please create an index for $bamFile" }
 		print CONFIG "BAM\t$bamFile\n"
 	    }
 	}

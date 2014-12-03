@@ -89,6 +89,7 @@ CALLING_TARGETS	SS_exome_v5_S04380110_Covered_GATK.interval_list
 CALLING_INTERVALPADDING	20
 CALLING_STANDCALLCONF	30
 CALLING_STANDEMITCONF	15
+CALLING_PLOIDY	2
 # Only UG
 #CALLING_UGMODE	BOTH
 
@@ -115,7 +116,7 @@ ANNOTATE_MEM	5
 ## SnpEff
 ANNOTATE_SNPEFF	yes
 ANNOTATE_DB	GRCh37.74
-ANNOTATE_FLAGS	-hgvs -lof
+ANNOTATE_FLAGS	-hgvs -lof -no-downstream -no-upstream -no-intergenic
 ## SnpSift
 ANNOTATE_SNPSIFT	yes
 ANNOTATE_DBNSFP	/hpc/cog_bioinf/common_scripts/snpEff/data/dbNSFPv2.7/dbNSFP2.7.txt.gz

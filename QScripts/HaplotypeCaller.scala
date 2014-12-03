@@ -43,6 +43,9 @@ class VariantCaller extends QScript {
     @Argument(doc="Amount of padding (in bp) to add to each interval", shortName="ip", required=false)
     var intervalPadding: Int = 0
 
+    @Argument(doc="Ploidy (number of chromosomes) per sample", shortName="ploidy", required=false)
+    var samplePloidy: Int = 2
+
     def script() {
 	val haplotypeCaller = new HaplotypeCaller
 
@@ -66,7 +69,9 @@ class VariantCaller extends QScript {
 	    haplotypeCaller.L :+= targetFile
 	    haplotypeCaller.ip = intervalPadding
 	}
-
+	
+	haplotypeCaller.sample_ploidy = samplePloidy
+	
 	//add function to queue
 	add(haplotypeCaller)
     }
