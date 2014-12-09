@@ -25,6 +25,7 @@ use illumina_realign;
 use illumina_baseRecal;
 use illumina_calling;
 use illumina_filterVariants;
+use illumina_somaticVariants;
 use illumina_annotateVariants;
 use illumina_check;
 
@@ -83,6 +84,7 @@ if(! $opt{INDELREALIGNMENT}){ die "ERROR: No INDELREALIGNMENT option in .conf fi
 if(! $opt{BASEQUALITYRECAL}){ die "ERROR: No BASEQUALITYRECAL option in .conf file \n" }
 if(! $opt{VARIANT_CALLING}){ die "ERROR: No VARIANT_CALLING option in .conf file \n" }
 if(! $opt{FILTER_VARIANTS}){ die "ERROR: No FILTER_VARIANTS option in .conf file \n" }
+if(! $opt{SOMATIC_VARIANTS}){ die "ERROR: No SOMATIC_VARIANTS option in .conf file \n" }
 if(! $opt{ANNOTATE_VARIANTS}){ die "ERROR: No ANNOTATE_VARIANTS option in .conf file \n" }
 if(! $opt{CHECKING}){ die "ERROR: No CHECKING option in .conf file \n" }
 
@@ -148,7 +150,7 @@ if (! $opt{VCF} ){
     %opt = %$opt_ref;
 }
 
-### Post variant caller
+### Filter variants
 if($opt{FILTER_VARIANTS} eq "yes"){
     print "\n###SCHEDULING VARIANT FILTRATION####\n";
     my $FVJob = illumina_filterVariants::runFilterVariants(\%opt);
@@ -158,6 +160,14 @@ if($opt{FILTER_VARIANTS} eq "yes"){
     }
 }
 
+### Somatic variant caller
+if($opt{SOMATIC_VARIANTS} eq "yes"){
+    print "\n###SCHEDULING SOMATIC VARIANT CALLERS####\n";
+    $opt_ref = illumina_somaticVariants::parseSamples(\%opt);
+    %opt = %$opt_ref;
+}
+
+### Annotate variants
 if($opt{ANNOTATE_VARIANTS} eq "yes"){
     print "\n###SCHEDULING VARIANT ANNOTATION####\n";
     my $AVJob = illumina_annotateVariants::runAnnotateVariants(\%opt);

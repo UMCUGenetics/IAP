@@ -19,6 +19,30 @@ use POSIX qw(tmpnam);
 sub parseSamples {
     my $configuration = shift;
     my %opt = %{readConfiguration($configuration)};
+    
+    my %somatic_samples;
+    
+    foreach my $sample (@{$opt{SAMPLES}}){
+	# Parse cpct samples based on expected naming
+	my ($cpct_name,$origin) = ($sample =~ /(CPCT\d{8})([TR].*)/);
+	
+	# Reference sample
+	if ($origin =~ m/R.*/){
+	    if ($somatic_samples{$cpct_name}{"ref"}){
+		warn "\t WARNING: $cpct_name has multiple reference samples, using: $somatic_samples{$cpct_name}{'ref'} \n";
+	    } else {
+		$somatic_samples{$cpct_name}{"ref"} = $opt{BAM_FILES}->{$sample};
+	    }
+	}
+	
+	# Tumor samples
+	elsif ($origin =~ m/T.*/){
+	    push(@{$somatic_samples{$cpct_name}{"tumor"}},$opt{BAM_FILES}->{$sample});
+	}
+    }
+
+    $opt{SOMATIC_SAMPELS} = {%somatic_samples};
+    return \%opt;
 }
 
 ### Somatic Variant Callers
