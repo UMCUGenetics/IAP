@@ -59,10 +59,15 @@ sub runSomaticVariantCallers {
     }
     if($opt{SOMVAR_VARSCAN} eq "yes"){
 	print "\n###SCHEDULING VARSCAN####\n";
+	my @varscan_jobs = @{runVarscan(\%opt)};
+	push(@somvar_jobs, @varscan_jobs);
     }
     if($opt{SOMVAR_FREEBAYES} eq "yes"){
 	print "\n###SCHEDULING FREEBAYES####\n";
     }
+    print "\n\n";
+    print @somvar_jobs;
+    print "\n\n";
 }
 
 
@@ -108,6 +113,7 @@ sub runStrelka {
 	    print STRELKA_SH "$opt{STRELKA_PATH}/bin/configureStrelkaWorkflow.pl --tumor $sample_tumor_bam --normal $sample_ref_bam --ref $opt{GENOME} --config $opt{STRELKA_INI} --output-dir $sample_tumor_ref_out\n";
 	    print STRELKA_SH "cd $sample_tumor_ref_out\n";
 	    print STRELKA_SH "make -j 8\n";
+	    close STRELKA_SH;
 
 	    # Run job
 	    if ( @running_jobs ){
@@ -123,11 +129,132 @@ sub runStrelka {
 }
 
 sub runVarscan {
+    my %opt = %{$_[0]};
+    my @varscan_jobs;
+    # Create varscan output, job and log dirs
+    my $job_dir = "$opt{OUTPUT_DIR}/somaticVariants/varscan/jobs";
+    my $log_dir = "$opt{OUTPUT_DIR}/somaticVariants/varscan/logs";
 
+    if(! -e $job_dir){
+	make_path($job_dir) or die "Couldn't create directory: $job_dir\n";
+    }
+    if(! -e $log_dir){
+	make_path($log_dir) or die "Couldn't create directory: $log_dir\n";
+    }
+
+    foreach my $sample (keys(%{$opt{SOMATIC_SAMPLES}})){
+	foreach my $sample_tumor (@{$opt{SOMATIC_SAMPLES}{$sample}{'tumor'}}){
+	    ## Lookup bams and running jobs
+	    my $sample_tumor_bam = "$opt{OUTPUT_DIR}/$sample_tumor/mapping/$opt{BAM_FILES}->{$sample_tumor}";
+	    my @running_jobs;
+	    if ( @{$opt{RUNNING_JOBS}->{$sample_tumor}} ){
+		push(@running_jobs, @{$opt{RUNNING_JOBS}->{$sample_tumor}});
+	    }
+
+	    my $sample_ref_bam = "$opt{OUTPUT_DIR}/$opt{SOMATIC_SAMPLES}{$sample}{'ref'}/mapping/$opt{BAM_FILES}->{$opt{SOMATIC_SAMPLES}{$sample}{'ref'}}";
+	    if ( @{$opt{RUNNING_JOBS}->{$opt{SOMATIC_SAMPLES}{$sample}{'ref'}}} ){
+		push(@running_jobs, @{$opt{RUNNING_JOBS}->{$opt{SOMATIC_SAMPLES}{$sample}{'ref'}}});
+	    }
+
+	    print "$sample \t $sample_ref_bam \t $sample_tumor_bam \n";
+
+	    ## Setup varscan bash script and output dir
+	    my $job_id = "VS_".$sample_tumor."_".get_job_id();
+	    my $bash_file = $job_dir."/".$job_id.".sh";
+
+	    # Create output dir
+	    my $output_name = "$opt{SOMATIC_SAMPLES}{$sample}{'ref'}\_$sample_tumor";
+	    my $sample_tumor_ref_out = "$opt{OUTPUT_DIR}/somaticVariants/varscan/$output_name";
+	    if(! -e $sample_tumor_ref_out){
+		make_path($sample_tumor_ref_out) or die "Couldn't create directory: $sample_tumor_ref_out\n";
+	    }
+
+	    # Create bash script
+	    open VARSCAN_SH, ">$bash_file" or die "cannot open file $bash_file \n";
+	    print VARSCAN_SH "#!/bin/bash\n\n";
+	    print VARSCAN_SH "cd $sample_tumor_ref_out\n";
+
+	    # run pileups
+	    if (!-e "$sample_tumor_bam.pileup") {
+		print VARSCAN_SH "samtools mpileup -q 1 -f $opt{GENOME} $sample_tumor_bam > $sample_tumor_bam.pileup\n";
+	    }
+	    if (!-e "$sample_ref_bam.pileup") {    
+		print VARSCAN_SH "samtools mpileup -q 1 -f $opt{GENOME} $sample_ref_bam > $sample_ref_bam.pileup\n";
+	    }
+
+	    # run varscan
+	    print VARSCAN_SH "java -Xmx12g -jar $opt{VARSCAN_PATH} somatic $sample_ref_bam.pileup $sample_tumor_bam.pileup $output_name $opt{VARSCAN_SETTINGS} --output-vcf 1\n";
+
+	    # postprocessing
+	    print VARSCAN_SH "java -Xmx12g -jar $opt{VARSCAN_PATH} processSomatic $output_name.indel.vcf $opt{VARSCAN_POSTSETTINGS}\n";
+	    print VARSCAN_SH "java -Xmx12g -jar $opt{VARSCAN_PATH} processSomatic $output_name.snp.vcf $opt{VARSCAN_POSTSETTINGS}\n";
+
+	    close VARSCAN_SH;
+
+	    # Run job
+	    if ( @running_jobs ){
+		system "qsub -q $opt{VARSCAN_QUEUE} -pe threaded $opt{VARSCAN_THREADS} -m a -M $opt{MAIL} -o $log_dir -e $log_dir -N $job_id -hold_jid ".join(",",@running_jobs)." $bash_file";
+		push(@varscan_jobs, $job_id);
+	    } else {
+		system "qsub -q $opt{VARSCAN_QUEUE} -pe threaded $opt{VARSCAN_THREADS} -m a -M $opt{MAIL} -o $log_dir -e $log_dir -N $job_id $bash_file";
+		push(@varscan_jobs, $job_id);
+	    }
+	}
+    }
+    return \@varscan_jobs;
 }
 
 sub runFreeBayes {
+    my %opt = %{$_[0]};
+    my @freebayes_jobs;
+    # Create freebayes output, job and log dirs
+    my $job_dir = "$opt{OUTPUT_DIR}/somaticVariants/freebayes/jobs";
+    my $log_dir = "$opt{OUTPUT_DIR}/somaticVariants/freebayes/logs";
 
+    if(! -e $job_dir){
+	make_path($job_dir) or die "Couldn't create directory: $job_dir\n";
+    }
+    if(! -e $log_dir){
+	make_path($log_dir) or die "Couldn't create directory: $log_dir\n";
+    }
+
+    foreach my $sample (keys(%{$opt{SOMATIC_SAMPLES}})){
+	foreach my $sample_tumor (@{$opt{SOMATIC_SAMPLES}{$sample}{'tumor'}}){
+	    # Lookup bams and running jobs
+	    my $sample_tumor_bam = "$opt{OUTPUT_DIR}/$sample_tumor/mapping/$opt{BAM_FILES}->{$sample_tumor}";
+	    my @running_jobs;
+	    if ( @{$opt{RUNNING_JOBS}->{$sample_tumor}} ){
+		push(@running_jobs, @{$opt{RUNNING_JOBS}->{$sample_tumor}});
+	    }
+
+	    my $sample_ref_bam = "$opt{OUTPUT_DIR}/$opt{SOMATIC_SAMPLES}{$sample}{'ref'}/mapping/$opt{BAM_FILES}->{$opt{SOMATIC_SAMPLES}{$sample}{'ref'}}";
+	    if ( @{$opt{RUNNING_JOBS}->{$opt{SOMATIC_SAMPLES}{$sample}{'ref'}}} ){
+		push(@running_jobs, @{$opt{RUNNING_JOBS}->{$opt{SOMATIC_SAMPLES}{$sample}{'ref'}}});
+	    }
+
+	    print "$sample \t $sample_ref_bam \t $sample_tumor_bam \n";
+
+	    # Create free bayes bash script
+	    my $job_id = "FB_".$sample_tumor."_".get_job_id();
+	    my $bash_file = $job_dir."/".$job_id.".sh";
+	    my $sample_tumor_ref_out = "$opt{OUTPUT_DIR}/somaticVariants/freebayes/$opt{SOMATIC_SAMPLES}{$sample}{'ref'}\_$sample_tumor";
+
+	    open freebayes_SH, ">$bash_file" or die "cannot open file $bash_file \n";
+	    print FREEBAYES_SH "#!/bin/bash\n\n";
+	    #free bayes code
+	    close FREEBAYES_SH;
+
+	    # Run job
+	    if ( @running_jobs ){
+		system "qsub -q $opt{FREEBAYES_QUEUE} -pe threaded $opt{FREEBAYES_THREADS} -m a -M $opt{MAIL} -o $log_dir -e $log_dir -N $job_id -hold_jid ".join(",",@running_jobs)." $bash_file";
+		push(@freebayes_jobs, $job_id);
+	    } else {
+		system "qsub -q $opt{FREEBAYES_QUEUE} -pe threaded $opt{FREEBAYES_THREADS} -m a -M $opt{MAIL} -o $log_dir -e $log_dir -N $job_id $bash_file";
+		push(@freebayes_jobs, $job_id);
+	    }
+	}
+    }
+    return \@freebayes_jobs;
 }
 
 ### Merge results
