@@ -165,6 +165,9 @@ if($opt{SOMATIC_VARIANTS} eq "yes"){
     print "\n###SCHEDULING SOMATIC VARIANT CALLERS####\n";
     $opt_ref = illumina_somaticVariants::parseSamples(\%opt);
     %opt = %$opt_ref;
+    
+    illumina_somaticVariants::runSomaticVariantCallers(\%opt);
+
 }
 
 ### Annotate variants
@@ -231,25 +234,25 @@ sub createOutputDirs{
     ### Create sample specific output directories
     foreach my $sample (@{$opt{SAMPLES}}){
 	if(! -e "$opt{OUTPUT_DIR}/$sample"){
-    	    mkdir("$opt{OUTPUT_DIR}/$sample") or die "Couldn't create directory: $opt{OUTPUT_DIR}/$sample\n";
+	    mkdir("$opt{OUTPUT_DIR}/$sample") or die "Couldn't create directory: $opt{OUTPUT_DIR}/$sample\n";
 	}
 	if(! -e "$opt{OUTPUT_DIR}/$sample/mapping"){
-    	    mkdir("$opt{OUTPUT_DIR}/$sample/mapping") or die "Couldn't create directory: $opt{OUTPUT_DIR}/$sample/mapping\n";
+	    mkdir("$opt{OUTPUT_DIR}/$sample/mapping") or die "Couldn't create directory: $opt{OUTPUT_DIR}/$sample/mapping\n";
 	}
 	if(! -e "$opt{OUTPUT_DIR}/$sample/QCStats"){
-    	    mkdir("$opt{OUTPUT_DIR}/$sample/QCStats") or die "Couldn't create directory: $opt{OUTPUT_DIR}/$sample/QCStats\n";
+	    mkdir("$opt{OUTPUT_DIR}/$sample/QCStats") or die "Couldn't create directory: $opt{OUTPUT_DIR}/$sample/QCStats\n";
 	}
 	if(! -e "$opt{OUTPUT_DIR}/$sample/jobs"){
-    	    mkdir("$opt{OUTPUT_DIR}/$sample/jobs") or die "Couldn't create directory: $opt{OUTPUT_DIR}/$sample/jobs\n";
+	    mkdir("$opt{OUTPUT_DIR}/$sample/jobs") or die "Couldn't create directory: $opt{OUTPUT_DIR}/$sample/jobs\n";
 	}
 	if(! -e "$opt{OUTPUT_DIR}/$sample/logs"){
-    	    mkdir("$opt{OUTPUT_DIR}/$sample/logs") or die "Couldn't create directory: $opt{OUTPUT_DIR}/$sample/logs\n";
+	    mkdir("$opt{OUTPUT_DIR}/$sample/logs") or die "Couldn't create directory: $opt{OUTPUT_DIR}/$sample/logs\n";
 	}
 	if(! -e "$opt{OUTPUT_DIR}/$sample/tmp"){
-    	    mkdir("$opt{OUTPUT_DIR}/$sample/tmp") or die "Couldn't create directory: $opt{OUTPUT_DIR}/$sample/tmp\n";
+	    mkdir("$opt{OUTPUT_DIR}/$sample/tmp") or die "Couldn't create directory: $opt{OUTPUT_DIR}/$sample/tmp\n";
 	}
 	#if(! -e "$opt{OUTPUT_DIR}/$sample/variants"){
-    	#    mkdir("$opt{OUTPUT_DIR}/$sample/variants") or die "Couldn't create directory: $opt{OUTPUT_DIR}/$sample/variants\n";
+	#    mkdir("$opt{OUTPUT_DIR}/$sample/variants") or die "Couldn't create directory: $opt{OUTPUT_DIR}/$sample/variants\n";
 	#}
     }
 }
