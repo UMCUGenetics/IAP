@@ -102,7 +102,6 @@ sub runRealignment {
 	    print MERGE_SH "\tif [ \$FS1 -eq \$FS2 ]\n";
 	    print MERGE_SH "\tthen\n";
 	    print MERGE_SH "\t\ttouch $opt{OUTPUT_DIR}/$sample/logs/Realignment_$sample.done\n";
-	    print MERGE_SH "\t\trm $opt{OUTPUT_DIR}/$sample/mapping/$bam\n";
 	    print MERGE_SH "\telse\n";
 	    print MERGE_SH "\t\techo \"ERROR: $opt{OUTPUT_DIR}/$sample/mapping/$flagstat and $opt{OUTPUT_DIR}/$sample/mapping/$realignedFlagstat do not have the same read counts\" >>$opt{OUTPUT_DIR}/$sample/logs/realn_merge.err\n";
 	    print MERGE_SH "\tfi\n";
@@ -200,7 +199,6 @@ sub runRealignment {
 	    print REALIGN_SH "\tif [ \$FS1 -eq \$FS2 ]\n";
 	    print REALIGN_SH "\tthen\n";
 	    print REALIGN_SH "\t\ttouch $opt{OUTPUT_DIR}/$sample/logs/Realignment_$sample.done\n";
-	    print REALIGN_SH "\t\trm $opt{OUTPUT_DIR}/$sample/mapping/$bam\n";
 	    print REALIGN_SH "\t\tmv $opt{OUTPUT_DIR}/$sample/tmp/IndelRealigner.jobreport.txt $opt{OUTPUT_DIR}/$sample/logs/IndelRealigner.jobreport.txt\n";
 	    print REALIGN_SH "\telse\n";
 	    print REALIGN_SH "\t\techo \"ERROR: $opt{OUTPUT_DIR}/$sample/mapping/$flagstat and $opt{OUTPUT_DIR}/$sample/mapping/$realignedFlagstat do not have the same read counts\" >>../logs/Realignment_$sample.err\n";
