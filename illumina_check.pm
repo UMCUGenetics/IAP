@@ -146,6 +146,15 @@ sub runCheck {
     print BASH "\trm -r $opt{OUTPUT_DIR}/*/tmp\n";
     print BASH "\tfind $opt{OUTPUT_DIR}/logs -size 0 -not -name \"*.done\" -delete\n"; 
     print BASH "\tfind $opt{OUTPUT_DIR}/*/logs -size 0 -not -name \"*.done\" -delete\n";
+    if($opt{INDELREALIGNMENT} eq "yes"){
+	foreach my $sample (@{$opt{SAMPLES}}){
+	    if($opt{MAPPING_MARKDUP} eq "yes"){
+		print BASH "\trm $opt{OUTPUT_DIR}/$sample/mapping/$sample\_dedup.ba*\n";
+	    } else {
+		print BASH "\trm $opt{OUTPUT_DIR}/$sample/mapping/$sample.ba*\n";
+	    }
+	}
+    }
     print BASH "fi\n";
     
     #Sleep to ensure that email is send from cluster.
