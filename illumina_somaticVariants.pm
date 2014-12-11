@@ -64,6 +64,8 @@ sub runSomaticVariantCallers {
     }
     if($opt{SOMVAR_FREEBAYES} eq "yes"){
 	print "\n###SCHEDULING FREEBAYES####\n";
+	my @freebayes_jobs = @{runFreeBayes(\%opt)};
+	push(@somvar_jobs, @freebayes_jobs);
     }
     print "\n\n";
     print @somvar_jobs;
@@ -220,13 +222,13 @@ sub runFreeBayes {
 
     foreach my $sample (keys(%{$opt{SOMATIC_SAMPLES}})){
 	foreach my $sample_tumor (@{$opt{SOMATIC_SAMPLES}{$sample}{'tumor'}}){
+
 	    # Lookup bams and running jobs
 	    my $sample_tumor_bam = "$opt{OUTPUT_DIR}/$sample_tumor/mapping/$opt{BAM_FILES}->{$sample_tumor}";
 	    my @running_jobs;
 	    if ( @{$opt{RUNNING_JOBS}->{$sample_tumor}} ){
 		push(@running_jobs, @{$opt{RUNNING_JOBS}->{$sample_tumor}});
 	    }
-
 	    my $sample_ref_bam = "$opt{OUTPUT_DIR}/$opt{SOMATIC_SAMPLES}{$sample}{'ref'}/mapping/$opt{BAM_FILES}->{$opt{SOMATIC_SAMPLES}{$sample}{'ref'}}";
 	    if ( @{$opt{RUNNING_JOBS}->{$opt{SOMATIC_SAMPLES}{$sample}{'ref'}}} ){
 		push(@running_jobs, @{$opt{RUNNING_JOBS}->{$opt{SOMATIC_SAMPLES}{$sample}{'ref'}}});
@@ -234,14 +236,22 @@ sub runFreeBayes {
 
 	    print "$sample \t $sample_ref_bam \t $sample_tumor_bam \n";
 
-	    # Create free bayes bash script
+	    ## Setup varscan bash script and output dir
 	    my $job_id = "FB_".$sample_tumor."_".get_job_id();
 	    my $bash_file = $job_dir."/".$job_id.".sh";
-	    my $sample_tumor_ref_out = "$opt{OUTPUT_DIR}/somaticVariants/freebayes/$opt{SOMATIC_SAMPLES}{$sample}{'ref'}\_$sample_tumor";
 
-	    open freebayes_SH, ">$bash_file" or die "cannot open file $bash_file \n";
+	    # Create output dir
+	    my $output_name = "$opt{SOMATIC_SAMPLES}{$sample}{'ref'}\_$sample_tumor";
+	    my $sample_tumor_ref_out = "$opt{OUTPUT_DIR}/somaticVariants/freebayes/$output_name";
+	    if(! -e $sample_tumor_ref_out){
+		make_path($sample_tumor_ref_out) or die "Couldn't create directory: $sample_tumor_ref_out\n";
+	    }
+
+	    # Create bash script
+	    open FREEBAYES_SH, ">$bash_file" or die "cannot open file $bash_file \n";
 	    print FREEBAYES_SH "#!/bin/bash\n\n";
-	    #free bayes code
+	    print FREEBAYES_SH "$opt{FREEBAYES_PATH}/freebayes -f $opt{GENOME} -t $opt{FREEBAYES_TARGETS} $opt{FREEBAYES_SETTINGS} $sample_ref_bam $sample_tumor_bam > $sample_tumor_ref_out/$output_name.vcf\n";
+	    print FREEBAYES_SH "";
 	    close FREEBAYES_SH;
 
 	    # Run job
