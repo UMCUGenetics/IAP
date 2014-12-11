@@ -250,8 +250,26 @@ sub runFreeBayes {
 	    # Create bash script
 	    open FREEBAYES_SH, ">$bash_file" or die "cannot open file $bash_file \n";
 	    print FREEBAYES_SH "#!/bin/bash\n\n";
-	    print FREEBAYES_SH "$opt{FREEBAYES_PATH}/freebayes -f $opt{GENOME} -t $opt{FREEBAYES_TARGETS} $opt{FREEBAYES_SETTINGS} $sample_ref_bam $sample_tumor_bam > $sample_tumor_ref_out/$output_name.vcf\n";
-	    print FREEBAYES_SH "";
+
+	    # Run freebayes
+	    print FREEBAYES_SH "$opt{FREEBAYES_PATH}/freebayes -f $opt{GENOME} -t $opt{FREEBAYES_TARGETS} $opt{FREEBAYES_SETTINGS} $sample_ref_bam $sample_tumor_bam > $sample_tumor_ref_out/$output_name.vcf\n\n";
+
+	    # Uniqify freebayes output 
+	    print FREEBAYES_SH "uniq $sample_tumor_ref_out/$output_name.vcf > $sample_tumor_ref_out/$output_name.uniq.vcf\n";
+	    print FREEBAYES_SH "mv $sample_tumor_ref_out/$output_name.uniq.vcf > $sample_tumor_ref_out/$output_name.vcf\n\n";
+
+	    # get sample ids
+	    print FREEBAYES_SH "sample_R=`grep -P \"^#CHROM\" $sample_tumor_ref_out/$output_name.vcf | cut -f 10`\n";
+	    print FREEBAYES_SH "sample_T=`grep -P \"^#CHROM\" $sample_tumor_ref_out/$output_name.vcf | cut -f 11`\n\n";
+
+	    # annotate somatic and germline scores
+	    print FREEBAYES_SH "/hpc/local/CentOS6/cog_bioinf/vcflib/bin/vcfsamplediff VT \$sample_R \$sample_T $sample_tumor_ref_out/$output_name.vcf> $sample_tumor_ref_out/$output_name\_VTannot.vcf\n";
+	    print FREEBAYES_SH "grep -P \"^#\" $sample_tumor_ref_out/$output_name\_VTannot.vcf > $sample_tumor_ref_out/$output_name\_germline.vcf\n";
+	    print FREEBAYES_SH "grep -P \"^#\" $sample_tumor_ref_out/$output_name\_VTannot.vcf > $sample_tumor_ref_out/$output_name\_somatic.vcf\n";
+	    print FREEBAYES_SH "grep -i \"VT=germline\" $sample_tumor_ref_out/$output_name\_VTannot.vcf >> $sample_tumor_ref_out/$output_name\_germline.vcf\n";
+	    print FREEBAYES_SH "grep -i \"VT=somatic\" $sample_tumor_ref_out/$output_name\_VTannot.vcf >> $sample_tumor_ref_out/$output_name\_somatic.vcf\n";
+	    print FREEBAYES_SH "rm $sample_tumor_ref_out/$output_name\_VTannot.vcf\n";
+
 	    close FREEBAYES_SH;
 
 	    # Run job
