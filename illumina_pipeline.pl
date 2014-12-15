@@ -136,8 +136,16 @@ if (! $opt{VCF} ){
 	$opt_ref = illumina_baseRecal::runBaseRecalibration(\%opt);
 	%opt = %$opt_ref;
     }
-    
-### Variant Caller or vcf input
+
+### Variant Caller
+    ### Somatic variant callers
+    if($opt{SOMATIC_VARIANTS} eq "yes"){
+	print "\n###SCHEDULING SOMATIC VARIANT CALLERS####\n";
+	$opt_ref = illumina_somaticVariants::parseSamples(\%opt);
+	%opt = %$opt_ref;
+	illumina_somaticVariants::runSomaticVariantCallers(\%opt);
+    }
+    ### GATK
     if($opt{VARIANT_CALLING} eq "yes"){
 	print "\n###SCHEDULING VARIANT CALLING####\n";
 	$opt_ref = illumina_calling::runVariantCalling(\%opt);
@@ -158,16 +166,6 @@ if($opt{FILTER_VARIANTS} eq "yes"){
     foreach my $sample (@{$opt{SAMPLES}}){
 	push (@{$opt{RUNNING_JOBS}->{$sample}} , $FVJob);
     }
-}
-
-### Somatic variant caller
-if($opt{SOMATIC_VARIANTS} eq "yes"){
-    print "\n###SCHEDULING SOMATIC VARIANT CALLERS####\n";
-    $opt_ref = illumina_somaticVariants::parseSamples(\%opt);
-    %opt = %$opt_ref;
-    
-    illumina_somaticVariants::runSomaticVariantCallers(\%opt);
-
 }
 
 ### Annotate variants

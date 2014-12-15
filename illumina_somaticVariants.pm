@@ -46,12 +46,13 @@ sub parseSamples {
     return \%opt;
 }
 
-### Somatic Variant Callers
+### Run and merge
 sub runSomaticVariantCallers {
     my $configuration = shift;
     my %opt = %{readConfiguration($configuration)};
     my @somvar_jobs;
     
+    ### Somatic variant callers
     if($opt{SOMVAR_STRELKA} eq "yes"){
 	print "\n###SCHEDULING STRELKA####\n";
 	my @strelka_jobs = @{runStrelka(\%opt)};
@@ -67,12 +68,11 @@ sub runSomaticVariantCallers {
 	my @freebayes_jobs = @{runFreeBayes(\%opt)};
 	push(@somvar_jobs, @freebayes_jobs);
     }
-    print "\n\n";
-    print @somvar_jobs;
-    print "\n\n";
 }
 
 
+
+### Somatic Variant Callers
 sub runStrelka {
     my %opt = %{$_[0]};
     my @strelka_jobs;
@@ -110,7 +110,7 @@ sub runStrelka {
 	    print "$sample \t $sample_ref_bam \t $sample_tumor_bam \n";
 
 	    ### Skip Strelka if .done file exist
-	    if (-e "$log_dir/strelka.done"){
+	    if (-e "$log_dir/$sample_tumor.done"){
 		warn "WARNING: $log_dir/$sample_tumor.done, skipping \n";
 		next;
 	    }
@@ -185,8 +185,8 @@ sub runVarscan {
 	    print "$sample \t $sample_ref_bam \t $sample_tumor_bam \n";
 
 	    ### Skip VarScan if .done file exist
-	    if (-e "$log_dir/varscan.done"){
-		warn "WARNING: $log_dir/varscan.done, skipping \n";
+	    if (-e "$log_dir/$sample_tumor.done"){
+		warn "WARNING: $log_dir/$sample_tumor.done, skipping \n";
 		next;
 	    }
 
@@ -274,8 +274,8 @@ sub runFreeBayes {
 	    print "$sample \t $sample_ref_bam \t $sample_tumor_bam \n";
 
 	    ### Skip FreeBayes if .done file exist
-	    if (-e "$log_dir/freebayes.done"){
-		warn "WARNING: $log_dir/freebayes.done, skipping \n";
+	    if (-e "$log_dir/$sample_tumor.done"){
+		warn "WARNING: $log_dir/$sample_tumor.done, skipping \n";
 		next;
 	    }
 
@@ -300,20 +300,24 @@ sub runFreeBayes {
 
 	    # Uniqify freebayes output 
 	    print FREEBAYES_SH "uniq $sample_tumor_ref_out/$output_name.vcf > $sample_tumor_ref_out/$output_name.uniq.vcf\n";
-	    print FREEBAYES_SH "mv $sample_tumor_ref_out/$output_name.uniq.vcf > $sample_tumor_ref_out/$output_name.vcf\n\n";
+	    print FREEBAYES_SH "mv $sample_tumor_ref_out/$output_name.uniq.vcf $sample_tumor_ref_out/$output_name.vcf\n\n";
 
 	    # get sample ids
 	    print FREEBAYES_SH "sample_R=`grep -P \"^#CHROM\" $sample_tumor_ref_out/$output_name.vcf | cut -f 10`\n";
 	    print FREEBAYES_SH "sample_T=`grep -P \"^#CHROM\" $sample_tumor_ref_out/$output_name.vcf | cut -f 11`\n\n";
 
 	    # annotate somatic and germline scores
-	    print FREEBAYES_SH "/hpc/local/CentOS6/cog_bioinf/vcflib/bin/vcfsamplediff VT \$sample_R \$sample_T $sample_tumor_ref_out/$output_name.vcf> $sample_tumor_ref_out/$output_name\_VTannot.vcf\n";
+	    print FREEBAYES_SH "$opt{VCFSAMPLEDIFF_PATH}/vcfsamplediff VT \$sample_R \$sample_T $sample_tumor_ref_out/$output_name.vcf> $sample_tumor_ref_out/$output_name\_VTannot.vcf\n";
 	    print FREEBAYES_SH "grep -P \"^#\" $sample_tumor_ref_out/$output_name\_VTannot.vcf > $sample_tumor_ref_out/$output_name\_germline.vcf\n";
 	    print FREEBAYES_SH "grep -P \"^#\" $sample_tumor_ref_out/$output_name\_VTannot.vcf > $sample_tumor_ref_out/$output_name\_somatic.vcf\n";
 	    print FREEBAYES_SH "grep -i \"VT=germline\" $sample_tumor_ref_out/$output_name\_VTannot.vcf >> $sample_tumor_ref_out/$output_name\_germline.vcf\n";
 	    print FREEBAYES_SH "grep -i \"VT=somatic\" $sample_tumor_ref_out/$output_name\_VTannot.vcf >> $sample_tumor_ref_out/$output_name\_somatic.vcf\n";
 	    print FREEBAYES_SH "rm $sample_tumor_ref_out/$output_name\_VTannot.vcf\n\n";
-	    
+
+	    # Filter
+	    print FREEBAYES_SH "cat $sample_tumor_ref_out/$output_name\_somatic.vcf | $opt{BIOVCF_PATH}/bio-vcf $opt{FREEBAYES_SOMATICFILTER} > $sample_tumor_ref_out/$output_name\_somatic_filtered.vcf\n";
+	    print FREEBAYES_SH "cat $sample_tumor_ref_out/$output_name\_germline.vcf | $opt{BIOVCF_PATH}/bio-vcf $opt{FREEBAYES_GERMLINEFILTER} > $sample_tumor_ref_out/$output_name\_germline_filtered.vcf\n\n";
+	
 	    print FREEBAYES_SH "touch $log_dir/$sample_tumor.done\n\n"; ## Check on complete output!!!
 	    print FREEBAYES_SH "echo \"End Freebayes\t\" `date` \"\t$sample \t $sample_ref_bam \t $sample_tumor_bam\t\" `uname -n` >> $log_dir/$sample_tumor.log\n";
 
