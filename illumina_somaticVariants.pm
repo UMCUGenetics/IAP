@@ -17,7 +17,6 @@ use File::Path qw(make_path);
 
 ### Parse sample names
 # Expects CPCT samples (CPCT........T/R)
-# Creates directory structure
 sub parseSamples {
     my $configuration = shift;
     my %opt = %{readConfiguration($configuration)};
@@ -50,296 +49,257 @@ sub parseSamples {
 sub runSomaticVariantCallers {
     my $configuration = shift;
     my %opt = %{readConfiguration($configuration)};
-    my @somvar_jobs;
-    
-    ### Somatic variant callers
-    if($opt{SOMVAR_STRELKA} eq "yes"){
-	print "\n###SCHEDULING STRELKA####\n";
-	my @strelka_jobs = @{runStrelka(\%opt)};
-	push(@somvar_jobs, @strelka_jobs);
-    }
-    if($opt{SOMVAR_VARSCAN} eq "yes"){
-	print "\n###SCHEDULING VARSCAN####\n";
-	my @varscan_jobs = @{runVarscan(\%opt)};
-	push(@somvar_jobs, @varscan_jobs);
-    }
-    if($opt{SOMVAR_FREEBAYES} eq "yes"){
-	print "\n###SCHEDULING FREEBAYES####\n";
-	my @freebayes_jobs = @{runFreeBayes(\%opt)};
-	push(@somvar_jobs, @freebayes_jobs);
+
+    ### Loop over tumor samples
+    foreach my $sample (keys(%{$opt{SOMATIC_SAMPLES}})){
+	foreach my $sample_tumor (@{$opt{SOMATIC_SAMPLES}{$sample}{'tumor'}}){
+	    my @somvar_jobs;
+	    ## Create output, log and job directories
+	    my $sample_tumor_name = "$opt{SOMATIC_SAMPLES}{$sample}{'ref'}\_$sample_tumor";
+	    my $sample_tumor_out_dir = "$opt{OUTPUT_DIR}/somaticVariants/$sample_tumor_name";
+	    my $sample_tumor_log_dir = "$sample_tumor_out_dir/logs/";
+	    my $sample_tumor_job_dir = "$sample_tumor_out_dir/jobs/";
+
+	    if(! -e $sample_tumor_out_dir){
+		make_path($sample_tumor_out_dir) or die "Couldn't create directory:  $sample_tumor_out_dir\n";
+	    }
+	    if(! -e $sample_tumor_job_dir){
+		make_path($sample_tumor_job_dir) or die "Couldn't create directory: $sample_tumor_job_dir\n";
+	    }
+	    if(! -e $sample_tumor_log_dir){
+		make_path($sample_tumor_log_dir) or die "Couldn't create directory: $sample_tumor_log_dir\n";
+	    }
+
+	    ## Lookup running jobs and bams
+	    my $sample_tumor_bam = "$opt{OUTPUT_DIR}/$sample_tumor/mapping/$opt{BAM_FILES}->{$sample_tumor}";
+	    my @running_jobs;
+	    if ( @{$opt{RUNNING_JOBS}->{$sample_tumor}} ){
+		push(@running_jobs, @{$opt{RUNNING_JOBS}->{$sample_tumor}});
+	    }
+	    my $sample_ref_bam = "$opt{OUTPUT_DIR}/$opt{SOMATIC_SAMPLES}{$sample}{'ref'}/mapping/$opt{BAM_FILES}->{$opt{SOMATIC_SAMPLES}{$sample}{'ref'}}";
+	    if ( @{$opt{RUNNING_JOBS}->{$opt{SOMATIC_SAMPLES}{$sample}{'ref'}}} ){
+		push(@running_jobs, @{$opt{RUNNING_JOBS}->{$opt{SOMATIC_SAMPLES}{$sample}{'ref'}}});
+	    }
+
+	    ## Print sample and bam info
+	    print "$sample \t $sample_ref_bam \t $sample_tumor_bam \n";
+
+	    ## Skip Somatic Callers if .done file exist
+	    if (-e "$sample_tumor_log_dir/$sample_tumor_name.done"){
+		warn "WARNING: $sample_tumor_log_dir/$sample_tumor_name.done, skipping \n";
+		next;
+	    }
+
+	    ## Run somatic callers
+	    if($opt{SOMVAR_STRELKA} eq "yes"){
+		print "\n###SCHEDULING STRELKA####\n";
+		my $strelka_job = runStrelka($sample_tumor, $sample_tumor_out_dir, $sample_tumor_job_dir, $sample_tumor_log_dir, $sample_tumor_bam, $sample_ref_bam, \@running_jobs, \%opt);
+		push(@somvar_jobs, $strelka_job);
+	    }
+	    if($opt{SOMVAR_VARSCAN} eq "yes"){
+		print "\n###SCHEDULING VARSCAN####\n";
+		my $varscan_job = runVarscan($sample_tumor, $sample_tumor_name, $sample_tumor_out_dir, $sample_tumor_job_dir, $sample_tumor_log_dir, $sample_tumor_bam, $sample_ref_bam, \@running_jobs, \%opt);
+		push(@somvar_jobs, $varscan_job);
+	    }
+	    if($opt{SOMVAR_FREEBAYES} eq "yes"){
+		print "\n###SCHEDULING FREEBAYES####\n";
+		my $freebayes_job = runFreeBayes($sample_tumor, $sample_tumor_name, $sample_tumor_out_dir, $sample_tumor_job_dir, $sample_tumor_log_dir, $sample_tumor_bam, $sample_ref_bam, \@running_jobs, \%opt);
+		push(@somvar_jobs, $freebayes_job);
+	    }
+	    
+	    ## Merge somatic vcfs
+	    my $job_id = "MERGE_".$sample_tumor."_".get_job_id();
+	    my $bash_file = $sample_tumor_job_dir."/".$job_id.".sh";
+	    
+	    open MERGE_SH, ">$bash_file" or die "cannot open file $bash_file \n";
+	    print MERGE_SH "#!/bin/bash\n\n";
+	    print MERGE_SH "echo \"Start Merge\t\" `date` `uname -n` >> $sample_tumor_log_dir/merge.log\n\n";
+	    
+	    print MERGE_SH "java -Xmx6G -jar $opt{GATK_PATH}/GenomeAnalysisTK.jar -T CombineVariants -R $opt{GENOME} -o $sample_tumor_out_dir/$sample_tumor_name\_merged_somatics.vcf ";
+	    if($opt{SOMVAR_STRELKA} eq "yes"){ print MERGE_SH "-V $sample_tumor_out_dir/strelka/passed.somatic.merged.vcf "; }
+	    if($opt{SOMVAR_VARSCAN} eq "yes"){ print MERGE_SH "-V $sample_tumor_out_dir/varscan/$sample_tumor_name.merged.Somatic.hc.vcf "; }
+	    if($opt{SOMVAR_FREEBAYES} eq "yes"){ print MERGE_SH "-V $sample_tumor_out_dir/freebayes/$sample_tumor_name\_somatic_filtered.vcf "; }
+	    
+	    print MERGE_SH "\n\necho \"END Merge\t\" `date` `uname -n` >> $sample_tumor_log_dir/merge.log\n\n";
+	    close MERGE_SH;
+	    
+	    print "\n\n";
+	    print @somvar_jobs;
+	    print "\n\n";
+	}
     }
 }
-
-
 
 ### Somatic Variant Callers
 sub runStrelka {
-    my %opt = %{$_[0]};
-    my @strelka_jobs;
-    my $job_dir = "$opt{OUTPUT_DIR}/somaticVariants/strelka/jobs";
-    my $log_dir = "$opt{OUTPUT_DIR}/somaticVariants/strelka/logs";
+    my ($sample_tumor, $out_dir, $job_dir, $log_dir, $sample_tumor_bam, $sample_ref_bam, $running_jobs, $opt) = (@_);
+    my @running_jobs = @{$running_jobs};
+    my %opt = %{$opt};
+    my $strelka_out_dir = "$out_dir/strelka";
 
-    ### Create strelka output, job and log dirs
-    if(! -e "$opt{OUTPUT_DIR}/somaticVariants/strelka"){
-	make_path("$opt{OUTPUT_DIR}/somaticVariants/strelka") or die "Couldn't create directory: $opt{OUTPUT_DIR}/somaticVariants/strelka\n";
+    ## Skip Strelka if .done file exist
+    if (-e "$log_dir/strelka.done"){
+	warn "WARNING: $log_dir/strelka.done, skipping \n";
+	return;
     }
-    if(! -e $job_dir){
-	make_path($job_dir) or die "Couldn't create directory: $job_dir\n";
+
+    ## Create strelka bash script
+    my $job_id = "STR_".$sample_tumor."_".get_job_id();
+    my $bash_file = $job_dir."/".$job_id.".sh";
+
+    open STRELKA_SH, ">$bash_file" or die "cannot open file $bash_file \n";
+    print STRELKA_SH "#!/bin/bash\n\n";
+    print STRELKA_SH "echo \"Start Strelka\t\" `date` \"\t $sample_ref_bam \t $sample_tumor_bam\t\" `uname -n` >> $log_dir/strelka.log\n\n";
+
+    # Run Strelka
+    print STRELKA_SH "$opt{STRELKA_PATH}/bin/configureStrelkaWorkflow.pl --tumor $sample_tumor_bam --normal $sample_ref_bam --ref $opt{GENOME} --config $opt{STRELKA_INI} --output-dir $strelka_out_dir\n\n";
+
+    print STRELKA_SH "cd $strelka_out_dir\n";
+    print STRELKA_SH "make -j 8\n\n";
+
+    # Check strelka completed
+    print STRELKA_SH "if [ -f $strelka_out_dir/task.complete ]\n";
+    print STRELKA_SH "then\n";
+    print STRELKA_SH "\tjava -Xmx6G -jar $opt{GATK_PATH}/GenomeAnalysisTK.jar -T CombineVariants -R $opt{GENOME} -o passed.somatic.merged.vcf -V results/passed.somatic.snvs.vcf -V results/passed.somatic.indels.vcf \n\n";
+    print STRELKA_SH "\ttouch $log_dir/strelka.done\n";
+    print STRELKA_SH "fi\n\n";
+    print STRELKA_SH "echo \"End Strelka\t\" `date` \"\t $sample_ref_bam \t $sample_tumor_bam\t\" `uname -n` >> $log_dir/strelka.log\n\n";
+    close STRELKA_SH;
+
+    ## Run job
+    if ( @running_jobs ){
+	system "qsub -q $opt{STRELKA_QUEUE} -m a -M $opt{MAIL} -pe threaded $opt{STRELKA_THREADS} -o $log_dir -e $log_dir -N $job_id -hold_jid ".join(",",@running_jobs)." $bash_file";
+    } else {
+	system "qsub -q $opt{STRELKA_QUEUE} -m a -M $opt{MAIL} -pe threaded $opt{STRELKA_THREADS} -o $log_dir -e $log_dir -N $job_id $bash_file";
     }
-    if(! -e $log_dir){
-	make_path($log_dir) or die "Couldn't create directory: $log_dir\n";
-    }
-    
-    ### Run Strelka per tumor sample
-    foreach my $sample (keys(%{$opt{SOMATIC_SAMPLES}})){
-	foreach my $sample_tumor (@{$opt{SOMATIC_SAMPLES}{$sample}{'tumor'}}){
 
-	    ## Lookup bams and running jobs
-	    my $sample_tumor_bam = "$opt{OUTPUT_DIR}/$sample_tumor/mapping/$opt{BAM_FILES}->{$sample_tumor}";
-	    my @running_jobs;
-	    if ( @{$opt{RUNNING_JOBS}->{$sample_tumor}} ){
-		push(@running_jobs, @{$opt{RUNNING_JOBS}->{$sample_tumor}});
-	    }
-
-	    my $sample_ref_bam = "$opt{OUTPUT_DIR}/$opt{SOMATIC_SAMPLES}{$sample}{'ref'}/mapping/$opt{BAM_FILES}->{$opt{SOMATIC_SAMPLES}{$sample}{'ref'}}";
-	    if ( @{$opt{RUNNING_JOBS}->{$opt{SOMATIC_SAMPLES}{$sample}{'ref'}}} ){
-		push(@running_jobs, @{$opt{RUNNING_JOBS}->{$opt{SOMATIC_SAMPLES}{$sample}{'ref'}}});
-	    }
-
-	    # Print sample and bam info
-	    print "$sample \t $sample_ref_bam \t $sample_tumor_bam \n";
-
-	    ### Skip Strelka if .done file exist
-	    if (-e "$log_dir/$sample_tumor.done"){
-		warn "WARNING: $log_dir/$sample_tumor.done, skipping \n";
-		next;
-	    }
-
-	    ## Create strelka bash script
-	    my $job_id = "STR_".$sample_tumor."_".get_job_id();
-	    my $bash_file = $job_dir."/".$job_id.".sh";
-	    my $sample_tumor_ref_out = "$opt{OUTPUT_DIR}/somaticVariants/strelka/$opt{SOMATIC_SAMPLES}{$sample}{'ref'}\_$sample_tumor";
-
-	    open STRELKA_SH, ">$bash_file" or die "cannot open file $bash_file \n";
-	    print STRELKA_SH "#!/bin/bash\n\n";
-	    print STRELKA_SH "echo \"Start Strelka\t\" `date` \"\t$sample \t $sample_ref_bam \t $sample_tumor_bam\t\" `uname -n` >> $log_dir/$sample_tumor.log\n\n";
-
-	    # Run Strelka
-	    print STRELKA_SH "$opt{STRELKA_PATH}/bin/configureStrelkaWorkflow.pl --tumor $sample_tumor_bam --normal $sample_ref_bam --ref $opt{GENOME} --config $opt{STRELKA_INI} --output-dir $sample_tumor_ref_out\n\n";
-
-	    print STRELKA_SH "cd $sample_tumor_ref_out\n";
-	    print STRELKA_SH "make -j 8\n\n";
-
-	    # Check strelka completed
-	    print STRELKA_SH "if [ -f $sample_tumor_ref_out/task.complete ]\n";
-	    print STRELKA_SH "then\n";
-	    print STRELKA_SH "\ttouch $log_dir/$sample_tumor.done\n";
-	    print STRELKA_SH "fi\n\n";
-	    print STRELKA_SH "echo \"End Strelka\t\" `date` \"\t$sample \t $sample_ref_bam \t $sample_tumor_bam\t\" `uname -n` >> $log_dir/$sample_tumor.log\n\n";
-	    close STRELKA_SH;
-
-	    ## Run job
-	    if ( @running_jobs ){
-		system "qsub -q $opt{STRELKA_QUEUE} -m a -M $opt{MAIL} -pe threaded $opt{STRELKA_THREADS} -o $log_dir -e $log_dir -N $job_id -hold_jid ".join(",",@running_jobs)." $bash_file";
-		push(@strelka_jobs, $job_id);
-	    } else {
-		system "qsub -q $opt{STRELKA_QUEUE} -m a -M $opt{MAIL} -pe threaded $opt{STRELKA_THREADS} -o $log_dir -e $log_dir -N $job_id $bash_file";
-		push(@strelka_jobs, $job_id);
-	    }
-	}
-    }
-    return \@strelka_jobs;
+    return $job_id;
 }
 
 sub runVarscan {
-    my %opt = %{$_[0]};
-    my @varscan_jobs;
-    my $job_dir = "$opt{OUTPUT_DIR}/somaticVariants/varscan/jobs";
-    my $log_dir = "$opt{OUTPUT_DIR}/somaticVariants/varscan/logs";
+    my ($sample_tumor, $sample_tumor_name, $out_dir, $job_dir, $log_dir, $sample_tumor_bam, $sample_ref_bam, $running_jobs, $opt) = (@_);
+    my @running_jobs = @{$running_jobs};
+    my %opt = %{$opt};
+    my $varscan_out_dir = "$out_dir/varscan";
 
-    ### Create varscan output, job and log dirs
-    if(! -e $job_dir){
-	make_path($job_dir) or die "Couldn't create directory: $job_dir\n";
+    ## Create output dir
+    if( ! -e $varscan_out_dir ){
+	make_path($varscan_out_dir) or die "Couldn't create directory: $varscan_out_dir\n";
     }
-    if(! -e $log_dir){
-	make_path($log_dir) or die "Couldn't create directory: $log_dir\n";
+
+    ## Skip varscan if .done file exist
+    if ( -e "$log_dir/varscan.done" ){
+	warn "WARNING: $log_dir/varscan.done, skipping \n";
+	return;
     }
+
+    ## Setup varscan bash script and output dir
+    my $job_id = "VS_".$sample_tumor."_".get_job_id();
+    my $bash_file = $job_dir."/".$job_id.".sh";
+
+    ## Create bash script
+    open VARSCAN_SH, ">$bash_file" or die "cannot open file $bash_file \n";
+    print VARSCAN_SH "#!/bin/bash\n\n";
+    print VARSCAN_SH "cd $varscan_out_dir\n";
+    print VARSCAN_SH "echo \"Start Pileup\t\" `date` \"$sample_ref_bam \t $sample_tumor_bam\t\" `uname -n` >> $log_dir/varscan.log\n";
+
+    # run pileups
+    if ((!-e "$sample_tumor_bam.pileup")||(-z "$sample_tumor_bam.pileup")) {
+	print VARSCAN_SH "samtools mpileup -q 1 -f $opt{GENOME} $sample_tumor_bam > $sample_tumor_bam.pileup\n";
+    }
+    if ((!-e "$sample_ref_bam.pileup")||(-z "$sample_ref_bam.pileup")) {
+	print VARSCAN_SH "samtools mpileup -q 1 -f $opt{GENOME} $sample_ref_bam > $sample_ref_bam.pileup\n";
+    }
+    print VARSCAN_SH "echo \"End Pileup\t\" `date` \"\t $sample_ref_bam \t $sample_tumor_bam\t\" `uname -n` >> $log_dir/varscan.log\n\n";
+
+    # run varscan
+    print VARSCAN_SH "echo \"Start Varscan\t\" `date` \"\t $sample_ref_bam \t $sample_tumor_bam\t\" `uname -n` >> $log_dir/varscan.log\n";
+    print VARSCAN_SH "java -Xmx12g -jar $opt{VARSCAN_PATH} somatic $sample_ref_bam.pileup $sample_tumor_bam.pileup $sample_tumor_name $opt{VARSCAN_SETTINGS} --output-vcf 1\n\n";
+
+    # postprocessing
+    print VARSCAN_SH "java -Xmx12g -jar $opt{VARSCAN_PATH} processSomatic $sample_tumor_name.indel.vcf $opt{VARSCAN_POSTSETTINGS}\n";
+    print VARSCAN_SH "java -Xmx12g -jar $opt{VARSCAN_PATH} processSomatic $sample_tumor_name.snp.vcf $opt{VARSCAN_POSTSETTINGS}\n\n";
     
-    ### Run Varscan for tumor sample
-    foreach my $sample (keys(%{$opt{SOMATIC_SAMPLES}})){
-	foreach my $sample_tumor (@{$opt{SOMATIC_SAMPLES}{$sample}{'tumor'}}){
+    # merge varscan hc snps and indels
+    print VARSCAN_SH "java -Xmx6G -jar $opt{GATK_PATH}/GenomeAnalysisTK.jar -T CombineVariants -R $opt{GENOME} -o $sample_tumor_name.merged.Somatic.hc.vcf -V $sample_tumor_name.snp.Somatic.hc.vcf -V $sample_tumor_name.indel.Somatic.hc.vcf\n\n";
+    
+    # Check varscan completed
+    print VARSCAN_SH "touch $log_dir/varscan.done\n\n"; ## Check on complete output!!!
+    print VARSCAN_SH "echo \"End Varscan\t\" `date` \"\t $sample_ref_bam \t $sample_tumor_bam\t\" `uname -n` >> $log_dir/varscan.log\n";
 
-	    ## Lookup bams and running jobs
-	    my $sample_tumor_bam = "$opt{OUTPUT_DIR}/$sample_tumor/mapping/$opt{BAM_FILES}->{$sample_tumor}";
-	    my @running_jobs;
-	    if ( @{$opt{RUNNING_JOBS}->{$sample_tumor}} ){
-		push(@running_jobs, @{$opt{RUNNING_JOBS}->{$sample_tumor}});
-	    }
+    close VARSCAN_SH;
 
-	    my $sample_ref_bam = "$opt{OUTPUT_DIR}/$opt{SOMATIC_SAMPLES}{$sample}{'ref'}/mapping/$opt{BAM_FILES}->{$opt{SOMATIC_SAMPLES}{$sample}{'ref'}}";
-	    if ( @{$opt{RUNNING_JOBS}->{$opt{SOMATIC_SAMPLES}{$sample}{'ref'}}} ){
-		push(@running_jobs, @{$opt{RUNNING_JOBS}->{$opt{SOMATIC_SAMPLES}{$sample}{'ref'}}});
-	    }
-
-	    #  Print sample and bam info
-	    print "$sample \t $sample_ref_bam \t $sample_tumor_bam \n";
-
-	    ### Skip VarScan if .done file exist
-	    if (-e "$log_dir/$sample_tumor.done"){
-		warn "WARNING: $log_dir/$sample_tumor.done, skipping \n";
-		next;
-	    }
-
-	    ## Setup varscan bash script and output dir
-	    my $job_id = "VS_".$sample_tumor."_".get_job_id();
-	    my $bash_file = $job_dir."/".$job_id.".sh";
-
-	    # Create output dir
-	    my $output_name = "$opt{SOMATIC_SAMPLES}{$sample}{'ref'}\_$sample_tumor";
-	    my $sample_tumor_ref_out = "$opt{OUTPUT_DIR}/somaticVariants/varscan/$output_name";
-	    if(! -e $sample_tumor_ref_out){
-		make_path($sample_tumor_ref_out) or die "Couldn't create directory: $sample_tumor_ref_out\n";
-	    }
-
-	    # Create bash script
-	    open VARSCAN_SH, ">$bash_file" or die "cannot open file $bash_file \n";
-	    print VARSCAN_SH "#!/bin/bash\n\n";
-	    print VARSCAN_SH "cd $sample_tumor_ref_out\n";
-	    print VARSCAN_SH "echo \"Start Pileup\t\" `date` \"\t$sample \t $sample_ref_bam \t $sample_tumor_bam\t\" `uname -n` >> $log_dir/$sample_tumor.log\n";
-	    # run pileups
-	    if (!-e "$sample_tumor_bam.pileup") {
-		print VARSCAN_SH "samtools mpileup -q 1 -f $opt{GENOME} $sample_tumor_bam > $sample_tumor_bam.pileup\n";
-	    }
-	    if (!-e "$sample_ref_bam.pileup") {    
-		print VARSCAN_SH "samtools mpileup -q 1 -f $opt{GENOME} $sample_ref_bam > $sample_ref_bam.pileup\n";
-	    }
-	    print VARSCAN_SH "echo \"End Pileup\t\" `date` \"\t$sample \t $sample_ref_bam \t $sample_tumor_bam\t\" `uname -n` >> $log_dir/$sample_tumor.log\n\n";
-
-	    # run varscan
-	    print VARSCAN_SH "echo \"Start Varscan\t\" `date` \"\t$sample \t $sample_ref_bam \t $sample_tumor_bam\t\" `uname -n` >> $log_dir/$sample_tumor.log\n";
-	    print VARSCAN_SH "java -Xmx12g -jar $opt{VARSCAN_PATH} somatic $sample_ref_bam.pileup $sample_tumor_bam.pileup $output_name $opt{VARSCAN_SETTINGS} --output-vcf 1\n\n";
-
-	    # postprocessing
-	    print VARSCAN_SH "java -Xmx12g -jar $opt{VARSCAN_PATH} processSomatic $output_name.indel.vcf $opt{VARSCAN_POSTSETTINGS}\n";
-	    print VARSCAN_SH "java -Xmx12g -jar $opt{VARSCAN_PATH} processSomatic $output_name.snp.vcf $opt{VARSCAN_POSTSETTINGS}\n\n";
-	    
-	    # Check varscan completed
-	    print VARSCAN_SH "touch $log_dir/$sample_tumor.done\n\n"; ## Check on complete output!!!
-	    print VARSCAN_SH "echo \"End Varscan\t\" `date` \"\t$sample \t $sample_ref_bam \t $sample_tumor_bam\t\" `uname -n` >> $log_dir/$sample_tumor.log\n";
-	    
-	    close VARSCAN_SH;
-
-	    # Run job
-	    if ( @running_jobs ){
-		system "qsub -q $opt{VARSCAN_QUEUE} -pe threaded $opt{VARSCAN_THREADS} -m a -M $opt{MAIL} -o $log_dir -e $log_dir -N $job_id -hold_jid ".join(",",@running_jobs)." $bash_file";
-		push(@varscan_jobs, $job_id);
-	    } else {
-		system "qsub -q $opt{VARSCAN_QUEUE} -pe threaded $opt{VARSCAN_THREADS} -m a -M $opt{MAIL} -o $log_dir -e $log_dir -N $job_id $bash_file";
-		push(@varscan_jobs, $job_id);
-	    }
-	}
+    ## Run job
+    if ( @running_jobs ){
+        system "qsub -q $opt{VARSCAN_QUEUE} -pe threaded $opt{VARSCAN_THREADS} -m a -M $opt{MAIL} -o $log_dir -e $log_dir -N $job_id -hold_jid ".join(",",@running_jobs)." $bash_file";
+    } else {
+        system "qsub -q $opt{VARSCAN_QUEUE} -pe threaded $opt{VARSCAN_THREADS} -m a -M $opt{MAIL} -o $log_dir -e $log_dir -N $job_id $bash_file";
     }
-    return \@varscan_jobs;
+
+    return $job_id;
 }
 
 sub runFreeBayes {
-    my %opt = %{$_[0]};
-    my @freebayes_jobs;
-    my $job_dir = "$opt{OUTPUT_DIR}/somaticVariants/freebayes/jobs";
-    my $log_dir = "$opt{OUTPUT_DIR}/somaticVariants/freebayes/logs";
-    
-    ### Create freebayes output, job and log dirs
-    if(! -e $job_dir){
-	make_path($job_dir) or die "Couldn't create directory: $job_dir\n";
-    }
-    if(! -e $log_dir){
-	make_path($log_dir) or die "Couldn't create directory: $log_dir\n";
+    my ($sample_tumor, $sample_tumor_name, $out_dir, $job_dir, $log_dir, $sample_tumor_bam, $sample_ref_bam, $running_jobs, $opt) = (@_);
+    my @running_jobs = @{$running_jobs};
+    my %opt = %{$opt};
+    my $freebayes_out_dir = "$out_dir/freebayes";
+
+    ## Create output dir
+    if(! -e $freebayes_out_dir){
+	make_path($freebayes_out_dir) or die "Couldn't create directory: $freebayes_out_dir\n";
     }
 
-    foreach my $sample (keys(%{$opt{SOMATIC_SAMPLES}})){
-	foreach my $sample_tumor (@{$opt{SOMATIC_SAMPLES}{$sample}{'tumor'}}){
-
-	    # Lookup bams and running jobs
-	    my $sample_tumor_bam = "$opt{OUTPUT_DIR}/$sample_tumor/mapping/$opt{BAM_FILES}->{$sample_tumor}";
-	    my @running_jobs;
-	    if ( @{$opt{RUNNING_JOBS}->{$sample_tumor}} ){
-		push(@running_jobs, @{$opt{RUNNING_JOBS}->{$sample_tumor}});
-	    }
-	    my $sample_ref_bam = "$opt{OUTPUT_DIR}/$opt{SOMATIC_SAMPLES}{$sample}{'ref'}/mapping/$opt{BAM_FILES}->{$opt{SOMATIC_SAMPLES}{$sample}{'ref'}}";
-	    if ( @{$opt{RUNNING_JOBS}->{$opt{SOMATIC_SAMPLES}{$sample}{'ref'}}} ){
-		push(@running_jobs, @{$opt{RUNNING_JOBS}->{$opt{SOMATIC_SAMPLES}{$sample}{'ref'}}});
-	    }
-
-	    #Print sample and bam info
-	    print "$sample \t $sample_ref_bam \t $sample_tumor_bam \n";
-
-	    ### Skip FreeBayes if .done file exist
-	    if (-e "$log_dir/$sample_tumor.done"){
-		warn "WARNING: $log_dir/$sample_tumor.done, skipping \n";
-		next;
-	    }
-
-	    ## Setup varscan bash script and output dir
-	    my $job_id = "FB_".$sample_tumor."_".get_job_id();
-	    my $bash_file = $job_dir."/".$job_id.".sh";
-
-	    # Create output dir
-	    my $output_name = "$opt{SOMATIC_SAMPLES}{$sample}{'ref'}\_$sample_tumor";
-	    my $sample_tumor_ref_out = "$opt{OUTPUT_DIR}/somaticVariants/freebayes/$output_name";
-	    if(! -e $sample_tumor_ref_out){
-		make_path($sample_tumor_ref_out) or die "Couldn't create directory: $sample_tumor_ref_out\n";
-	    }
-
-	    # Create bash script
-	    open FREEBAYES_SH, ">$bash_file" or die "cannot open file $bash_file \n";
-	    print FREEBAYES_SH "#!/bin/bash\n\n";
-	    print FREEBAYES_SH "echo \"Start Freebayes\t\" `date` \"\t$sample \t $sample_ref_bam \t $sample_tumor_bam\t\" `uname -n` >> $log_dir/$sample_tumor.log\n";
-	    
-	    # Run freebayes
-	    print FREEBAYES_SH "$opt{FREEBAYES_PATH}/freebayes -f $opt{GENOME} -t $opt{FREEBAYES_TARGETS} $opt{FREEBAYES_SETTINGS} $sample_ref_bam $sample_tumor_bam > $sample_tumor_ref_out/$output_name.vcf\n\n";
-
-	    # Uniqify freebayes output 
-	    print FREEBAYES_SH "uniq $sample_tumor_ref_out/$output_name.vcf > $sample_tumor_ref_out/$output_name.uniq.vcf\n";
-	    print FREEBAYES_SH "mv $sample_tumor_ref_out/$output_name.uniq.vcf $sample_tumor_ref_out/$output_name.vcf\n\n";
-
-	    # get sample ids
-	    print FREEBAYES_SH "sample_R=`grep -P \"^#CHROM\" $sample_tumor_ref_out/$output_name.vcf | cut -f 10`\n";
-	    print FREEBAYES_SH "sample_T=`grep -P \"^#CHROM\" $sample_tumor_ref_out/$output_name.vcf | cut -f 11`\n\n";
-
-	    # annotate somatic and germline scores
-	    print FREEBAYES_SH "$opt{VCFSAMPLEDIFF_PATH}/vcfsamplediff VT \$sample_R \$sample_T $sample_tumor_ref_out/$output_name.vcf> $sample_tumor_ref_out/$output_name\_VTannot.vcf\n";
-	    print FREEBAYES_SH "grep -P \"^#\" $sample_tumor_ref_out/$output_name\_VTannot.vcf > $sample_tumor_ref_out/$output_name\_germline.vcf\n";
-	    print FREEBAYES_SH "grep -P \"^#\" $sample_tumor_ref_out/$output_name\_VTannot.vcf > $sample_tumor_ref_out/$output_name\_somatic.vcf\n";
-	    print FREEBAYES_SH "grep -i \"VT=germline\" $sample_tumor_ref_out/$output_name\_VTannot.vcf >> $sample_tumor_ref_out/$output_name\_germline.vcf\n";
-	    print FREEBAYES_SH "grep -i \"VT=somatic\" $sample_tumor_ref_out/$output_name\_VTannot.vcf >> $sample_tumor_ref_out/$output_name\_somatic.vcf\n";
-	    print FREEBAYES_SH "rm $sample_tumor_ref_out/$output_name\_VTannot.vcf\n\n";
-
-	    # Filter
-	    print FREEBAYES_SH "cat $sample_tumor_ref_out/$output_name\_somatic.vcf | $opt{BIOVCF_PATH}/bio-vcf $opt{FREEBAYES_SOMATICFILTER} > $sample_tumor_ref_out/$output_name\_somatic_filtered.vcf\n";
-	    print FREEBAYES_SH "cat $sample_tumor_ref_out/$output_name\_germline.vcf | $opt{BIOVCF_PATH}/bio-vcf $opt{FREEBAYES_GERMLINEFILTER} > $sample_tumor_ref_out/$output_name\_germline_filtered.vcf\n\n";
-	
-	    print FREEBAYES_SH "touch $log_dir/$sample_tumor.done\n\n"; ## Check on complete output!!!
-	    print FREEBAYES_SH "echo \"End Freebayes\t\" `date` \"\t$sample \t $sample_ref_bam \t $sample_tumor_bam\t\" `uname -n` >> $log_dir/$sample_tumor.log\n";
-
-	    close FREEBAYES_SH;
-
-	    # Run job
-	    if ( @running_jobs ){
-		system "qsub -q $opt{FREEBAYES_QUEUE} -pe threaded $opt{FREEBAYES_THREADS} -m a -M $opt{MAIL} -o $log_dir -e $log_dir -N $job_id -hold_jid ".join(",",@running_jobs)." $bash_file";
-		push(@freebayes_jobs, $job_id);
-	    } else {
-		system "qsub -q $opt{FREEBAYES_QUEUE} -pe threaded $opt{FREEBAYES_THREADS} -m a -M $opt{MAIL} -o $log_dir -e $log_dir -N $job_id $bash_file";
-		push(@freebayes_jobs, $job_id);
-	    }
-	}
+    ## Skip varscan if .done file exist
+    if (-e "$log_dir/freebayes.done"){
+	warn "WARNING: $log_dir/freebayes.done, skipping \n";
+	return;
     }
-    return \@freebayes_jobs;
-}
 
-### Merge results
-sub mergeSomaticVariants {
-    my $configuration = shift;
-    my %opt = %{readConfiguration($configuration)};
+    ## Setup freebayes bash script and output dir
+    my $job_id = "FB_".$sample_tumor."_".get_job_id();
+    my $bash_file = $job_dir."/".$job_id.".sh";
+
+    # Create bash script
+    open FREEBAYES_SH, ">$bash_file" or die "cannot open file $bash_file \n";
+    print FREEBAYES_SH "#!/bin/bash\n\n";
+    print FREEBAYES_SH "echo \"Start Freebayes\t\" `date` \"\t $sample_ref_bam \t $sample_tumor_bam\t\" `uname -n` >> $log_dir/freebayes.log\n";
+
+    # Run freebayes
+    print FREEBAYES_SH "$opt{FREEBAYES_PATH}/freebayes -f $opt{GENOME} -t $opt{FREEBAYES_TARGETS} $opt{FREEBAYES_SETTINGS} $sample_ref_bam $sample_tumor_bam > $freebayes_out_dir/$sample_tumor_name.vcf\n\n";
+
+    # Uniqify freebayes output 
+    print FREEBAYES_SH "uniq $freebayes_out_dir/$sample_tumor_name.vcf > $freebayes_out_dir/$sample_tumor_name.uniq.vcf\n";
+    print FREEBAYES_SH "mv $freebayes_out_dir/$sample_tumor_name.uniq.vcf $freebayes_out_dir/$sample_tumor_name.vcf\n\n";
+
+    # get sample ids
+    print FREEBAYES_SH "sample_R=`grep -P \"^#CHROM\" $freebayes_out_dir/$sample_tumor_name.vcf | cut -f 10`\n";
+    print FREEBAYES_SH "sample_T=`grep -P \"^#CHROM\" $freebayes_out_dir/$sample_tumor_name.vcf | cut -f 11`\n\n";
+
+    # annotate somatic and germline scores
+    print FREEBAYES_SH "$opt{VCFSAMPLEDIFF_PATH}/vcfsamplediff VT \$sample_R \$sample_T $freebayes_out_dir/$sample_tumor_name.vcf > $freebayes_out_dir/$sample_tumor_name\_VTannot.vcf\n";
+    print FREEBAYES_SH "grep -P \"^#\" $freebayes_out_dir/$sample_tumor_name\_VTannot.vcf > $freebayes_out_dir/$sample_tumor_name\_germline.vcf\n";
+    print FREEBAYES_SH "grep -P \"^#\" $freebayes_out_dir/$sample_tumor_name\_VTannot.vcf > $freebayes_out_dir/$sample_tumor_name\_somatic.vcf\n";
+    print FREEBAYES_SH "grep -i \"VT=germline\" $freebayes_out_dir/$sample_tumor_name\_VTannot.vcf >> $freebayes_out_dir/$sample_tumor_name\_germline.vcf\n";
+    print FREEBAYES_SH "grep -i \"VT=somatic\" $freebayes_out_dir/$sample_tumor_name\_VTannot.vcf >> $freebayes_out_dir/$sample_tumor_name\_somatic.vcf\n";
+    print FREEBAYES_SH "rm $freebayes_out_dir/$sample_tumor_name\_VTannot.vcf\n\n";
+
+    # Filter
+    print FREEBAYES_SH "cat $freebayes_out_dir/$sample_tumor_name\_somatic.vcf | $opt{BIOVCF_PATH}/bio-vcf $opt{FREEBAYES_SOMATICFILTER} > $freebayes_out_dir/$sample_tumor_name\_somatic_filtered.vcf\n";
+    print FREEBAYES_SH "cat $freebayes_out_dir/$sample_tumor_name\_germline.vcf | $opt{BIOVCF_PATH}/bio-vcf $opt{FREEBAYES_GERMLINEFILTER} > $freebayes_out_dir/$sample_tumor_name\_germline_filtered.vcf\n\n";
+
+    print FREEBAYES_SH "touch $log_dir/freebayes.done\n\n"; ## Check on complete output!!!
+    print FREEBAYES_SH "echo \"End Freebayes\t\" `date` \"\t $sample_ref_bam \t $sample_tumor_bam\t\" `uname -n` >> $log_dir/freebayes.log\n";
+
+    close FREEBAYES_SH;
+
+    # Run job
+    if ( @running_jobs ){
+	system "qsub -q $opt{FREEBAYES_QUEUE} -pe threaded $opt{FREEBAYES_THREADS} -m a -M $opt{MAIL} -o $log_dir -e $log_dir -N $job_id -hold_jid ".join(",",@running_jobs)." $bash_file";
+    } else {
+	system "qsub -q $opt{FREEBAYES_QUEUE} -pe threaded $opt{FREEBAYES_THREADS} -m a -M $opt{MAIL} -o $log_dir -e $log_dir -N $job_id $bash_file";
+    }
+    return $job_id;
 }
 
 ### Read config and check input
@@ -350,7 +310,6 @@ sub readConfiguration{
     foreach my $key (keys %{$configuration}){
 	$opt{$key} = $configuration->{$key};
     }
-
 
     if(! $opt{GENOME}){ die "ERROR: No GENOME found in .ini file\n" }
     elsif(! -e $opt{GENOME}){ die"ERROR: $opt{GENOME} does not exist\n"}
