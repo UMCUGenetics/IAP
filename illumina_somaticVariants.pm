@@ -106,26 +106,31 @@ sub runSomaticVariantCallers {
 		my $freebayes_job = runFreeBayes($sample_tumor, $sample_tumor_name, $sample_tumor_out_dir, $sample_tumor_job_dir, $sample_tumor_log_dir, $sample_tumor_bam, $sample_ref_bam, \@running_jobs, \%opt);
 		push(@somvar_jobs, $freebayes_job);
 	    }
-	    
+
 	    ## Merge somatic vcfs
+	    print "\n###SCHEDULING MERGE SOMATIC VCFS####\n";
+
 	    my $job_id = "MERGE_".$sample_tumor."_".get_job_id();
 	    my $bash_file = $sample_tumor_job_dir."/".$job_id.".sh";
-	    
+
 	    open MERGE_SH, ">$bash_file" or die "cannot open file $bash_file \n";
 	    print MERGE_SH "#!/bin/bash\n\n";
 	    print MERGE_SH "echo \"Start Merge\t\" `date` `uname -n` >> $sample_tumor_log_dir/merge.log\n\n";
-	    
-	    print MERGE_SH "java -Xmx6G -jar $opt{GATK_PATH}/GenomeAnalysisTK.jar -T CombineVariants -R $opt{GENOME} -o $sample_tumor_out_dir/$sample_tumor_name\_merged_somatics.vcf ";
+
+	    print MERGE_SH "java -Xmx6G -jar $opt{GATK_PATH}/GenomeAnalysisTK.jar -T CombineVariants -R $opt{GENOME} -o $sample_tumor_out_dir/$sample_tumor_name\_merged_somatics.vcf --genotypemergeoption uniquify --assumeIdenticalSamples ";
 	    if($opt{SOMVAR_STRELKA} eq "yes"){ print MERGE_SH "-V $sample_tumor_out_dir/strelka/passed.somatic.merged.vcf "; }
 	    if($opt{SOMVAR_VARSCAN} eq "yes"){ print MERGE_SH "-V $sample_tumor_out_dir/varscan/$sample_tumor_name.merged.Somatic.hc.vcf "; }
 	    if($opt{SOMVAR_FREEBAYES} eq "yes"){ print MERGE_SH "-V $sample_tumor_out_dir/freebayes/$sample_tumor_name\_somatic_filtered.vcf "; }
-	    
+
 	    print MERGE_SH "\n\necho \"END Merge\t\" `date` `uname -n` >> $sample_tumor_log_dir/merge.log\n\n";
 	    close MERGE_SH;
-	    
-	    print "\n\n";
-	    print @somvar_jobs;
-	    print "\n\n";
+
+	    # Run job
+	    if ( @somvar_jobs ){
+		system "qsub -q $opt{SOMVARMERGE_QUEUE} -m a -M $opt{MAIL} -pe threaded $opt{SOMVARMERGE_THREADS} -o $sample_tumor_log_dir -e $sample_tumor_log_dir -N $job_id -hold_jid ".join(",",@somvar_jobs)." $bash_file";
+	    } else {
+		system "qsub -q $opt{SOMVARMERGE_QUEUE} -m a -M $opt{MAIL} -pe threaded $opt{SOMVARMERGE_THREADS} -o $sample_tumor_log_dir -e $sample_tumor_log_dir -N $job_id $bash_file";
+	    }
 	}
     }
 }
@@ -221,7 +226,8 @@ sub runVarscan {
     print VARSCAN_SH "java -Xmx12g -jar $opt{VARSCAN_PATH} processSomatic $sample_tumor_name.snp.vcf $opt{VARSCAN_POSTSETTINGS}\n\n";
     
     # merge varscan hc snps and indels
-    print VARSCAN_SH "java -Xmx6G -jar $opt{GATK_PATH}/GenomeAnalysisTK.jar -T CombineVariants -R $opt{GENOME} -o $sample_tumor_name.merged.Somatic.hc.vcf -V $sample_tumor_name.snp.Somatic.hc.vcf -V $sample_tumor_name.indel.Somatic.hc.vcf\n\n";
+    print VARSCAN_SH "java -Xmx6G -jar $opt{GATK_PATH}/GenomeAnalysisTK.jar -T CombineVariants -R $opt{GENOME} -o $sample_tumor_name.merged.Somatic.hc.vcf -V $sample_tumor_name.snp.Somatic.hc.vcf -V $sample_tumor_name.indel.Somatic.hc.vcf\n";
+    print VARSCAN_SH "sed -i 's/SSC/VS_SSC/' $sample_tumor_name.merged.Somatic.hc.vcf\n\n"; # to resolve merge conflict with FB vcfs
     
     # Check varscan completed
     print VARSCAN_SH "touch $log_dir/varscan.done\n\n"; ## Check on complete output!!!
@@ -278,6 +284,7 @@ sub runFreeBayes {
 
     # annotate somatic and germline scores
     print FREEBAYES_SH "$opt{VCFSAMPLEDIFF_PATH}/vcfsamplediff VT \$sample_R \$sample_T $freebayes_out_dir/$sample_tumor_name.vcf > $freebayes_out_dir/$sample_tumor_name\_VTannot.vcf\n";
+    print FREEBAYES_SH "sed -i 's/SSC/FB_SSC/' $freebayes_out_dir/$sample_tumor_name\_VTannot.vcf\n"; # to resolve merge conflicts with varscan vcfs
     print FREEBAYES_SH "grep -P \"^#\" $freebayes_out_dir/$sample_tumor_name\_VTannot.vcf > $freebayes_out_dir/$sample_tumor_name\_germline.vcf\n";
     print FREEBAYES_SH "grep -P \"^#\" $freebayes_out_dir/$sample_tumor_name\_VTannot.vcf > $freebayes_out_dir/$sample_tumor_name\_somatic.vcf\n";
     print FREEBAYES_SH "grep -i \"VT=germline\" $freebayes_out_dir/$sample_tumor_name\_VTannot.vcf >> $freebayes_out_dir/$sample_tumor_name\_germline.vcf\n";
@@ -313,8 +320,38 @@ sub readConfiguration{
 
     if(! $opt{GENOME}){ die "ERROR: No GENOME found in .ini file\n" }
     elsif(! -e $opt{GENOME}){ die"ERROR: $opt{GENOME} does not exist\n"}
+    if(! $opt{SOMVAR_STRELKA}){ die "ERROR: NO SOMVAR_STRELKA found in .ini file\n" }
+    if($opt{SOMVAR_STRELKA} eq "yes"){
+	if(! $opt{STRELKA_PATH}){ die "ERROR: NO STRELKA_PATH found in .ini file\n" }
+	if(! $opt{STRELKA_INI}){ die "ERROR: NO STRELKA_INI found in .ini file\n" }
+	if(! $opt{STRELKA_QUEUE}){ die "ERROR: NO STRELKA_QUEUE found in .ini file\n" }
+	if(! $opt{STRELKA_THREADS}){ die "ERROR: NO STRELKA_THREADS found in .ini file\n" }
+    }
+    if(! $opt{SOMVAR_VARSCAN}){ die "ERROR: NO SOMVAR_VARSCAN found in .ini file\n" }
+    if($opt{SOMVAR_VARSCAN} eq "yes"){
+	if(! $opt{VARSCAN_PATH}){ die "ERROR: NO VARSCAN_PATH found in .ini file\n" }
+	if(! $opt{VARSCAN_QUEUE}){ die "ERROR: NO VARSCAN_QUEUE found in .ini file\n" }
+	if(! $opt{VARSCAN_THREADS}){ die "ERROR: NO VARSCAN_THREADS found in .ini file\n" }
+	if(! $opt{VARSCAN_SETTINGS}){ die "ERROR: NO VARSCAN_SETTINGS found in .ini file\n" }
+	if(! $opt{VARSCAN_POSTSETTINGS}){ die "ERROR: NO VARSCAN_POSTSETTINGS found in .ini file\n" }
+    }
+    if(! $opt{SOMVAR_FREEBAYES}){ die "ERROR: NO SOMVAR_FREEBAYES found in .ini file\n" }
+    if($opt{SOMVAR_FREEBAYES} eq "yes"){
+	if(! $opt{FREEBAYES_PATH}){ die "ERROR: NO found in .ini file\n" }
+	if(! $opt{VCFSAMPLEDIFF_PATH}){ die "ERROR: NO found in .ini file\n" }
+	if(! $opt{BIOVCF_PATH}){ die "ERROR: NO found in .ini file\n" }
+	if(! $opt{FREEBAYES_QUEUE}){ die "ERROR: NO found in .ini file\n" }
+	if(! $opt{FREEBAYES_THREADS}){ die "ERROR: NO found in .ini file\n" }
+	if(! $opt{FREEBAYES_TARGETS}){ die "ERROR: NO found in .ini file\n" }
+	if(! $opt{FREEBAYES_SETTINGS}){ die "ERROR: NO found in .ini file\n" }
+	if(! $opt{FREEBAYES_SOMATICFILTER}){ die "ERROR: NO found in .ini file\n" }
+	if(! $opt{FREEBAYES_GERMLINEFILTER}){ die "ERROR: NO found in .ini file\n" }
+    }
+    if(! $opt{SOMVARMERGE_QUEUE}){ die "ERROR: NO SOMVARMERGE_QUEUE found in .ini file\n" }
+    if(! $opt{SOMVARMERGE_THREADS}){ die "ERROR: NO found in .ini file\n" }
     if(! $opt{OUTPUT_DIR}){ die "ERROR: No OUTPUT_DIR found in .conf file\n" }
     if(! $opt{MAIL}){ die "ERROR: No MAIL address specified in .conf file\n" }
+
     return \%opt;
 }
 
