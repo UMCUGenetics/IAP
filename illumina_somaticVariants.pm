@@ -94,17 +94,17 @@ sub runSomaticVariantCallers {
 	    if($opt{SOMVAR_STRELKA} eq "yes"){
 		print "\n###SCHEDULING STRELKA####\n";
 		my $strelka_job = runStrelka($sample_tumor, $sample_tumor_out_dir, $sample_tumor_job_dir, $sample_tumor_log_dir, $sample_tumor_bam, $sample_ref_bam, \@running_jobs, \%opt);
-		push(@somvar_jobs, $strelka_job);
+		if($strelka_job){push(@somvar_jobs, $strelka_job)};
 	    }
 	    if($opt{SOMVAR_VARSCAN} eq "yes"){
 		print "\n###SCHEDULING VARSCAN####\n";
 		my $varscan_job = runVarscan($sample_tumor, $sample_tumor_name, $sample_tumor_out_dir, $sample_tumor_job_dir, $sample_tumor_log_dir, $sample_tumor_bam, $sample_ref_bam, \@running_jobs, \%opt);
-		push(@somvar_jobs, $varscan_job);
+		if($varscan_job){push(@somvar_jobs, $varscan_job)};
 	    }
 	    if($opt{SOMVAR_FREEBAYES} eq "yes"){
 		print "\n###SCHEDULING FREEBAYES####\n";
 		my $freebayes_job = runFreeBayes($sample_tumor, $sample_tumor_name, $sample_tumor_out_dir, $sample_tumor_job_dir, $sample_tumor_log_dir, $sample_tumor_bam, $sample_ref_bam, \@running_jobs, \%opt);
-		push(@somvar_jobs, $freebayes_job);
+		if($freebayes_job){push(@somvar_jobs, $freebayes_job)};
 	    }
 
 	    ## Merge somatic vcfs
@@ -122,7 +122,9 @@ sub runSomaticVariantCallers {
 	    if($opt{SOMVAR_VARSCAN} eq "yes"){ print MERGE_SH "-V $sample_tumor_out_dir/varscan/$sample_tumor_name.merged.Somatic.hc.vcf "; }
 	    if($opt{SOMVAR_FREEBAYES} eq "yes"){ print MERGE_SH "-V $sample_tumor_out_dir/freebayes/$sample_tumor_name\_somatic_filtered.vcf "; }
 
-	    print MERGE_SH "\n\necho \"END Merge\t\" `date` `uname -n` >> $sample_tumor_log_dir/merge.log\n\n";
+	    print MERGE_SH "\n\ntouch $sample_tumor_log_dir/$sample_tumor_name.done\n\n";
+
+	    print MERGE_SH "echo \"END Merge\t\" `date` `uname -n` >> $sample_tumor_log_dir/merge.log\n\n";
 	    close MERGE_SH;
 
 	    # Run job
