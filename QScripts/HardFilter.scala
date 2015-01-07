@@ -63,7 +63,7 @@ class HardFilter extends QScript {
 
 	val SNPfilter = new VariantFiltration with HF_Arguments
 	SNPfilter.scatterCount = numScatters
-	SNPfilter.V = rawVCF
+	SNPfilter.V = selectSNP.out
 	SNPfilter.out = qscript.out + ".filtered_snps.vcf"
 	SNPfilter.filterExpression = snpFilterExp 
 	SNPfilter.filterName = snpFilterNames
@@ -80,7 +80,7 @@ class HardFilter extends QScript {
 
 	val INDELfilter = new VariantFiltration with HF_Arguments
 	INDELfilter.scatterCount = numScatters
-	INDELfilter.V = rawVCF
+	INDELfilter.V = selectINDEL.out
 	INDELfilter.out = qscript.out + ".filtered_indels.vcf"
 	INDELfilter.filterExpression = indelFilterExp
 	INDELfilter.filterName = indelFilterNames
