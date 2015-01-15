@@ -80,10 +80,11 @@ sub runAnnotateVariants {
     }
     
     #Add GoNL annotation
-    if($opt{ANNOTATE_VCFTOOLS} eq "yes"){
+    if($opt{ANNOTATE_FREQUENCIES} eq "yes"){
 	$outvcf = $invcf;
-	$outvcf =~ s/.vcf/_GoNL.vcf/;
-	$command = "$opt{VCFTOOLS_PATH}/vcf-annotate -a $opt{ANNOTATE_FREQ} -c $opt{ANNOTATE_COLUMNS} -d $opt{ANNOTATE_DESCR} $invcf > $outvcf";
+	my $suffix = "_$opt{ANNOTATE_FREQNAME}.vcf";
+	$outvcf =~ s/.vcf/$suffix/;
+	$command = "java -Xmx".$opt{ANNOTATE_MEM}."g -jar $opt{SNPEFF_PATH}/SnpSift.jar annotate -tabix -name $opt{ANNOTATE_FREQNAME}_ -info $opt{ANNOTATE_FREQINFO} $opt{ANNOTATE_FREQDB} $invcf > $outvcf";
 	print ANNOTATE_SH "if [ -f $invcf ]\n";
 	print ANNOTATE_SH "then\n";
 	print ANNOTATE_SH "\t$command\n";
@@ -94,6 +95,7 @@ sub runAnnotateVariants {
 	    print ANNOTATE_SH "if [ -f $outvcf ]\nthen\n\trm $invcf\nfi\n\n";
 	}
     }
+
     print ANNOTATE_SH "if [ -s $outvcf ]\nthen\n\ttouch $opt{OUTPUT_DIR}/logs/VariantAnnotation.done\nfi\n\n"; ### check whether annotated vcf is not empty
     print ANNOTATE_SH "echo \"End variant annotation\t\" `date` \"\t$invcf\t\" `uname -n` >> $opt{OUTPUT_DIR}/logs/$runName.log\n";
     
@@ -137,13 +139,12 @@ sub readConfiguration{
 	elsif( $opt{ANNOTATE_DBNSFP} && ! -e $opt{ANNOTATE_DBNSFP}) { die"ERROR: $opt{ANNOTATE_DBNSFP} does not exist\n" }
 	if(! $opt{ANNOTATE_FIELDS}){ die "ERROR: No ANNOTATE_FIELDS found in .ini file\n" }
     }
-    if(! $opt{ANNOTATE_VCFTOOLS}){ die "ERROR: No ANNOTATE_VCFTOOLS found in .ini file\n" }
-    if($opt{ANNOTATE_VCFTOOLS} eq "yes"){
-	if(! $opt{ANNOTATE_FREQ}){ die "ERROR: No ANNOTATE_FREQ found in .ini file\n" }
-	elsif( $opt{ANNOTATE_FREQ} && ! -e $opt{ANNOTATE_FREQ}) { die"ERROR: $opt{ANNOTATE_FREQ} does not exist\n" }
-	if(! $opt{ANNOTATE_DESCR}){ die "ERROR: No ANNOTATE_DESCR found in .ini file\n" }
-	elsif( $opt{ANNOTATE_DESCR} && ! -e $opt{ANNOTATE_DESCR}) { die"ERROR: $opt{ANNOTATE_DESCR} does not exist\n" }
-	if(! $opt{ANNOTATE_COLUMNS}){ die "ERROR: No ANNOTATE_COLUMNS found in .ini file\n" }
+    if(! $opt{ANNOTATE_FREQUENCIES}){ die "ERROR: No ANNOTATE_VCFTOOLS found in .ini file\n" }
+    if($opt{ANNOTATE_FREQUENCIES} eq "yes"){
+	if(! $opt{ANNOTATE_FREQNAME}){ die "ERROR: No ANNOTATE_FREQNAME found in .ini file\n" }
+	if(! $opt{ANNOTATE_FREQDB}){ die "ERROR: No ANNOTATE_FREQDB found in .ini file\n" }
+	elsif( $opt{ANNOTATE_FREQDB} && ! -e $opt{ANNOTATE_FREQDB}) { die"ERROR: $opt{ANNOTATE_FREQDB} does not exist\n" }
+	if(! $opt{ANNOTATE_FREQINFO}){ die "ERROR: No ANNOTATE_FREQINFO found in .ini file\n" }
     }
     if(! $opt{OUTPUT_DIR}){ die "ERROR: No OUTPUT_DIR found in .conf file\n" }
 
