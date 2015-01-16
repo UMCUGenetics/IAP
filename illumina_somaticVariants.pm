@@ -49,7 +49,7 @@ sub parseSamples {
 sub runSomaticVariantCallers {
     my $configuration = shift;
     my %opt = %{readConfiguration($configuration)};
-
+    my @all_somvar_jobs;
     ### Loop over tumor samples
     foreach my $sample (keys(%{$opt{SOMATIC_SAMPLES}})){
 	foreach my $sample_tumor (@{$opt{SOMATIC_SAMPLES}{$sample}{'tumor'}}){
@@ -133,8 +133,10 @@ sub runSomaticVariantCallers {
 	    } else {
 		system "qsub -q $opt{SOMVARMERGE_QUEUE} -m a -M $opt{MAIL} -pe threaded $opt{SOMVARMERGE_THREADS} -o $sample_tumor_log_dir -e $sample_tumor_log_dir -N $job_id $bash_file";
 	    }
+	    push(@all_somvar_jobs, @somvar_jobs);
 	}
     }
+    return \@all_somvar_jobs;
 }
 
 ### Somatic Variant Callers

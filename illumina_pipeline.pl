@@ -143,7 +143,8 @@ if (! $opt{VCF} ){
 	print "\n###SCHEDULING SOMATIC VARIANT CALLERS####\n";
 	$opt_ref = illumina_somaticVariants::parseSamples(\%opt);
 	%opt = %$opt_ref;
-	illumina_somaticVariants::runSomaticVariantCallers(\%opt);
+	my $somVar_jobs = illumina_somaticVariants::runSomaticVariantCallers(\%opt);
+	$opt{RUNNING_JOBS}->{'somVar'} = $somVar_jobs;
     }
     ### GATK
     if($opt{VARIANT_CALLING} eq "yes"){
