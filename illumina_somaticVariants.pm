@@ -24,7 +24,7 @@ sub parseSamples {
 
     foreach my $sample (@{$opt{SAMPLES}}){
 	# Parse cpct samples based on expected naming
-	my ($cpct_name,$origin) = ($sample =~ /(CPCT\d{8})([TR].*)/);
+	my ($cpct_name,$origin) = ($sample =~ /(CPCT\d{8})([TR][IVX]*)/);
 
 	# Reference sample
 	if ($origin =~ m/R.*/){
