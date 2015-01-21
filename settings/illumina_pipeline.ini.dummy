@@ -1,6 +1,7 @@
 ####MAIN CLUSTER CONFIGURATION####
 CLUSTER_PATH	/srv/sge/fedor8/common
 CLUSTER_TMP	/tmp
+CLUSTER_RESERVATION	no
 
 ####DEFAULT TOOL PATHS####
 BWA_PATH	/data_fedor13/common_scripts/bwa/0.7.5a
