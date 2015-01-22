@@ -139,7 +139,7 @@ sub readConfiguration{
 	elsif( $opt{ANNOTATE_DBNSFP} && ! -e $opt{ANNOTATE_DBNSFP}) { die"ERROR: $opt{ANNOTATE_DBNSFP} does not exist\n" }
 	if(! $opt{ANNOTATE_FIELDS}){ die "ERROR: No ANNOTATE_FIELDS found in .ini file\n" }
     }
-    if(! $opt{ANNOTATE_FREQUENCIES}){ die "ERROR: No ANNOTATE_VCFTOOLS found in .ini file\n" }
+    if(! $opt{ANNOTATE_FREQUENCIES}){ die "ERROR: No ANNOTATE_FREQUENCIES found in .ini file\n" }
     if($opt{ANNOTATE_FREQUENCIES} eq "yes"){
 	if(! $opt{ANNOTATE_FREQNAME}){ die "ERROR: No ANNOTATE_FREQNAME found in .ini file\n" }
 	if(! $opt{ANNOTATE_FREQDB}){ die "ERROR: No ANNOTATE_FREQDB found in .ini file\n" }
