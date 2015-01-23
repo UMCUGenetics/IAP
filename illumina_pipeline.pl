@@ -25,6 +25,7 @@ use illumina_realign;
 use illumina_baseRecal;
 use illumina_calling;
 use illumina_filterVariants;
+use illumina_somaticVariants;
 use illumina_annotateVariants;
 use illumina_check;
 
@@ -83,6 +84,7 @@ if(! $opt{INDELREALIGNMENT}){ die "ERROR: No INDELREALIGNMENT option in .conf fi
 if(! $opt{BASEQUALITYRECAL}){ die "ERROR: No BASEQUALITYRECAL option in .conf file \n" }
 if(! $opt{VARIANT_CALLING}){ die "ERROR: No VARIANT_CALLING option in .conf file \n" }
 if(! $opt{FILTER_VARIANTS}){ die "ERROR: No FILTER_VARIANTS option in .conf file \n" }
+if(! $opt{SOMATIC_VARIANTS}){ die "ERROR: No SOMATIC_VARIANTS option in .conf file \n" }
 if(! $opt{ANNOTATE_VARIANTS}){ die "ERROR: No ANNOTATE_VARIANTS option in .conf file \n" }
 if(! $opt{CHECKING}){ die "ERROR: No CHECKING option in .conf file \n" }
 
@@ -134,8 +136,17 @@ if (! $opt{VCF} ){
 	$opt_ref = illumina_baseRecal::runBaseRecalibration(\%opt);
 	%opt = %$opt_ref;
     }
-    
-### Variant Caller or vcf input
+
+### Variant Caller
+    ### Somatic variant callers
+    if($opt{SOMATIC_VARIANTS} eq "yes"){
+	print "\n###SCHEDULING SOMATIC VARIANT CALLERS####\n";
+	$opt_ref = illumina_somaticVariants::parseSamples(\%opt);
+	%opt = %$opt_ref;
+	my $somVar_jobs = illumina_somaticVariants::runSomaticVariantCallers(\%opt);
+	$opt{RUNNING_JOBS}->{'somVar'} = $somVar_jobs;
+    }
+    ### GATK
     if($opt{VARIANT_CALLING} eq "yes"){
 	print "\n###SCHEDULING VARIANT CALLING####\n";
 	$opt_ref = illumina_calling::runVariantCalling(\%opt);
@@ -148,7 +159,7 @@ if (! $opt{VCF} ){
     %opt = %$opt_ref;
 }
 
-### Post variant caller
+### Filter variants
 if($opt{FILTER_VARIANTS} eq "yes"){
     print "\n###SCHEDULING VARIANT FILTRATION####\n";
     my $FVJob = illumina_filterVariants::runFilterVariants(\%opt);
@@ -158,6 +169,7 @@ if($opt{FILTER_VARIANTS} eq "yes"){
     }
 }
 
+### Annotate variants
 if($opt{ANNOTATE_VARIANTS} eq "yes"){
     print "\n###SCHEDULING VARIANT ANNOTATION####\n";
     my $AVJob = illumina_annotateVariants::runAnnotateVariants(\%opt);
@@ -221,25 +233,25 @@ sub createOutputDirs{
     ### Create sample specific output directories
     foreach my $sample (@{$opt{SAMPLES}}){
 	if(! -e "$opt{OUTPUT_DIR}/$sample"){
-    	    mkdir("$opt{OUTPUT_DIR}/$sample") or die "Couldn't create directory: $opt{OUTPUT_DIR}/$sample\n";
+	    mkdir("$opt{OUTPUT_DIR}/$sample") or die "Couldn't create directory: $opt{OUTPUT_DIR}/$sample\n";
 	}
 	if(! -e "$opt{OUTPUT_DIR}/$sample/mapping"){
-    	    mkdir("$opt{OUTPUT_DIR}/$sample/mapping") or die "Couldn't create directory: $opt{OUTPUT_DIR}/$sample/mapping\n";
+	    mkdir("$opt{OUTPUT_DIR}/$sample/mapping") or die "Couldn't create directory: $opt{OUTPUT_DIR}/$sample/mapping\n";
 	}
 	if(! -e "$opt{OUTPUT_DIR}/$sample/QCStats"){
-    	    mkdir("$opt{OUTPUT_DIR}/$sample/QCStats") or die "Couldn't create directory: $opt{OUTPUT_DIR}/$sample/QCStats\n";
+	    mkdir("$opt{OUTPUT_DIR}/$sample/QCStats") or die "Couldn't create directory: $opt{OUTPUT_DIR}/$sample/QCStats\n";
 	}
 	if(! -e "$opt{OUTPUT_DIR}/$sample/jobs"){
-    	    mkdir("$opt{OUTPUT_DIR}/$sample/jobs") or die "Couldn't create directory: $opt{OUTPUT_DIR}/$sample/jobs\n";
+	    mkdir("$opt{OUTPUT_DIR}/$sample/jobs") or die "Couldn't create directory: $opt{OUTPUT_DIR}/$sample/jobs\n";
 	}
 	if(! -e "$opt{OUTPUT_DIR}/$sample/logs"){
-    	    mkdir("$opt{OUTPUT_DIR}/$sample/logs") or die "Couldn't create directory: $opt{OUTPUT_DIR}/$sample/logs\n";
+	    mkdir("$opt{OUTPUT_DIR}/$sample/logs") or die "Couldn't create directory: $opt{OUTPUT_DIR}/$sample/logs\n";
 	}
 	if(! -e "$opt{OUTPUT_DIR}/$sample/tmp"){
-    	    mkdir("$opt{OUTPUT_DIR}/$sample/tmp") or die "Couldn't create directory: $opt{OUTPUT_DIR}/$sample/tmp\n";
+	    mkdir("$opt{OUTPUT_DIR}/$sample/tmp") or die "Couldn't create directory: $opt{OUTPUT_DIR}/$sample/tmp\n";
 	}
 	#if(! -e "$opt{OUTPUT_DIR}/$sample/variants"){
-    	#    mkdir("$opt{OUTPUT_DIR}/$sample/variants") or die "Couldn't create directory: $opt{OUTPUT_DIR}/$sample/variants\n";
+	#    mkdir("$opt{OUTPUT_DIR}/$sample/variants") or die "Couldn't create directory: $opt{OUTPUT_DIR}/$sample/variants\n";
 	#}
     }
 }
