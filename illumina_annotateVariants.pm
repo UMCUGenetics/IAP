@@ -79,12 +79,12 @@ sub runAnnotateVariants {
 	$invcf = $outvcf;
     }
     
-    #Add GoNL annotation
-    if($opt{ANNOTATE_FREQUENCIES} eq "yes"){
+    # Add ID from database vcf, for example Cosmic
+    if($opt{ANNOTATE_IDFIELD} eq "yes"){
 	$outvcf = $invcf;
-	my $suffix = "_$opt{ANNOTATE_FREQNAME}.vcf";
+	my $suffix = "_$opt{ANNOTATE_IDNAME}.vcf";
 	$outvcf =~ s/.vcf/$suffix/;
-	$command = "java -Xmx".$opt{ANNOTATE_MEM}."g -jar $opt{SNPEFF_PATH}/SnpSift.jar annotate -tabix -name $opt{ANNOTATE_FREQNAME}_ -info $opt{ANNOTATE_FREQINFO} $opt{ANNOTATE_FREQDB} $invcf > $outvcf";
+	$command = "java -Xmx".$opt{ANNOTATE_MEM}."g -jar $opt{GATK_PATH}/GenomeAnalysisTK.jar -T VariantAnnotator -nt $opt{ANNOTATE_THREADS} -R $opt{GENOME} -o $outvcf --variant $invcf --dbsnp $opt{ANNOTATE_IDDB} --alwaysAppendDbsnpId";
 	print ANNOTATE_SH "if [ -f $invcf ]\n";
 	print ANNOTATE_SH "then\n";
 	print ANNOTATE_SH "\t$command\n";
@@ -97,23 +97,23 @@ sub runAnnotateVariants {
 	$invcf = $outvcf;
     }
     
-    if($opt{ANNOTATE_IDFIELD} eq "yes"){
+    #Add GoNL annotation
+    if($opt{ANNOTATE_FREQUENCIES} eq "yes"){
 	$outvcf = $invcf;
-	my $suffix = "_$opt{ANNOTATE_IDNAME}.vcf";
+	my $suffix = "_$opt{ANNOTATE_FREQNAME}.vcf";
 	$outvcf =~ s/.vcf/$suffix/;
-	$command = "java -Xmx".$opt{ANNOTATE_MEM}."g -jar $opt{GATK_PATH}/GenomeAnalysisTK.jar -T VariantAnnotator -R $opt{GENOME} -o $outvcf --variant $invcf --dbsnp $opt{ANNOTATE_IDDB} --alwaysAppendDbsnpId";
+	$command = "java -Xmx".$opt{ANNOTATE_MEM}."g -jar $opt{SNPEFF_PATH}/SnpSift.jar annotate -tabix -name $opt{ANNOTATE_FREQNAME}_ -info $opt{ANNOTATE_FREQINFO} $opt{ANNOTATE_FREQDB} $invcf > $outvcf";
 	print ANNOTATE_SH "if [ -f $invcf ]\n";
 	print ANNOTATE_SH "then\n";
 	print ANNOTATE_SH "\t$command\n";
 	print ANNOTATE_SH "else\n";
 	print ANNOTATE_SH "\techo \"ERROR: $invcf does not exist.\" >&2\n";
 	print ANNOTATE_SH "fi\n\n";
-	#if($opt{ANNOTATE_SNPSIFT} eq "yes" || $opt{ANNOTATE_SNPEFF} eq "yes" || $opt{ANNOTATE_FREQUENCIES} eq "yes"){
-	    #print ANNOTATE_SH "if [ -f $outvcf ]\nthen\n\trm $invcf\nfi\n\n";
-	#}
+	if($opt{ANNOTATE_SNPSIFT} eq "yes" || $opt{ANNOTATE_SNPEFF} eq "yes" || $opt{ANNOTATE_IDFIELD} eq "yes"){
+	    print ANNOTATE_SH "if [ -f $outvcf ]\nthen\n\trm $invcf\nfi\n\n";
+	}
 	$invcf = $outvcf;
     }
-    
     
     print ANNOTATE_SH "if [ -s $outvcf ]\nthen\n\ttouch $opt{OUTPUT_DIR}/logs/VariantAnnotation.done\nfi\n\n"; ### check whether annotated vcf is not empty
     print ANNOTATE_SH "echo \"End variant annotation\t\" `date` \"\t$invcf\t\" `uname -n` >> $opt{OUTPUT_DIR}/logs/$runName.log\n";
@@ -127,9 +127,9 @@ sub runAnnotateVariants {
 
     ### Start main bash script
     if (@runningJobs){
-	system "qsub -q $opt{ANNOTATE_QUEUE} -m a -M $opt{MAIL} -pe threaded $opt{ANNOTATE_THREADS} -o $logDir/VariantAnnotation_$runName.out -e $logDir/VariantAnnotation_$runName.err -N $jobID -hold_jid ".join(",",@runningJobs)." $bashFile";
+	system "qsub -q $opt{ANNOTATE_QUEUE} -m a -M $opt{MAIL} -pe threaded $opt{ANNOTATE_THREADS} -R $opt{CLUSTER_RESERVATION} -o $logDir/VariantAnnotation_$runName.out -e $logDir/VariantAnnotation_$runName.err -N $jobID -hold_jid ".join(",",@runningJobs)." $bashFile";
     } else {
-	system "qsub -q $opt{ANNOTATE_QUEUE} -m a -M $opt{MAIL} -pe threaded $opt{ANNOTATE_THREADS} -o $logDir/VariantAnnotation_$runName.out -e $logDir/VariantAnnotation_$runName.err -N $jobID $bashFile";
+	system "qsub -q $opt{ANNOTATE_QUEUE} -m a -M $opt{MAIL} -pe threaded $opt{ANNOTATE_THREADS} -R $opt{CLUSTER_RESERVATION} -o $logDir/VariantAnnotation_$runName.out -e $logDir/VariantAnnotation_$runName.err -N $jobID $bashFile";
     }
 
     return $jobID;
@@ -147,6 +147,7 @@ sub readConfiguration{
     if(! $opt{ANNOTATE_QUEUE}){ die "ERROR: No ANNOTATE_QUEUE found in .ini file\n" }
     if(! $opt{ANNOTATE_THREADS}){ die "ERROR: No ANNOTATE_THREADS found in .ini file\n" }
     if(! $opt{ANNOTATE_MEM}){ die "ERROR: No ANNOTATE_MEM found in .ini file\n" }
+    if(! $opt{CLUSTER_RESERVATION}){ die "ERROR: No CLUSTER_RESERVATION found in .ini file\n" }
     if(! $opt{ANNOTATE_SNPEFF}){ die "ERROR: No ANNOTATE_SNPEFF found in .ini file\n" }
     if($opt{ANNOTATE_SNPEFF} eq "yes"){
 	if(! $opt{ANNOTATE_DB}){ die "ERROR: No ANNOTATE_DB found in .ini file\n" }
