@@ -162,8 +162,9 @@ sub runCheck {
     #remove all tmp folders and empty logs except .done files
     print BASH "\trm -r $opt{OUTPUT_DIR}/tmp\n";
     print BASH "\trm -r $opt{OUTPUT_DIR}/*/tmp\n";
-    print BASH "\tfind $opt{OUTPUT_DIR}/logs -size 0 -not -name \"*.done\" -delete\n"; 
+    print BASH "\tfind $opt{OUTPUT_DIR}/logs -size 0 -not -name \"*.done\" -delete\n";
     print BASH "\tfind $opt{OUTPUT_DIR}/*/logs -size 0 -not -name \"*.done\" -delete\n";
+    print BASH "\tfind $opt{OUTPUT_DIR}/somaticVariants/*/logs -size 0 -not -name \"*.done\" -delete\n";
     if($opt{INDELREALIGNMENT} eq "yes"){
 	foreach my $sample (@{$opt{SAMPLES}}){
 	    if($opt{MAPPING_MARKDUP} eq "yes"){
