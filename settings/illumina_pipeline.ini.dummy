@@ -20,6 +20,7 @@ POSTSTATS	yes
 INDELREALIGNMENT	yes
 BASEQUALITYRECAL	yes
 VARIANT_CALLING	yes
+SOMATIC_VARIANTS	yes
 FILTER_VARIANTS	yes
 ANNOTATE_VARIANTS	yes
 CHECKING	yes
@@ -109,6 +110,38 @@ FILTER_INDELNAME	LowQualityDepth	StrandBias	ReadPosRankSumLow
 FILTER_INDELEXPR	QD < 2.0	FS > 200.0	ReadPosRankSum < -20.0
 FILTER_CLUSTERSIZE	3
 FILTER_CLUSTERWINDOWSIZE	35
+
+####SOMATIC VARIANT CONFIGURATION####
+## Strelka
+SOMVAR_STRELKA	yes
+STRELKA_PATH	/hpc/local/CentOS6/cog_bioinf/strelka-1.0.14
+STRELKA_INI	/hpc/local/CentOS6/cog_bioinf/strelka-1.0.12/etc/strelka_config_bwa_exome.ini
+STRELKA_QUEUE	veryshort
+STRELKA_THREADS	8
+
+## Varscan
+SOMVAR_VARSCAN	yes
+VARSCAN_PATH	/hpc/local/CentOS6/cog_bioinf/Varscan.v2.3.7/VarScan.v2.3.7.jar
+VARSCAN_QUEUE	long
+VARSCAN_THREADS	4
+VARSCAN_SETTINGS	--min-coverage 20 --min-var-freq 0.1 --tumor-purity 0.8
+VARSCAN_POSTSETTINGS	-max-normal-freq 0.02 --p-value 0.05
+
+## Freebayes
+SOMVAR_FREEBAYES	yes
+FREEBAYES_PATH	/hpc/local/CentOS6/cog_bioinf/freebayes/bin
+VCFSAMPLEDIFF_PATH	/hpc/local/CentOS6/cog_bioinf/vcflib/bin
+BIOVCF_PATH	/hpc/local/CentOS6/cog_bioinf/CuppenResearch/somatic_pipeline/wrappers
+FREEBAYES_QUEUE	veryshort
+FREEBAYES_THREADS	2
+FREEBAYES_TARGETS	/hpc/cog_bioinf/ENRICH/PICARD/SS_exome_v5_S04380110_Covered_picard.bed
+FREEBAYES_SETTINGS	-C 3 --pooled-discrete --genotype-qualities --min-coverage 5 --no-mnps --no-complex
+FREEBAYES_SOMATICFILTER	--filter 'r.tumor.dp>=20 and r.normal.dp>=20 and r.info.ssc>=20 and qual>=10' --sfilter 's.gq>=15'
+FREEBAYES_GERMLINEFILTER	--filter 'r.tumor.dp>=20 and r.normal.dp>=20 and qual>=10' --sfilter 's.gq>=15'
+
+## Merge vcfs
+SOMVARMERGE_QUEUE	veryshort
+SOMVARMERGE_THREADS	2
 
 ####VARIANT ANNOTATION CONFIGURATION####
 ANNOTATE_QUEUE	veryshort
