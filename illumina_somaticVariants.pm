@@ -352,7 +352,7 @@ sub readConfiguration{
 	if(! $opt{FREEBAYES_GERMLINEFILTER}){ die "ERROR: NO found in .ini file\n" }
     }
     if(! $opt{SOMVARMERGE_QUEUE}){ die "ERROR: NO SOMVARMERGE_QUEUE found in .ini file\n" }
-    if(! $opt{SOMVARMERGE_THREADS}){ die "ERROR: NO found in .ini file\n" }
+    if(! $opt{SOMVARMERGE_THREADS}){ die "ERROR: NO SOMVARMERGE_THREADS found in .ini file\n" }
     if(! $opt{OUTPUT_DIR}){ die "ERROR: No OUTPUT_DIR found in .conf file\n" }
     if(! $opt{MAIL}){ die "ERROR: No MAIL address specified in .conf file\n" }
 
