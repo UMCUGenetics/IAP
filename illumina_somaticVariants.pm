@@ -117,7 +117,7 @@ sub runSomaticVariantCallers {
 	    print MERGE_SH "#!/bin/bash\n\n";
 	    print MERGE_SH "echo \"Start Merge\t\" `date` `uname -n` >> $sample_tumor_log_dir/merge.log\n\n";
 
-	    print MERGE_SH "java -Xmx6G -jar $opt{GATK_PATH}/GenomeAnalysisTK.jar -T CombineVariants -R $opt{GENOME} -o $sample_tumor_out_dir/$sample_tumor_name\_merged_somatics.vcf --genotypemergeoption uniquify --assumeIdenticalSamples ";
+	    print MERGE_SH "java -Xmx6G -jar $opt{GATK_PATH}/GenomeAnalysisTK.jar -T CombineVariants -R $opt{GENOME} -o $sample_tumor_out_dir/$sample_tumor_name\_merged_somatics.vcf --genotypemergeoption uniquify ";
 	    if($opt{SOMVAR_STRELKA} eq "yes"){ print MERGE_SH "-V $sample_tumor_out_dir/strelka/passed.somatic.merged.vcf "; }
 	    if($opt{SOMVAR_VARSCAN} eq "yes"){ print MERGE_SH "-V $sample_tumor_out_dir/varscan/$sample_tumor_name.merged.Somatic.hc.vcf "; }
 	    if($opt{SOMVAR_FREEBAYES} eq "yes"){ print MERGE_SH "-V $sample_tumor_out_dir/freebayes/$sample_tumor_name\_somatic_filtered.vcf "; }
