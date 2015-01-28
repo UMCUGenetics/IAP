@@ -74,7 +74,7 @@ sub runAnnotateVariants {
 	print ANNOTATE_SH "\techo \"ERROR: $invcf does not exist.\" >&2\n";
 	print ANNOTATE_SH "fi\n\n";
 	if($opt{ANNOTATE_SNPEFF} eq "yes"){
-	    print ANNOTATE_SH "if [ -f $outvcf ]\nthen\n\trm $invcf\nfi\n\n";
+	    print ANNOTATE_SH "if [ -f $outvcf ]\nthen\n\trm $invcf $invcf.idx \nfi\n\n";
 	}
 	$invcf = $outvcf;
     }
@@ -92,7 +92,7 @@ sub runAnnotateVariants {
 	print ANNOTATE_SH "\techo \"ERROR: $invcf does not exist.\" >&2\n";
 	print ANNOTATE_SH "fi\n\n";
 	if($opt{ANNOTATE_SNPSIFT} eq "yes" || $opt{ANNOTATE_SNPEFF} eq "yes"){
-	    print ANNOTATE_SH "if [ -f $outvcf ]\nthen\n\trm $invcf\nfi\n\n";
+	    print ANNOTATE_SH "if [ -f $outvcf ]\nthen\n\trm $invcf $invcf.idx \nfi\n\n";
 	}
 	$invcf = $outvcf;
     }
@@ -102,7 +102,9 @@ sub runAnnotateVariants {
 	$outvcf = $invcf;
 	my $suffix = "_$opt{ANNOTATE_FREQNAME}.vcf";
 	$outvcf =~ s/.vcf/$suffix/;
-	$command = "java -Xmx".$opt{ANNOTATE_MEM}."g -jar $opt{SNPEFF_PATH}/SnpSift.jar annotate -tabix -name $opt{ANNOTATE_FREQNAME}_ -info $opt{ANNOTATE_FREQINFO} $opt{ANNOTATE_FREQDB} $invcf > $outvcf";
+	$command = "java -Xmx".$opt{ANNOTATE_MEM}."g -jar $opt{SNPEFF_PATH}/SnpSift.jar annotate -tabix -name $opt{ANNOTATE_FREQNAME}_ -info $opt{ANNOTATE_FREQINFO} $opt{ANNOTATE_FREQDB} $invcf > $outvcf \n";
+	$command .= "\t$opt{IGVTOOLS_PATH}/igvtools index $outvcf\n";
+	$command .= "\trm igv.log";
 	print ANNOTATE_SH "if [ -f $invcf ]\n";
 	print ANNOTATE_SH "then\n";
 	print ANNOTATE_SH "\t$command\n";
@@ -110,7 +112,7 @@ sub runAnnotateVariants {
 	print ANNOTATE_SH "\techo \"ERROR: $invcf does not exist.\" >&2\n";
 	print ANNOTATE_SH "fi\n\n";
 	if($opt{ANNOTATE_SNPSIFT} eq "yes" || $opt{ANNOTATE_SNPEFF} eq "yes" || $opt{ANNOTATE_IDFIELD} eq "yes"){
-	    print ANNOTATE_SH "if [ -f $outvcf ]\nthen\n\trm $invcf\nfi\n\n";
+	    print ANNOTATE_SH "if [ -f $outvcf ]\nthen\n\trm $invcf $invcf.idx \nfi\n\n";
 	}
 	$invcf = $outvcf;
     }
@@ -144,6 +146,7 @@ sub readConfiguration{
 	$opt{$key} = $configuration->{$key};
     }
     if(! $opt{SNPEFF_PATH}){ die "ERROR: No SNPEFF_PATH found in .ini file\n" }
+    if(! $opt{IGVTOOLS_PATH}){ die "ERROR: No IGVTOOLS_PATH found in .ini file\n" }
     if(! $opt{ANNOTATE_QUEUE}){ die "ERROR: No ANNOTATE_QUEUE found in .ini file\n" }
     if(! $opt{ANNOTATE_THREADS}){ die "ERROR: No ANNOTATE_THREADS found in .ini file\n" }
     if(! $opt{ANNOTATE_MEM}){ die "ERROR: No ANNOTATE_MEM found in .ini file\n" }
