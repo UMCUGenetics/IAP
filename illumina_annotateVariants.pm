@@ -52,7 +52,9 @@ sub runAnnotateVariants {
     if($opt{ANNOTATE_SNPEFF} eq "yes"){
 	$outvcf = $invcf;
 	$outvcf =~ s/.vcf/_snpEff.vcf/;
-	$command = "java -Xmx".$opt{ANNOTATE_MEM}."g -jar $opt{SNPEFF_PATH}/snpEff.jar -c $opt{SNPEFF_PATH}/snpEff.config $opt{ANNOTATE_DB} -v $invcf -o gatk $opt{ANNOTATE_FLAGS} > $outvcf";
+	$command = "java -Xmx".$opt{ANNOTATE_MEM}."g -jar $opt{SNPEFF_PATH}/snpEff.jar -c $opt{SNPEFF_PATH}/snpEff.config $opt{ANNOTATE_DB} -v $invcf -o gatk $opt{ANNOTATE_FLAGS} > $outvcf\n";
+	$command .= "\t$opt{IGVTOOLS_PATH}/igvtools index $outvcf\n";
+	$command .= "\trm igv.log";
 	print ANNOTATE_SH "if [ -f $invcf ]\n";
 	print ANNOTATE_SH "then\n";
 	print ANNOTATE_SH "\t$command\n";
@@ -66,7 +68,9 @@ sub runAnnotateVariants {
     if($opt{ANNOTATE_SNPSIFT} eq "yes"){
 	$outvcf = $invcf;
 	$outvcf =~ s/.vcf/_snpSift.vcf/;
-	$command = "java -Xmx".$opt{ANNOTATE_MEM}."g -jar $opt{SNPEFF_PATH}/SnpSift.jar dbnsfp -v -f $opt{ANNOTATE_FIELDS} -db $opt{ANNOTATE_DBNSFP} $invcf > $outvcf";
+	$command = "java -Xmx".$opt{ANNOTATE_MEM}."g -jar $opt{SNPEFF_PATH}/SnpSift.jar dbnsfp -v -f $opt{ANNOTATE_FIELDS} -db $opt{ANNOTATE_DBNSFP} $invcf > $outvcf\n";
+	$command .= "\t$opt{IGVTOOLS_PATH}/igvtools index $outvcf\n";
+	$command .= "\trm igv.log";
 	print ANNOTATE_SH "if [ -f $invcf ]\n";
 	print ANNOTATE_SH "then\n";
 	print ANNOTATE_SH "\t$command\n";
