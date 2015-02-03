@@ -28,6 +28,11 @@ sub runVariantCalling {
 	return \%opt;
     }
     
+    ### Create gvcf folder if CALLING_GVCF eq yes
+    if((! -e "$opt{OUTPUT_DIR}/gvcf" && $opt{CALLING_GVCF} eq 'yes')){
+	mkdir("$opt{OUTPUT_DIR}/gvcf") or die "Couldn't create directory: $opt{OUTPUT_DIR}/gvcf\n";
+    }
+    
     ### Build Queue command
     my $javaMem = $opt{CALLING_MASTERTHREADS} * $opt{CALLING_MEM};
     my $command = "java -Xmx".$javaMem."G -Xms".$opt{CALLING_MEM}."G -jar $opt{QUEUE_PATH}/Queue.jar ";
@@ -99,6 +104,10 @@ sub runVariantCalling {
     print CALLING_SH "then\n";
     print CALLING_SH "\tmv $opt{OUTPUT_DIR}/tmp/$runName\.raw_variants.vcf $opt{OUTPUT_DIR}/\n";
     print CALLING_SH "\tmv $opt{OUTPUT_DIR}/tmp/$runName\.raw_variants.vcf.idx $opt{OUTPUT_DIR}/\n";
+    if($opt{CALLING_GVCF} eq 'yes'){
+	print CALLING_SH "\tmv $opt{OUTPUT_DIR}/tmp/*.g.vcf $opt{OUTPUT_DIR}/gvcf/\n";
+	print CALLING_SH "\tmv $opt{OUTPUT_DIR}/tmp/*.g.vcf.idx $opt{OUTPUT_DIR}/gvcf/\n";
+    }
     print CALLING_SH "\ttouch $opt{OUTPUT_DIR}/logs/VariantCaller.done\n";
     print CALLING_SH "fi\n\n";
     print CALLING_SH "echo \"Finished variant caller\t\" `date` \"\t\" `uname -n` >> $opt{OUTPUT_DIR}/logs/$runName.log\n";
@@ -144,6 +153,7 @@ sub readConfiguration{
     if(! $opt{CALLING_THREADS}){ die "ERROR: No CALLING_THREADS found in .ini file\n" }
     if(! $opt{CALLING_MEM}){ die "ERROR: No CALLING_QUEUE found in .ini file\n" }
     if(! $opt{CALLING_SCATTER}){ die "ERROR: No CALLING_SCATTER found in .ini file\n" }
+    if(! $opt{CALLING_GVCF}){ die "ERROR: No CALLING_GVCF found in .ini file\n"}
     if(! $opt{CALLING_SCALA}){ die "ERROR: No CALLING_SCALA found in .ini file\n" }
     if($opt{CALLING_UGMODE}){ 
 	if($opt{CALLING_UGMODE} ne "SNP" and $opt{CALLING_UGMODE} ne "INDEL" and $opt{CALLING_UGMODE} ne "BOTH"){ die "ERROR: UGMODE: $opt{CALLING_UGMODE} does not exist use SNP, INDEL or BOTH\n"}
