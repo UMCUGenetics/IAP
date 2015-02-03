@@ -49,7 +49,7 @@ sub parseSamples {
 sub runSomaticVariantCallers {
     my $configuration = shift;
     my %opt = %{readConfiguration($configuration)};
-    my @all_somvar_jobs;
+    my @merge_somvar_jobs;
     ### Loop over tumor samples
     foreach my $sample (keys(%{$opt{SOMATIC_SAMPLES}})){
 	foreach my $sample_tumor (@{$opt{SOMATIC_SAMPLES}{$sample}{'tumor'}}){
@@ -117,7 +117,7 @@ sub runSomaticVariantCallers {
 	    print MERGE_SH "#!/bin/bash\n\n";
 	    print MERGE_SH "echo \"Start Merge\t\" `date` `uname -n` >> $sample_tumor_log_dir/merge.log\n\n";
 
-	    print MERGE_SH "java -Xmx6G -jar $opt{GATK_PATH}/GenomeAnalysisTK.jar -T CombineVariants -R $opt{GENOME} -o $sample_tumor_out_dir/$sample_tumor_name\_merged_somatics.vcf --genotypemergeoption uniquify --assumeIdenticalSamples ";
+	    print MERGE_SH "java -Xmx6G -jar $opt{GATK_PATH}/GenomeAnalysisTK.jar -T CombineVariants -R $opt{GENOME} -o $sample_tumor_out_dir/$sample_tumor_name\_merged_somatics.vcf --genotypemergeoption uniquify ";
 	    if($opt{SOMVAR_STRELKA} eq "yes"){ print MERGE_SH "-V $sample_tumor_out_dir/strelka/passed.somatic.merged.vcf "; }
 	    if($opt{SOMVAR_VARSCAN} eq "yes"){ print MERGE_SH "-V $sample_tumor_out_dir/varscan/$sample_tumor_name.merged.Somatic.hc.vcf "; }
 	    if($opt{SOMVAR_FREEBAYES} eq "yes"){ print MERGE_SH "-V $sample_tumor_out_dir/freebayes/$sample_tumor_name\_somatic_filtered.vcf "; }
@@ -133,10 +133,10 @@ sub runSomaticVariantCallers {
 	    } else {
 		system "qsub -q $opt{SOMVARMERGE_QUEUE} -m a -M $opt{MAIL} -pe threaded $opt{SOMVARMERGE_THREADS} -o $sample_tumor_log_dir -e $sample_tumor_log_dir -N $job_id $bash_file";
 	    }
-	    push(@all_somvar_jobs, @somvar_jobs);
+	    push(@merge_somvar_jobs, $job_id);
 	}
     }
-    return \@all_somvar_jobs;
+    return \@merge_somvar_jobs;
 }
 
 ### Somatic Variant Callers
@@ -169,7 +169,10 @@ sub runStrelka {
     # Check strelka completed
     print STRELKA_SH "if [ -f $strelka_out_dir/task.complete ]\n";
     print STRELKA_SH "then\n";
-    print STRELKA_SH "\tjava -Xmx6G -jar $opt{GATK_PATH}/GenomeAnalysisTK.jar -T CombineVariants -R $opt{GENOME} -o passed.somatic.merged.vcf -V results/passed.somatic.snvs.vcf -V results/passed.somatic.indels.vcf \n\n";
+    print STRELKA_SH "\tjava -Xmx6G -jar $opt{GATK_PATH}/GenomeAnalysisTK.jar -T CombineVariants -R $opt{GENOME} -o passed.somatic.merged.vcf -V results/passed.somatic.snvs.vcf -V results/passed.somatic.indels.vcf \n";
+    #print STRELKA_SH "\tcp passed.somatic.merged.vcf passed.somatic.merged.org.vcf\n";
+    print STRELKA_SH "\tperl -p -e 's/\\t([A-Z][A-Z]:)/\\tGT:\$1/g' passed.somatic.merged.vcf | perl -p -e 's/(:T[UO]R?)\\t/\$1\\t0\\/0:/g' | perl -p -e 's/(:\\d+,\\d+)\\t/\$1\\t0\\/1:/g' | perl -p -e 's/(#CHROM.*)/##StrelkaGATKCompatibility=Added GT fields to strelka calls for gatk compatibility.\\n\$1/g' > temp.vcf\n";
+    print STRELKA_SH "\tmv temp.vcf passed.somatic.merged.vcf\n";
     print STRELKA_SH "\ttouch $log_dir/strelka.done\n";
     print STRELKA_SH "fi\n\n";
     print STRELKA_SH "echo \"End Strelka\t\" `date` \"\t $sample_ref_bam \t $sample_tumor_bam\t\" `uname -n` >> $log_dir/strelka.log\n\n";
