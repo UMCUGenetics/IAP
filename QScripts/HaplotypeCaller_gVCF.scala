@@ -59,7 +59,7 @@ class VariantCaller extends QScript {
 	    // All required input
 	    haplotypeCaller.input_file :+= bamFile
 	    haplotypeCaller.reference_sequence = referenceFile
-	    haplotypeCaller.out = swapExt(bamFile, "bam", "g.vcf")
+	    haplotypeCaller.out = swapExt(bamFile, "bam", "g.vcf.gz")
 
 	    haplotypeCaller.scatterCount = numScatters
 	    haplotypeCaller.memoryLimit = maxMem

@@ -105,8 +105,9 @@ sub runVariantCalling {
     print CALLING_SH "\tmv $opt{OUTPUT_DIR}/tmp/$runName\.raw_variants.vcf $opt{OUTPUT_DIR}/\n";
     print CALLING_SH "\tmv $opt{OUTPUT_DIR}/tmp/$runName\.raw_variants.vcf.idx $opt{OUTPUT_DIR}/\n";
     if($opt{CALLING_GVCF} eq 'yes'){
-	print CALLING_SH "\tmv $opt{OUTPUT_DIR}/tmp/*.g.vcf $opt{OUTPUT_DIR}/gvcf/\n";
-	print CALLING_SH "\tmv $opt{OUTPUT_DIR}/tmp/*.g.vcf.idx $opt{OUTPUT_DIR}/gvcf/\n";
+	print CALLING_SH "\tmv $opt{OUTPUT_DIR}/tmp/*.g.vcf.gz $opt{OUTPUT_DIR}/gvcf/\n";
+	print CALLING_SH "\tmv $opt{OUTPUT_DIR}/tmp/*.g.vcf.gz.tbi $opt{OUTPUT_DIR}/gvcf/\n";
+	
     }
     print CALLING_SH "\ttouch $opt{OUTPUT_DIR}/logs/VariantCaller.done\n";
     print CALLING_SH "fi\n\n";
