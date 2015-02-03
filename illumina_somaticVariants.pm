@@ -171,7 +171,7 @@ sub runStrelka {
     print STRELKA_SH "then\n";
     print STRELKA_SH "\tjava -Xmx6G -jar $opt{GATK_PATH}/GenomeAnalysisTK.jar -T CombineVariants -R $opt{GENOME} -o passed.somatic.merged.vcf -V results/passed.somatic.snvs.vcf -V results/passed.somatic.indels.vcf \n";
     #print STRELKA_SH "\tcp passed.somatic.merged.vcf passed.somatic.merged.org.vcf\n";
-    print STRELKA_SH "\tperl -p -e 's/\\t(DP:)/\\tGT:\$1/g' passed.somatic.merged.vcf | perl -p -e 's/(:TU)\\t/\$1\\t0\\/0:/g' | perl -p -e 's/(:\\d,\\d)\\t/\$1\\t0\\/1:/g' | perl -p -e 's/(#CHROM.*)/##StrelkaGATKCompatibility=Added GT fields to strelka calls for gatk compatibility.\n\$1/g' > temp.vcf\n";
+    print STRELKA_SH "\tperl -p -e 's/\\t([A-Z][A-Z]:)/\\tGT:\$1/g' passed.somatic.merged.vcf | perl -p -e 's/(:T[UO]R?)\\t/\$1\\t0\\/0:/g' | perl -p -e 's/(:\\d+,\\d+)\\t/\$1\\t0\\/1:/g' | perl -p -e 's/(#CHROM.*)/##StrelkaGATKCompatibility=Added GT fields to strelka calls for gatk compatibility.\\n\$1/g' > temp.vcf\n";
     print STRELKA_SH "\tmv temp.vcf passed.somatic.merged.vcf\n";
     print STRELKA_SH "\ttouch $log_dir/strelka.done\n";
     print STRELKA_SH "fi\n\n";
