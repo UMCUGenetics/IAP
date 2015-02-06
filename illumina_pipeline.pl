@@ -156,6 +156,13 @@ if (! $opt{VCF} ){
     %opt = %$opt_ref;
 }
 
+### DX step
+if($opt{DX} eq "yes"){
+    print "\n###SCHEDULING Dx Module Jobs####\n";
+    my $dx_job = illumina_dx::runDX(\%opt);
+    $opt{RUNNING_JOBS}->{'DX'} = $dx_job;
+}
+
 ### Filter variants
 if($opt{FILTER_VARIANTS} eq "yes"){
     print "\n###SCHEDULING VARIANT FILTRATION####\n";
