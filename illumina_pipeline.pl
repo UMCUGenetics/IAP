@@ -28,6 +28,7 @@ use illumina_filterVariants;
 use illumina_somaticVariants;
 use illumina_copyNumber;
 use illumina_annotateVariants;
+use illumina_dx;
 use illumina_check;
 
 ### Check correct usage
@@ -153,6 +154,13 @@ if (! $opt{VCF} ){
     print "\n###RUNNING VCF PREP###\n";
     $opt_ref = illumina_calling::runVcfPrep(\%opt);
     %opt = %$opt_ref;
+}
+
+### DX step
+if($opt{DX} eq "yes"){
+    print "\n###SCHEDULING Dx Module Jobs####\n";
+    my $dx_job = illumina_dx::runDX(\%opt);
+    $opt{RUNNING_JOBS}->{'DX'} = $dx_job;
 }
 
 ### Filter variants
@@ -286,6 +294,7 @@ sub checkConfig{
     if(! $opt{SOMATIC_VARIANTS}){ print "ERROR: No SOMATIC_VARIANTS option found in config files. \n"; $checkFailed = 1; }
     if(! $opt{COPY_NUMBER}){ print "ERROR: No COPY_NUMBER option found in config files. \n"; $checkFailed = 1; }
     if(! $opt{ANNOTATE_VARIANTS}){ print "ERROR: No ANNOTATE_VARIANTS option found in config files. \n"; $checkFailed = 1; }
+    if(! $opt{DX}){ print "ERROR: No DX option found in config files. \n"; $checkFailed = 1; }
     if(! $opt{CHECKING}){ print "ERROR: No CHECKING option found in config files. \n"; $checkFailed = 1; }
 
     ### Module Settings / tools
