@@ -86,6 +86,7 @@ CALLING_THREADS	1
 CALLING_MEM	4
 CALLING_SCATTER	1000
 CALLING_SCALA	QScripts/HaplotypeCaller.scala
+CALLING_GVCF	no
 CALLING_DBSNP	bundle/dbsnp_137.b37.vcf
 # Optional target interval and padding
 CALLING_TARGETS	SS_exome_v5_S04380110_Covered_GATK.interval_list
