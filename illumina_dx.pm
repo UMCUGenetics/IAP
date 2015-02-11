@@ -34,7 +34,7 @@ sub runDX {
     }
     
     ### Create main bash script
-    my $bashFile = $opt{OUTPUT_DIR}."/jobs/DX_".$jobID.".sh";
+    my $bashFile = $opt{OUTPUT_DIR}."/jobs/".$jobID.".sh";
     my $logDir = $opt{OUTPUT_DIR}."/logs";
     
     open DX_SH, ">$bashFile" or die "cannot open file $bashFile \n";
@@ -58,7 +58,20 @@ sub runDX {
 	    print DX_SH "touch $opt{OUTPUT_DIR}/logs/Kinship.done\n\n";
 	}
     }
-    
+
+    ### Phase by transmission
+    if ( $opt{DX_PHASE} eq "yes" ) {
+	if (-e "$opt{OUTPUT_DIR}/logs/Phase.done"){
+	    warn "WARNING: $opt{OUTPUT_DIR}/logs/Phase.done exists, skipping \n";
+	} else {
+	    print DX_SH "cd $opt{OUTPUT_DIR}/tmp/\n";
+	    print DX_SH "java -Xmx8G -jar $opt{GATK_PATH}/GenomeAnalysisTK.jar -T PhaseByTransmission -R $opt{GENOME} -V $opt{OUTPUT_DIR}/$vcf -ped $opt{DX_PED} -o $runName.phased.vcf.gz --MendelianViolationsFile $runName.MendelViol\n";
+	    print DX_SH "mv $runName.phased.vcf.gz $opt{OUTPUT_DIR}/\n";
+	    print DX_SH "mv $runName.MendelViol $opt{OUTPUT_DIR}/\n";
+	    print DX_SH "touch $opt{OUTPUT_DIR}/logs/Phase.done\n\n";
+	}
+    }
+
     print DX_SH "touch $opt{OUTPUT_DIR}/logs/DX.done\n";
     print DX_SH "echo \"End DX\t\" `date` \"\t$vcf\t\" `uname -n` >> $opt{OUTPUT_DIR}/logs/$runName.log\n";
 
@@ -94,8 +107,8 @@ sub readConfiguration{
     if(! $opt{DX_KINSHIP}){ die "ERROR: No DX_KINSHIP found in .ini file\n" }
     if(! $opt{PLINK_PATH}){ die "ERROR: No PLINK_PATH found in .ini file\n" }
     if(! $opt{VCFTOOLS_PATH}){ die "ERROR: No VCFTOOLS_PATH found in .ini file\n" }
-    #if(! $opt{PHASE_SCALA}){ die "ERROR: No PHASE_SCALA found in .ini file\n" }
-    #if(! $opt{PED}){ die "ERROR: No PED found in .conf file\n" }
+    if(! $opt{DX_PHASE}){ die "ERROR: No DX_PHASE found in .ini file\n" }
+    if(! $opt{DX_PED}){ die "ERROR: No PED found in .conf file\n" }
     if(! $opt{OUTPUT_DIR}){ die "ERROR: No OUTPUT_DIR found in .conf file\n" }
     if(! $opt{MAIL}){die "ERROR: No MAIL address found in .ini file \n" }
 
