@@ -128,6 +128,7 @@ sub runRealignment {
 	print CLEAN_SH "then\n";
 	print CLEAN_SH "echo \"Finished indel realignment\t\" `date` >> ../logs/$runName.log\n";
 	print CLEAN_SH "\tmv $opt{OUTPUT_DIR}/tmp/IndelRealigner.jobreport.txt $opt{OUTPUT_DIR}/logs/IndelRealigner.jobreport.txt\n";
+	print CLEAN_SH "\tmv $opt{OUTPUT_DIR}/tmp/IndelRealigner.jobreport.pdf $opt{OUTPUT_DIR}/logs/IndelRealigner.jobreport.pdf\n";
 	print CLEAN_SH "fi\n";
 	close CLEAN_SH;
 	
