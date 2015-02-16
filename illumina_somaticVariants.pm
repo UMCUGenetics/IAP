@@ -122,8 +122,8 @@ sub runSomaticVariantCallers {
 	    if($opt{SOMVAR_VARSCAN} eq "yes"){ print MERGE_SH "-V $sample_tumor_out_dir/varscan/$sample_tumor_name.merged.Somatic.hc.vcf "; }
 	    if($opt{SOMVAR_FREEBAYES} eq "yes"){ print MERGE_SH "-V $sample_tumor_out_dir/freebayes/$sample_tumor_name\_somatic_filtered.vcf "; }
 	    #Filter vcf on target
-	    if($opt{SOMATIC_TARGETS}){
-		print MERGE_SH "\njava -Xmx6G -jar $opt{GATK_PATH}/GenomeAnalysisTK.jar -T SelectVariants -R $opt{GENOME} -L $opt{SOMATIC_TARGETS} -V $sample_tumor_out_dir/$sample_tumor_name\_merged_somatics.vcf -o $sample_tumor_out_dir/$sample_tumor_name\_filtered_merged_somatics.vcf\n";
+	    if($opt{SOMVAR_TARGETS}){
+		print MERGE_SH "\njava -Xmx6G -jar $opt{GATK_PATH}/GenomeAnalysisTK.jar -T SelectVariants -R $opt{GENOME} -L $opt{SOMVAR_TARGETS} -V $sample_tumor_out_dir/$sample_tumor_name\_merged_somatics.vcf -o $sample_tumor_out_dir/$sample_tumor_name\_filtered_merged_somatics.vcf\n";
 		print MERGE_SH "rm $sample_tumor_out_dir/$sample_tumor_name\_merged_somatics.vcf*";
 	    }
 	    print MERGE_SH "\n\ntouch $sample_tumor_log_dir/$sample_tumor_name.done\n\n";
@@ -220,10 +220,10 @@ sub runVarscan {
 
     # run pileups
     if ((!-e "$sample_tumor_bam.pileup")||(-z "$sample_tumor_bam.pileup")) {
-	print VARSCAN_SH "$opt{SAMTOOLS_PATH}/samtools mpileup -q 1 -f $opt{GENOME} -l $opt{SOMATIC_TARGETS} $sample_tumor_bam > $sample_tumor_bam.pileup\n";
+	print VARSCAN_SH "$opt{SAMTOOLS_PATH}/samtools mpileup -q 1 -f $opt{GENOME} -l $opt{SOMVAR_TARGETS} $sample_tumor_bam > $sample_tumor_bam.pileup\n";
     }
     if ((!-e "$sample_ref_bam.pileup")||(-z "$sample_ref_bam.pileup")) {
-	print VARSCAN_SH "$opt{SAMTOOLS_PATH}/samtools mpileup -q 1 -f $opt{GENOME} -l $opt{SOMATIC_TARGETS} $sample_ref_bam > $sample_ref_bam.pileup\n";
+	print VARSCAN_SH "$opt{SAMTOOLS_PATH}/samtools mpileup -q 1 -f $opt{GENOME} -l $opt{SOMVAR_TARGETS} $sample_ref_bam > $sample_ref_bam.pileup\n";
     }
     print VARSCAN_SH "echo \"End Pileup\t\" `date` \"\t $sample_ref_bam \t $sample_tumor_bam\t\" `uname -n` >> $log_dir/varscan.log\n\n";
 
@@ -282,7 +282,7 @@ sub runFreeBayes {
     print FREEBAYES_SH "echo \"Start Freebayes\t\" `date` \"\t $sample_ref_bam \t $sample_tumor_bam\t\" `uname -n` >> $log_dir/freebayes.log\n";
 
     # Run freebayes
-    print FREEBAYES_SH "$opt{FREEBAYES_PATH}/freebayes -f $opt{GENOME} -t $opt{SOMATIC_TARGETS} $opt{FREEBAYES_SETTINGS} $sample_ref_bam $sample_tumor_bam > $freebayes_out_dir/$sample_tumor_name.vcf\n\n";
+    print FREEBAYES_SH "$opt{FREEBAYES_PATH}/freebayes -f $opt{GENOME} -t $opt{SOMVAR_TARGETS} $opt{FREEBAYES_SETTINGS} $sample_ref_bam $sample_tumor_bam > $freebayes_out_dir/$sample_tumor_name.vcf\n\n";
 
     # Uniqify freebayes output 
     print FREEBAYES_SH "uniq $freebayes_out_dir/$sample_tumor_name.vcf > $freebayes_out_dir/$sample_tumor_name.uniq.vcf\n";
@@ -331,7 +331,7 @@ sub readConfiguration{
     if(! $opt{GENOME}){ die "ERROR: No GENOME found in .ini file\n" }
     elsif(! -e $opt{GENOME}){ die"ERROR: $opt{GENOME} does not exist\n"}
     if(! $opt{SAMTOOLS_PATH}){ die "ERROR: NO SAMTOOLS_PATH found in .ini file\n" }
-    if(! $opt{SOMATIC_TARGETS}){ die "ERROR: NO SOMATIC_TARGETS found in .ini file\n" }
+    if(! $opt{SOMVAR_TARGETS}){ die "ERROR: NO SOMVAR_TARGETS found in .ini file\n" }
     if(! $opt{SOMVAR_STRELKA}){ die "ERROR: NO SOMVAR_STRELKA found in .ini file\n" }
     if($opt{SOMVAR_STRELKA} eq "yes"){
 	if(! $opt{STRELKA_PATH}){ die "ERROR: NO STRELKA_PATH found in .ini file\n" }
