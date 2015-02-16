@@ -116,12 +116,16 @@ sub runSomaticVariantCallers {
 	    open MERGE_SH, ">$bash_file" or die "cannot open file $bash_file \n";
 	    print MERGE_SH "#!/bin/bash\n\n";
 	    print MERGE_SH "echo \"Start Merge\t\" `date` `uname -n` >> $sample_tumor_log_dir/merge.log\n\n";
-
+	    #Merge vcfs
 	    print MERGE_SH "java -Xmx6G -jar $opt{GATK_PATH}/GenomeAnalysisTK.jar -T CombineVariants -R $opt{GENOME} -o $sample_tumor_out_dir/$sample_tumor_name\_merged_somatics.vcf --genotypemergeoption uniquify ";
 	    if($opt{SOMVAR_STRELKA} eq "yes"){ print MERGE_SH "-V $sample_tumor_out_dir/strelka/passed.somatic.merged.vcf "; }
 	    if($opt{SOMVAR_VARSCAN} eq "yes"){ print MERGE_SH "-V $sample_tumor_out_dir/varscan/$sample_tumor_name.merged.Somatic.hc.vcf "; }
 	    if($opt{SOMVAR_FREEBAYES} eq "yes"){ print MERGE_SH "-V $sample_tumor_out_dir/freebayes/$sample_tumor_name\_somatic_filtered.vcf "; }
-
+	    #Filter vcf on target
+	    if($opt{SOMATIC_TARGETS}){
+		print MERGE_SH "\njava -Xmx6G -jar $opt{GATK_PATH}/GenomeAnalysisTK.jar -T SelectVariants -R $opt{GENOME} -L $opt{SOMATIC_TARGETS} -V $sample_tumor_out_dir/$sample_tumor_name\_merged_somatics.vcf -o $sample_tumor_out_dir/$sample_tumor_name\_filtered_merged_somatics.vcf\n";
+		print MERGE_SH "rm $sample_tumor_out_dir/$sample_tumor_name\_merged_somatics.vcf*";
+	    }
 	    print MERGE_SH "\n\ntouch $sample_tumor_log_dir/$sample_tumor_name.done\n\n";
 
 	    print MERGE_SH "echo \"END Merge\t\" `date` `uname -n` >> $sample_tumor_log_dir/merge.log\n\n";
@@ -170,7 +174,6 @@ sub runStrelka {
     print STRELKA_SH "if [ -f $strelka_out_dir/task.complete ]\n";
     print STRELKA_SH "then\n";
     print STRELKA_SH "\tjava -Xmx6G -jar $opt{GATK_PATH}/GenomeAnalysisTK.jar -T CombineVariants -R $opt{GENOME} -o passed.somatic.merged.vcf -V results/passed.somatic.snvs.vcf -V results/passed.somatic.indels.vcf \n";
-    #print STRELKA_SH "\tcp passed.somatic.merged.vcf passed.somatic.merged.org.vcf\n";
     print STRELKA_SH "\tperl -p -e 's/\\t([A-Z][A-Z]:)/\\tGT:\$1/g' passed.somatic.merged.vcf | perl -p -e 's/(:T[UO]R?)\\t/\$1\\t0\\/0:/g' | perl -p -e 's/(:\\d+,\\d+)\\t/\$1\\t0\\/1:/g' | perl -p -e 's/(#CHROM.*)/##StrelkaGATKCompatibility=Added GT fields to strelka calls for gatk compatibility.\\n\$1/g' > temp.vcf\n";
     print STRELKA_SH "\tmv temp.vcf passed.somatic.merged.vcf\n";
     print STRELKA_SH "\ttouch $log_dir/strelka.done\n";
@@ -217,10 +220,10 @@ sub runVarscan {
 
     # run pileups
     if ((!-e "$sample_tumor_bam.pileup")||(-z "$sample_tumor_bam.pileup")) {
-	print VARSCAN_SH "samtools mpileup -q 1 -f $opt{GENOME} $sample_tumor_bam > $sample_tumor_bam.pileup\n";
+	print VARSCAN_SH "$opt{SAMTOOLS_PATH}/samtools mpileup -q 1 -f $opt{GENOME} -l $opt{SOMATIC_TARGETS} $sample_tumor_bam > $sample_tumor_bam.pileup\n";
     }
     if ((!-e "$sample_ref_bam.pileup")||(-z "$sample_ref_bam.pileup")) {
-	print VARSCAN_SH "samtools mpileup -q 1 -f $opt{GENOME} $sample_ref_bam > $sample_ref_bam.pileup\n";
+	print VARSCAN_SH "$opt{SAMTOOLS_PATH}/samtools mpileup -q 1 -f $opt{GENOME} -l $opt{SOMATIC_TARGETS} $sample_ref_bam > $sample_ref_bam.pileup\n";
     }
     print VARSCAN_SH "echo \"End Pileup\t\" `date` \"\t $sample_ref_bam \t $sample_tumor_bam\t\" `uname -n` >> $log_dir/varscan.log\n\n";
 
@@ -279,7 +282,7 @@ sub runFreeBayes {
     print FREEBAYES_SH "echo \"Start Freebayes\t\" `date` \"\t $sample_ref_bam \t $sample_tumor_bam\t\" `uname -n` >> $log_dir/freebayes.log\n";
 
     # Run freebayes
-    print FREEBAYES_SH "$opt{FREEBAYES_PATH}/freebayes -f $opt{GENOME} -t $opt{FREEBAYES_TARGETS} $opt{FREEBAYES_SETTINGS} $sample_ref_bam $sample_tumor_bam > $freebayes_out_dir/$sample_tumor_name.vcf\n\n";
+    print FREEBAYES_SH "$opt{FREEBAYES_PATH}/freebayes -f $opt{GENOME} -t $opt{SOMATIC_TARGETS} $opt{FREEBAYES_SETTINGS} $sample_ref_bam $sample_tumor_bam > $freebayes_out_dir/$sample_tumor_name.vcf\n\n";
 
     # Uniqify freebayes output 
     print FREEBAYES_SH "uniq $freebayes_out_dir/$sample_tumor_name.vcf > $freebayes_out_dir/$sample_tumor_name.uniq.vcf\n";
@@ -327,6 +330,8 @@ sub readConfiguration{
 
     if(! $opt{GENOME}){ die "ERROR: No GENOME found in .ini file\n" }
     elsif(! -e $opt{GENOME}){ die"ERROR: $opt{GENOME} does not exist\n"}
+    if(! $opt{SAMTOOLS_PATH}){ die "ERROR: NO SAMTOOLS_PATH found in .ini file\n" }
+    if(! $opt{SOMATIC_TARGETS}){ die "ERROR: NO SOMATIC_TARGETS found in .ini file\n" }
     if(! $opt{SOMVAR_STRELKA}){ die "ERROR: NO SOMVAR_STRELKA found in .ini file\n" }
     if($opt{SOMVAR_STRELKA} eq "yes"){
 	if(! $opt{STRELKA_PATH}){ die "ERROR: NO STRELKA_PATH found in .ini file\n" }
@@ -344,15 +349,14 @@ sub readConfiguration{
     }
     if(! $opt{SOMVAR_FREEBAYES}){ die "ERROR: NO SOMVAR_FREEBAYES found in .ini file\n" }
     if($opt{SOMVAR_FREEBAYES} eq "yes"){
-	if(! $opt{FREEBAYES_PATH}){ die "ERROR: NO found in .ini file\n" }
-	if(! $opt{VCFSAMPLEDIFF_PATH}){ die "ERROR: NO found in .ini file\n" }
-	if(! $opt{BIOVCF_PATH}){ die "ERROR: NO found in .ini file\n" }
-	if(! $opt{FREEBAYES_QUEUE}){ die "ERROR: NO found in .ini file\n" }
-	if(! $opt{FREEBAYES_THREADS}){ die "ERROR: NO found in .ini file\n" }
-	if(! $opt{FREEBAYES_TARGETS}){ die "ERROR: NO found in .ini file\n" }
-	if(! $opt{FREEBAYES_SETTINGS}){ die "ERROR: NO found in .ini file\n" }
-	if(! $opt{FREEBAYES_SOMATICFILTER}){ die "ERROR: NO found in .ini file\n" }
-	if(! $opt{FREEBAYES_GERMLINEFILTER}){ die "ERROR: NO found in .ini file\n" }
+	if(! $opt{FREEBAYES_PATH}){ die "ERROR: NO FREEBAYES_PATH found in .ini file\n" }
+	if(! $opt{VCFSAMPLEDIFF_PATH}){ die "ERROR: NO VCFSAMPLEDIFF_PATH found in .ini file\n" }
+	if(! $opt{BIOVCF_PATH}){ die "ERROR: NO BIOVCF_PATH found in .ini file\n" }
+	if(! $opt{FREEBAYES_QUEUE}){ die "ERROR: NO FREEBAYES_QUEUE found in .ini file\n" }
+	if(! $opt{FREEBAYES_THREADS}){ die "ERROR: NO FREEBAYES_THREADS found in .ini file\n" }
+	if(! $opt{FREEBAYES_SETTINGS}){ die "ERROR: NO FREEBAYES_SETTINGS found in .ini file\n" }
+	if(! $opt{FREEBAYES_SOMATICFILTER}){ die "ERROR: NO FREEBAYES_SOMATICFILTER found in .ini file\n" }
+	if(! $opt{FREEBAYES_GERMLINEFILTER}){ die "ERROR: NO FREEBAYES_GERMLINEFILTER found in .ini file\n" }
     }
     if(! $opt{SOMVARMERGE_QUEUE}){ die "ERROR: NO SOMVARMERGE_QUEUE found in .ini file\n" }
     if(! $opt{SOMVARMERGE_THREADS}){ die "ERROR: NO SOMVARMERGE_THREADS found in .ini file\n" }
