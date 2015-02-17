@@ -10,7 +10,7 @@ QUEUE_PATH	/data_fedor13/common_scripts/gatk/GenomeAnalysisTK-2.8-1-g932cd3a/Que
 PICARD_PATH	/data_fedor13/common_scripts/picard/picard-tools-1.98
 FASTQC_PATH	/data_fedor13/common_scripts/fastqc/FastQC_v0.10.1
 GATK_PATH	/data_fedor13/common_scripts/gatk/GenomeAnalysisTK-2.8-1-g932cd3a
-SNPEFF_PATH	/hpc/cog_bioinf/data/robert/src/snpEff
+SNPEFF_PATH	/hpc/cog_bioinf/data/robert/src/snpEff_v4.1/
 VCFTOOLS_PATH	/hpc/cog_bioinf/common_scripts/vcftools/bin/
 IGVTOOLS_PATH	/hpc/local/CentOS6/cog_bioinf/bin
 

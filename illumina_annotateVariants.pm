@@ -52,7 +52,8 @@ sub runAnnotateVariants {
     if($opt{ANNOTATE_SNPEFF} eq "yes"){
 	$outvcf = $invcf;
 	$outvcf =~ s/.vcf/_snpEff.vcf/;
-	$command = "java -Xmx".$opt{ANNOTATE_MEM}."g -jar $opt{SNPEFF_PATH}/snpEff.jar -c $opt{SNPEFF_PATH}/snpEff.config $opt{ANNOTATE_DB} -v $invcf -o gatk $opt{ANNOTATE_FLAGS} > $outvcf\n";
+	#$command = "java -Xmx".$opt{ANNOTATE_MEM}."g -jar $opt{SNPEFF_PATH}/snpEff.jar -c $opt{SNPEFF_PATH}/snpEff.config $opt{ANNOTATE_DB} -v $invcf -o gatk $opt{ANNOTATE_FLAGS} > $outvcf\n";
+	$command = "java -Xmx".$opt{ANNOTATE_MEM}."g -jar $opt{SNPEFF_PATH}/snpEff.jar -c $opt{SNPEFF_PATH}/snpEff.config $opt{ANNOTATE_DB} -v $invcf $opt{ANNOTATE_FLAGS} > $outvcf\n";
 	$command .= "\t$opt{IGVTOOLS_PATH}/igvtools index $outvcf\n";
 	$command .= "\trm igv.log";
 	print ANNOTATE_SH "if [ -f $invcf ]\n";
