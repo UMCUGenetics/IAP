@@ -52,6 +52,13 @@ sub runSomaticVariantCallers {
     my @merge_somvar_jobs;
     ### Loop over tumor samples
     foreach my $sample (keys(%{$opt{SOMATIC_SAMPLES}})){
+
+	# Check correct sample ref
+	if (! $opt{SOMATIC_SAMPLES}{$sample}{'ref'}){
+	    warn "WARNING: No ref sample for $sample, skipping \n";
+	    next;
+	}
+
 	foreach my $sample_tumor (@{$opt{SOMATIC_SAMPLES}{$sample}{'tumor'}}){
 	    my @somvar_jobs;
 	    ## Create output, log and job directories
