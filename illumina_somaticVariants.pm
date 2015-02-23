@@ -24,12 +24,17 @@ sub parseSamples {
 
     foreach my $sample (@{$opt{SAMPLES}}){
 	# Parse cpct samples based on expected naming
-	my ($cpct_name,$origin) = ($sample =~ /(CPCT\d{8})([TR][IVX]*)/);
-
+	my ($cpct_name,$origin) = ($sample =~ /(CPCT\d{8})([TR][IVX]*$)/);
+	
+	if ( (! $cpct_name) || (! $origin) ){
+	    warn "WARNING: $sample is not passing somatic samplename parsing, skipping \n\n";
+	    next;
+	}
+	
 	# Reference sample
 	if ($origin =~ m/R.*/){
 	    if ($somatic_samples{$cpct_name}{"ref"}){
-		warn "\t WARNING: $cpct_name has multiple reference samples, using: $somatic_samples{$cpct_name}{'ref'} \n";
+		warn "\t WARNING: $cpct_name has multiple reference samples, using: $somatic_samples{$cpct_name}{'ref'} \n\n";
 	    } else {
 		$somatic_samples{$cpct_name}{"ref"} = $sample;
 	    }
@@ -89,7 +94,7 @@ sub runSomaticVariantCallers {
 	    }
 
 	    ## Print sample and bam info
-	    print "$sample \t $sample_ref_bam \t $sample_tumor_bam \n";
+	    print "\n$sample \t $sample_ref_bam \t $sample_tumor_bam \n";
 
 	    ## Skip Somatic Callers if .done file exist
 	    if (-e "$sample_tumor_log_dir/$sample_tumor_name.done"){
