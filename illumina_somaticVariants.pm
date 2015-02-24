@@ -241,6 +241,10 @@ sub runVarscan {
 
     # run varscan
     print VARSCAN_SH "echo \"Start Varscan\t\" `date` \"\t $sample_ref_bam \t $sample_tumor_bam\t\" `uname -n` >> $log_dir/varscan.log\n";
+    #print VARSCAN_SH "tumor_pileup=\"$opt{SAMTOOLS_PATH}/samtools mpileup -q 1 -f $opt{GENOME} -l $opt{SOMVAR_TARGETS} $sample_tumor_bam\"\n";
+    #print VARSCAN_SH "ref_pileup=\"$opt{SAMTOOLS_PATH}/samtools mpileup -q 1 -f $opt{GENOME} -l $opt{SOMVAR_TARGETS} $sample_ref_bam\"\n";
+    #print VARSCAN_SH "java -Xmx12g -jar $opt{VARSCAN_PATH} somatic <(\$ref_pileup) <(\$tumor_pileup) $sample_tumor_name $opt{VARSCAN_SETTINGS} --output-vcf 1\n\n";
+
     print VARSCAN_SH "java -Xmx12g -jar $opt{VARSCAN_PATH} somatic $sample_ref_bam.pileup $sample_tumor_bam.pileup $sample_tumor_name $opt{VARSCAN_SETTINGS} --output-vcf 1\n\n";
 
     # postprocessing
