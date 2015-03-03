@@ -268,7 +268,10 @@ sub runVarscan {
     print VARSCAN_SH "\tsed -i 's/SSC/VS_SSC/' $sample_tumor_name.merged.Somatic.hc.vcf\n\n"; # to resolve merge conflict with FB vcfs
     
     # Check varscan completed
-    print VARSCAN_SH "\ttouch $log_dir/varscan.done\n\n"; ## Check on complete output!!!
+    print VARSCAN_SH "\tif [ -f $sample_tumor_name.merged.Somatic.hc.vcf ]\n";
+    print VARSCAN_SH "\tthen\n";
+    print VARSCAN_SH "\t\ttouch $log_dir/varscan.done\n\n";
+    print VARSCAN_SH "\ffi\n";
     print VARSCAN_SH "\techo \"End Varscan\t\" `date` \"\t $sample_ref_bam \t $sample_tumor_bam\t\" `uname -n` >> $log_dir/varscan.log\n";
 
     print VARSCAN_SH "else\n";
@@ -297,7 +300,7 @@ sub runFreeBayes {
 	make_path($freebayes_out_dir) or die "Couldn't create directory: $freebayes_out_dir\n";
     }
 
-    ## Skip varscan if .done file exist
+    ## Skip freebayes if .done file exist
     if (-e "$log_dir/freebayes.done"){
 	warn "WARNING: $log_dir/freebayes.done, skipping \n";
 	return;
@@ -338,10 +341,14 @@ sub runFreeBayes {
     # Filter
     print FREEBAYES_SH "\tcat $freebayes_out_dir/$sample_tumor_name\_somatic.vcf | $opt{BIOVCF_PATH}/bio-vcf $opt{FREEBAYES_SOMATICFILTER} > $freebayes_out_dir/$sample_tumor_name\_somatic_filtered.vcf\n";
     print FREEBAYES_SH "\tcat $freebayes_out_dir/$sample_tumor_name\_germline.vcf | $opt{BIOVCF_PATH}/bio-vcf $opt{FREEBAYES_GERMLINEFILTER} > $freebayes_out_dir/$sample_tumor_name\_germline_filtered.vcf\n\n";
-
-    print FREEBAYES_SH "\ttouch $log_dir/freebayes.done\n\n"; ## Check on complete output!!!
+    
+    #Check freebayes completed
+    print FREEBAYES_SH "\tif [ -f $freebayes_out_dir/$sample_tumor_name\_somatic_filtered.vcf -a -f $freebayes_out_dir/$sample_tumor_name\_germline_filtered.vcf ]\n";
+    print FREEBAYES_SH "\tthen\n";
+    print FREEBAYES_SH "\t\ttouch $log_dir/freebayes.done\n\n"; ## Check on complete output!!!
+    print FREEBAYES_SH "\tfi\n";
+    
     print FREEBAYES_SH "\techo \"End Freebayes\t\" `date` \"\t $sample_ref_bam \t $sample_tumor_bam\t\" `uname -n` >> $log_dir/freebayes.log\n";
-
     print FREEBAYES_SH "else\n";
     print FREEBAYES_SH "\techo \"ERROR: $sample_tumor_bam or $sample_ref_bam does not exist.\" >&2\n";
     print FREEBAYES_SH "fi\n";
