@@ -128,6 +128,7 @@ sub runRealignment {
 	print CLEAN_SH "then\n";
 	print CLEAN_SH "echo \"Finished indel realignment\t\" `date` >> ../logs/$runName.log\n";
 	print CLEAN_SH "\tmv $opt{OUTPUT_DIR}/tmp/IndelRealigner.jobreport.txt $opt{OUTPUT_DIR}/logs/IndelRealigner.jobreport.txt\n";
+	print CLEAN_SH "\tmv $opt{OUTPUT_DIR}/tmp/IndelRealigner.jobreport.pdf $opt{OUTPUT_DIR}/logs/IndelRealigner.jobreport.pdf\n";
 	print CLEAN_SH "fi\n";
 	close CLEAN_SH;
 	
@@ -200,6 +201,7 @@ sub runRealignment {
 	    print REALIGN_SH "\tthen\n";
 	    print REALIGN_SH "\t\ttouch $opt{OUTPUT_DIR}/$sample/logs/Realignment_$sample.done\n";
 	    print REALIGN_SH "\t\tmv $opt{OUTPUT_DIR}/$sample/tmp/IndelRealigner.jobreport.txt $opt{OUTPUT_DIR}/$sample/logs/IndelRealigner.jobreport.txt\n";
+	    print REALIGN_SH "\t\tmv $opt{OUTPUT_DIR}/$sample/tmp/IndelRealigner.jobreport.pdf $opt{OUTPUT_DIR}/$sample/logs/IndelRealigner.jobreport.pdf\n";
 	    print REALIGN_SH "\telse\n";
 	    print REALIGN_SH "\t\techo \"ERROR: $opt{OUTPUT_DIR}/$sample/mapping/$flagstat and $opt{OUTPUT_DIR}/$sample/mapping/$realignedFlagstat do not have the same read counts\" >>../logs/Realignment_$sample.err\n";
 	    print REALIGN_SH "\tfi\n";

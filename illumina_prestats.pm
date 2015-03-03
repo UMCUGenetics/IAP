@@ -42,7 +42,7 @@ sub runPreStats {
 	    print PS "\#!/bin/sh\n\n";
 	    print PS "cd $opt{OUTPUT_DIR}/$sampleName\n\n";
 	    print PS "echo \"Start PreStats\t\" `date` \"\t$coreName\t\" `uname -n` >> $opt{OUTPUT_DIR}/$sampleName/logs/$sampleName.log\n";
-	    print PS "$opt{FASTQC_PATH}/fastqc $input -o QCStats --noextract\n";
+	    print PS "$opt{FASTQC_PATH}/fastqc $input -o QCStats --noextract -t $opt{PRESTATS_THREADS}\n";
 	    print PS "touch logs/PreStats_$sampleName.done\n";
 	    print PS "echo \"End PreStats\t\" `date` \"\t$coreName\t\" `uname -n` >> $opt{OUTPUT_DIR}/$sampleName/logs/$sampleName.log\n";
 	    close PS;
