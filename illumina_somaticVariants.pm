@@ -270,8 +270,8 @@ sub runVarscan {
     # Check varscan completed
     print VARSCAN_SH "\tif [ -f $sample_tumor_name.merged.Somatic.hc.vcf ]\n";
     print VARSCAN_SH "\tthen\n";
-    print VARSCAN_SH "\t\ttouch $log_dir/varscan.done\n\n";
-    print VARSCAN_SH "\ffi\n";
+    print VARSCAN_SH "\t\ttouch $log_dir/varscan.done\n";
+    print VARSCAN_SH "\tfi\n\n";
     print VARSCAN_SH "\techo \"End Varscan\t\" `date` \"\t $sample_ref_bam \t $sample_tumor_bam\t\" `uname -n` >> $log_dir/varscan.log\n";
 
     print VARSCAN_SH "else\n";
