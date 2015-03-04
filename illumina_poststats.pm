@@ -17,10 +17,10 @@ sub runPostStats {
     my $picard = "java -Xmx".$javaMem."G -jar $opt{PICARD_PATH}";
     my @runningJobs; #internal job array
     my $runName = (split("/", $opt{OUTPUT_DIR}))[-1];
-    my $jobID;
+    my $jobID = "PostStats_".get_job_id();
+    my $jobIDCheck = "PostStats_Check_".get_job_id();
 
     ### Run bamMetrics
-    $jobID = "PostStats_".get_job_id();
     if(! -e "$opt{OUTPUT_DIR}/logs/PostStats.done"){
 	my $command = "perl $opt{BAMMETRICS_PATH}/bamMetrics.pl ";
 	foreach my $sample (@{$opt{SAMPLES}}){
@@ -56,18 +56,28 @@ sub runPostStats {
 	print OUT "cd $opt{OUTPUT_DIR}\n";
 	print OUT "echo \"Start poststats\t\" `date` \"\t\" `uname -n` >> $opt{OUTPUT_DIR}/logs/$runName.log\n";
 	print OUT "$command\n";
-	print OUT "if [ -f QCStats/*.bamMetrics.pdf -a -f QCStats/*.bamMetrics.html ]\nthen\n";
-	print OUT "\ttouch logs/PostStats.done \n";
-	print OUT "\techo \"Finished poststats\t\" `date` \"\t\" `uname -n` >> $opt{OUTPUT_DIR}/logs/$runName.log\n";
-	print OUT "fi\n";
-
+	print OUT "qalter -hold_jid bamMetrics_report_".$runName." $jobIDCheck\n"; #hack to make sure check does not start before bamMetrics ends.
+	close OUT;
+	
 	if (@runningJobs){
 	    system "qsub -q $opt{POSTSTATS_QUEUE} -m a -M $opt{MAIL} -pe threaded $opt{POSTSTATS_THREADS} -o $logDir/PostStats_$runName.out -e $logDir/PostStats_$runName.err -N $jobID -hold_jid ".join(",",@runningJobs)." $bashFile";
-	    return $jobID;
 	} else {
 	    system "qsub -q $opt{POSTSTATS_QUEUE} -m a -M $opt{MAIL} -pe threaded $opt{POSTSTATS_THREADS} -o $logDir/PostStats_$runName.out -e $logDir/PostStats_$runName.err -N $jobID $bashFile";
-	    return $jobID;
 	}
+	
+	### Check BamMetrics result
+	my $bashFileCheck = $opt{OUTPUT_DIR}."/jobs/".$jobIDCheck.".sh";
+	open OUTCHECK, ">$bashFileCheck" or die "cannot open file $bashFileCheck\n";
+	print OUTCHECK "cd $opt{OUTPUT_DIR}\n";
+	print OUTCHECK "if [ -f QCStats/*.bamMetrics.pdf -a -f QCStats/*.bamMetrics.html ]\nthen\n";
+	print OUTCHECK "\ttouch logs/PostStats.done \n";
+	print OUTCHECK "\techo \"Finished poststats\t\" `date` \"\t\" `uname -n` >> $opt{OUTPUT_DIR}/logs/$runName.log\n";
+	print OUTCHECK "fi\n";
+	close OUTCHECK;
+
+	system "qsub -q $opt{POSTSTATS_QUEUE} -m a -M $opt{MAIL} -pe threaded $opt{POSTSTATS_THREADS} -o $logDir/PostStats_$runName.out -e $logDir/PostStats_$runName.err -N $jobIDCheck -hold_jid bamMetrics_report_".$runName.",$jobID $bashFileCheck";
+	return $jobIDCheck;
+
     } else {
 	print "WARNING: $opt{OUTPUT_DIR}/logs/PostStats.done exists, skipping\n";
     }
