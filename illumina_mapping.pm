@@ -74,7 +74,7 @@ sub runMapping {
 	}elsif(scalar(@files) == 1){
 	    print "Switching to fragment mode!\n";
 	    $R1 = $files[0];
-
+	    $opt{SINGLE_END} = 1;
 	    if($R1 !~ m/fastq.gz$/){
 	        die "ERROR: Invalid input file:\n\t$R1\n";
 	    }

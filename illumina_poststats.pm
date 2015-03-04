@@ -44,6 +44,10 @@ sub runPostStats {
 	    $command .= "-coverage_cap 250 "; # add option to ini file
 	}
 	
+	if ( $opt{SINGLE_END} ) {
+	    $command .= "-single_end ";
+	}
+	
 	my $bashFile = $opt{OUTPUT_DIR}."/jobs/".$jobID.".sh";
 	my $logDir = $opt{OUTPUT_DIR}."/logs";
         
