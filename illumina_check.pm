@@ -127,6 +127,24 @@ sub runCheck {
 	    push( @runningJobs, @{$opt{RUNNING_JOBS}->{'somVar'}} );
 	}
     }
+    if($opt{CNV} eq "yes"){
+	print BASH "echo \"Copy Number Analysis:\" >>$logFile\n";
+	foreach my $sample (keys(%{$opt{SOMATIC_SAMPLES}})){
+	    foreach my $sample_tumor (@{$opt{SOMATIC_SAMPLES}{$sample}{'tumor'}}){
+		my $sample_tumor_name = "$opt{SOMATIC_SAMPLES}{$sample}{'ref'}\_$sample_tumor";
+		my $done_file = "$opt{OUTPUT_DIR}/copyNumber/$sample_tumor_name/logs/$sample_tumor_name.done";
+		print BASH "if [ -f $done_file ]; then\n";
+		print BASH "\techo \"\t $sample_tumor_name: done \" >>$logFile\n";
+		print BASH "else\n";
+		print BASH "\techo \"\t $sample_tumor_name: failed \">>$logFile\n";
+		print BASH "\tfailed=true\n";
+		print BASH "fi\n";
+	    }
+	}
+	if ( $opt{RUNNING_JOBS}->{'CNV'} ){
+	    push( @runningJobs, @{$opt{RUNNING_JOBS}->{'CNV'}} );
+	}
+    }
     if($opt{FILTER_VARIANTS} eq "yes"){
 	$doneFile = $opt{OUTPUT_DIR}."/logs/VariantFilter.done";
 	print BASH "if [ -f $doneFile ]; then\n";

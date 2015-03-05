@@ -26,6 +26,7 @@ use illumina_baseRecal;
 use illumina_calling;
 use illumina_filterVariants;
 use illumina_somaticVariants;
+use illumina_copynumber;
 use illumina_annotateVariants;
 use illumina_check;
 
@@ -145,6 +146,13 @@ if (! $opt{VCF} ){
 	%opt = %$opt_ref;
 	my $somVar_jobs = illumina_somaticVariants::runSomaticVariantCallers(\%opt);
 	$opt{RUNNING_JOBS}->{'somVar'} = $somVar_jobs;
+    }
+    if($opt{CNV} eq "yes"){
+	print "\n###SCHEDULING COPY NUMBER TOOLS####\n";
+	$opt_ref = illumina_somaticVariants::parseSamples(\%opt);
+	%opt = %$opt_ref;
+	my $cnv_jobs = illumina_copyNumber::runCopyNumberTools(\%opt);
+	$opt{RUNNING_JOBS}->{'CNV'} = $cnv_jobs;
     }
     ### GATK
     if($opt{VARIANT_CALLING} eq "yes"){
