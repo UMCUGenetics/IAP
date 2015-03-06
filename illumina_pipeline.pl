@@ -86,6 +86,7 @@ if(! $opt{BASEQUALITYRECAL}){ die "ERROR: No BASEQUALITYRECAL option in .conf fi
 if(! $opt{VARIANT_CALLING}){ die "ERROR: No VARIANT_CALLING option in .conf file \n" }
 if(! $opt{FILTER_VARIANTS}){ die "ERROR: No FILTER_VARIANTS option in .conf file \n" }
 if(! $opt{SOMATIC_VARIANTS}){ die "ERROR: No SOMATIC_VARIANTS option in .conf file \n" }
+if(! $opt{CNV}){ die "ERROR: No CNV option in .conf file \n" }
 if(! $opt{ANNOTATE_VARIANTS}){ die "ERROR: No ANNOTATE_VARIANTS option in .conf file \n" }
 if(! $opt{CHECKING}){ die "ERROR: No CHECKING option in .conf file \n" }
 
@@ -258,9 +259,6 @@ sub createOutputDirs{
 	if(! -e "$opt{OUTPUT_DIR}/$sample/tmp"){
 	    mkdir("$opt{OUTPUT_DIR}/$sample/tmp") or die "Couldn't create directory: $opt{OUTPUT_DIR}/$sample/tmp\n";
 	}
-	#if(! -e "$opt{OUTPUT_DIR}/$sample/variants"){
-	#    mkdir("$opt{OUTPUT_DIR}/$sample/variants") or die "Couldn't create directory: $opt{OUTPUT_DIR}/$sample/variants\n";
-	#}
     }
 }
 
