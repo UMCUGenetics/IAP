@@ -17,7 +17,7 @@ use FindBin;
 
 sub runCheck {
     my $configuration = shift;
-    my %opt = %{readConfiguration($configuration)};
+    my %opt = %{$configuration};
     my $runName = (split("/", $opt{OUTPUT_DIR}))[-1];
     my $doneFile;
     my @runningJobs;
@@ -127,6 +127,24 @@ sub runCheck {
 	    push( @runningJobs, @{$opt{RUNNING_JOBS}->{'somVar'}} );
 	}
     }
+    if($opt{COPY_NUMBER} eq "yes"){
+	print BASH "echo \"Copy Number Analysis:\" >>$logFile\n";
+	foreach my $sample (keys(%{$opt{SOMATIC_SAMPLES}})){
+	    foreach my $sample_tumor (@{$opt{SOMATIC_SAMPLES}{$sample}{'tumor'}}){
+		my $sample_tumor_name = "$opt{SOMATIC_SAMPLES}{$sample}{'ref'}\_$sample_tumor";
+		my $done_file = "$opt{OUTPUT_DIR}/copyNumber/$sample_tumor_name/logs/$sample_tumor_name.done";
+		print BASH "if [ -f $done_file ]; then\n";
+		print BASH "\techo \"\t $sample_tumor_name: done \" >>$logFile\n";
+		print BASH "else\n";
+		print BASH "\techo \"\t $sample_tumor_name: failed \">>$logFile\n";
+		print BASH "\tfailed=true\n";
+		print BASH "fi\n";
+	    }
+	}
+	if ( $opt{RUNNING_JOBS}->{'CNV'} ){
+	    push( @runningJobs, @{$opt{RUNNING_JOBS}->{'CNV'}} );
+	}
+    }
     if($opt{FILTER_VARIANTS} eq "yes"){
 	$doneFile = $opt{OUTPUT_DIR}."/logs/VariantFilter.done";
 	print BASH "if [ -f $doneFile ]; then\n";
@@ -186,21 +204,6 @@ sub runCheck {
     } else {
 	system "qsub -q $opt{CHECKING_QUEUE} -m a -M $opt{MAIL} -pe threaded $opt{CHECKING_THREADS} -o /dev/null -e /dev/null -N check_$jobID $bashFile";
     }
-}
-
-sub readConfiguration{
-    my $configuration = shift;
-    my %opt;
-
-    foreach my $key (keys %{$configuration}){
-	$opt{$key} = $configuration->{$key};
-    }
-
-    if(! $opt{CHECKING_QUEUE}){ die "ERROR: No CHECKING_QUEUE found in .conf file\n" }
-    if(! $opt{CHECKING_THREADS}){ die "ERROR: No CHECKING_THREADS found in .ini file\n" }
-    if(! $opt{OUTPUT_DIR}){ die "ERROR: No OUTPUT_DIR found in .conf file\n" }
-    if(! $opt{MAIL}){ die "ERROR: No MAIL address specified in .conf file\n" }
-    return \%opt;
 }
 
 ############

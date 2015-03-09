@@ -18,7 +18,7 @@ use FindBin;
 
 sub runPostStats {
     my $configuration = shift;
-    my %opt = %{readConfiguration($configuration)};
+    my %opt = %{$configuration};
     my $javaMem = $opt{POSTSTATS_THREADS} * $opt{POSTSTATS_MEM};
     my $picard = "java -Xmx".$javaMem."G -jar $opt{PICARD_PATH}";
     my @runningJobs; #internal job array
@@ -93,30 +93,6 @@ sub runPostStats {
 	print "WARNING: $opt{OUTPUT_DIR}/logs/PostStats.done exists, skipping\n";
     }
 }
-
-sub readConfiguration{
-    my $configuration = shift;
-    my %opt;
-
-    foreach my $key (keys %{$configuration}){
-	$opt{$key} = $configuration->{$key};
-    }
-
-    if(! $opt{PICARD_PATH}){ die "ERROR: No PICARD_PATH found in .ini file\n" }
-    if(! $opt{POSTSTATS_THREADS}){ die "ERROR: No POSTSTATS_THREADS found in .ini file\n" }
-    if(! $opt{POSTSTATS_MEM}){ die "ERROR: No POSTSTATS_MEM found in .ini file\n" }
-    if(! $opt{POSTSTATS_QUEUE}){ die "ERROR: No POSTSTATS_THREADS found in .ini file\n" }
-    if(! ($opt{POSTSTATS_TARGETS}) && ! ($opt{POSTSTATS_BAITS}) ) {
-	if(! $opt{POSTSTATS_COVERAGECAP}){ die "ERROR: No POSTSTATS_COVERAGECAP found in .ini file\n" }
-    }
-    if( $opt{POSTSTATS_TARGETS} && ! -e $opt{POSTSTATS_TARGETS}) { die"ERROR: $opt{POSTSTATS_TARGETS} does not exist\n" }
-    if( $opt{POSTSTATS_BAITS} && ! -e $opt{POSTSTATS_BAITS}) { die"ERROR: $opt{POSTSTATS_BAITS} does not exist\n" }
-    if(! $opt{GENOME}){ die "ERROR: No GENOME found in .ini file\n" }
-    if(! $opt{OUTPUT_DIR}){ die "ERROR: No OUTPUT_DIR found in .conf file\n" }
-    if(! $opt{MAIL}){ die "ERROR: No MAIL address specified in .conf file\n" }
-    return \%opt;
-}
-
 
 ############
 sub get_job_id {

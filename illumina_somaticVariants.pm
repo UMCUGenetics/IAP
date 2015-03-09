@@ -19,7 +19,7 @@ use File::Path qw(make_path);
 # Expects CPCT samples (CPCT........T/R)
 sub parseSamples {
     my $configuration = shift;
-    my %opt = %{readConfiguration($configuration)};
+    my %opt = %{$configuration};
     my %somatic_samples;
 
     foreach my $sample (@{$opt{SAMPLES}}){
@@ -53,7 +53,7 @@ sub parseSamples {
 ### Run and merge
 sub runSomaticVariantCallers {
     my $configuration = shift;
-    my %opt = %{readConfiguration($configuration)};
+    my %opt = %{$configuration};
     my @merge_somvar_jobs;
     ### Loop over tumor samples
     foreach my $sample (keys(%{$opt{SOMATIC_SAMPLES}})){
@@ -362,53 +362,6 @@ sub runFreeBayes {
 	system "qsub -q $opt{FREEBAYES_QUEUE} -pe threaded $opt{FREEBAYES_THREADS} -R $opt{CLUSTER_RESERVATION} -m a -M $opt{MAIL} -o $log_dir -e $log_dir -N $job_id $bash_file";
     }
     return $job_id;
-}
-
-### Read config and check input
-sub readConfiguration{
-    my $configuration = shift;
-    my %opt;
-
-    foreach my $key (keys %{$configuration}){
-	$opt{$key} = $configuration->{$key};
-    }
-
-    if(! $opt{GENOME}){ die "ERROR: No GENOME found in .ini file\n" }
-    elsif(! -e $opt{GENOME}){ die"ERROR: $opt{GENOME} does not exist\n"}
-    if(! $opt{SAMTOOLS_PATH}){ die "ERROR: NO SAMTOOLS_PATH found in .ini file\n" }
-    if(! $opt{SOMVAR_TARGETS}){ die "ERROR: NO SOMVAR_TARGETS found in .ini file\n" }
-    if(! $opt{SOMVAR_STRELKA}){ die "ERROR: NO SOMVAR_STRELKA found in .ini file\n" }
-    if($opt{SOMVAR_STRELKA} eq "yes"){
-	if(! $opt{STRELKA_PATH}){ die "ERROR: NO STRELKA_PATH found in .ini file\n" }
-	if(! $opt{STRELKA_INI}){ die "ERROR: NO STRELKA_INI found in .ini file\n" }
-	if(! $opt{STRELKA_QUEUE}){ die "ERROR: NO STRELKA_QUEUE found in .ini file\n" }
-	if(! $opt{STRELKA_THREADS}){ die "ERROR: NO STRELKA_THREADS found in .ini file\n" }
-    }
-    if(! $opt{SOMVAR_VARSCAN}){ die "ERROR: NO SOMVAR_VARSCAN found in .ini file\n" }
-    if($opt{SOMVAR_VARSCAN} eq "yes"){
-	if(! $opt{VARSCAN_PATH}){ die "ERROR: NO VARSCAN_PATH found in .ini file\n" }
-	if(! $opt{VARSCAN_QUEUE}){ die "ERROR: NO VARSCAN_QUEUE found in .ini file\n" }
-	if(! $opt{VARSCAN_THREADS}){ die "ERROR: NO VARSCAN_THREADS found in .ini file\n" }
-	if(! $opt{VARSCAN_SETTINGS}){ die "ERROR: NO VARSCAN_SETTINGS found in .ini file\n" }
-	if(! $opt{VARSCAN_POSTSETTINGS}){ die "ERROR: NO VARSCAN_POSTSETTINGS found in .ini file\n" }
-    }
-    if(! $opt{SOMVAR_FREEBAYES}){ die "ERROR: NO SOMVAR_FREEBAYES found in .ini file\n" }
-    if($opt{SOMVAR_FREEBAYES} eq "yes"){
-	if(! $opt{FREEBAYES_PATH}){ die "ERROR: NO FREEBAYES_PATH found in .ini file\n" }
-	if(! $opt{VCFSAMPLEDIFF_PATH}){ die "ERROR: NO VCFSAMPLEDIFF_PATH found in .ini file\n" }
-	if(! $opt{BIOVCF_PATH}){ die "ERROR: NO BIOVCF_PATH found in .ini file\n" }
-	if(! $opt{FREEBAYES_QUEUE}){ die "ERROR: NO FREEBAYES_QUEUE found in .ini file\n" }
-	if(! $opt{FREEBAYES_THREADS}){ die "ERROR: NO FREEBAYES_THREADS found in .ini file\n" }
-	if(! $opt{FREEBAYES_SETTINGS}){ die "ERROR: NO FREEBAYES_SETTINGS found in .ini file\n" }
-	if(! $opt{FREEBAYES_SOMATICFILTER}){ die "ERROR: NO FREEBAYES_SOMATICFILTER found in .ini file\n" }
-	if(! $opt{FREEBAYES_GERMLINEFILTER}){ die "ERROR: NO FREEBAYES_GERMLINEFILTER found in .ini file\n" }
-    }
-    if(! $opt{SOMVARMERGE_QUEUE}){ die "ERROR: NO SOMVARMERGE_QUEUE found in .ini file\n" }
-    if(! $opt{SOMVARMERGE_THREADS}){ die "ERROR: NO SOMVARMERGE_THREADS found in .ini file\n" }
-    if(! $opt{OUTPUT_DIR}){ die "ERROR: No OUTPUT_DIR found in .conf file\n" }
-    if(! $opt{MAIL}){ die "ERROR: No MAIL address specified in .conf file\n" }
-
-    return \%opt;
 }
 
 ############

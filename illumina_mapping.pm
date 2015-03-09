@@ -18,7 +18,7 @@ use POSIX qw(tmpnam);
 sub runMapping {
     
     my $configuration = shift;
-    my %opt = %{readConfiguration($configuration)};
+    my %opt = %{$configuration};
     
     my $FAI = "$opt{GENOME}\.fai";
     die "GENOME: $opt{GENOME} does not exists!\n" if !-e "$opt{GENOME}";
@@ -523,7 +523,7 @@ sub submitSingleJobs{
 
 sub runBamPrep {
     my $configuration = shift;
-    my %opt = %{readConfiguration($configuration)};
+    my %opt = %{$configuration};
     my $jobIds = {};
     foreach my $input (keys %{$opt{BAM}}){
 	my $bamFile = (split("/", $input))[-1];
@@ -548,35 +548,7 @@ sub runBamPrep {
     return \%opt;
 }
 
-
 ############
-sub readConfiguration {
-    my $configuration = shift;
-    my %opt;
-    
-    foreach my $key (keys %{$configuration}){
-	$opt{$key} = $configuration->{$key};
-    }
-    
-    if(! $opt{BWA_PATH}){ die "ERROR: No BWA_PATH found in .ini file\n" }
-    if(! $opt{SAMBAMBA_PATH}){ die "ERROR: No SAMBAMBA_PATH found in .ini file\n" }
-    if(! $opt{MAPPING_THREADS}){ die "ERROR: No MAPPING_THREADS found in .ini file\n" }
-    if(! $opt{MAPPING_MEM}){ die "ERROR: No MAPPING_MEM found in .ini file\n" }
-    if(! $opt{MAPPING_QUEUE}){ die "ERROR: No MAPPING_QUEUE found in .ini file\n" }
-    if(! $opt{MAPPING_PROJECT}){ die "ERROR: No MAPPING_PROJECT found in .ini file\n" }
-    if(! $opt{MAPPING_MODE}){ die "ERROR: No MAPPING_MODE found in .ini file\n" }
-    if(! $opt{MAPPING_MARKDUP}){ die "ERROR: No MAPPING_MARKDUP found in .ini file\n" }
-    if(! $opt{CLUSTER_PATH}){ die "ERROR: No CLUSTER_PATH found in .ini file\n" }
-    if(! $opt{CLUSTER_TMP}){ die "ERROR: No CLUSTER_TMP found in .ini file\n" }
-    if(! $opt{CLUSTER_RESERVATION}){ die "ERROR: No CLUSTER_RESERVATION found in .ini file\n" }
-    if(! $opt{GENOME}){ die "ERROR: No GENOME found in .ini file\n" }
-    elsif(! -e $opt{GENOME}){ die"ERROR: $opt{GENOME} does not exist\n"}
-    if(! $opt{OUTPUT_DIR}){ die "ERROR: No OUTPUT_DIR found in .conf file\n" }
-    if(! ($opt{FASTQ} || $opt{BAM}) ){ die "ERROR: No FASTQ or BAM files specified in .conf file\n" }
-    if(! $opt{MAIL}){die "ERROR: No MAIL address found in .conf file \n" }
-    return \%opt;
-}
-
 sub get_job_id {
    my $id = tmpnam();
       $id=~s/\/tmp\/file//;
