@@ -19,7 +19,7 @@ use File::Path qw(make_path);
 # Expects CPCT samples (CPCT........T/R)
 sub parseSamples {
     my $configuration = shift;
-    my %opt = %{readConfiguration($configuration)};
+    my %opt = %{$configuration};
     my %somatic_samples;
 
     foreach my $sample (@{$opt{SAMPLES}}){
@@ -53,7 +53,7 @@ sub parseSamples {
 ### Run and merge
 sub runCopyNumberTools {
     my $configuration = shift;
-    my %opt = %{readConfiguration($configuration)};
+    my %opt = %{$configuration};
     my @check_cnv_jobs;
     ### Loop over tumor samples
     foreach my $sample (keys(%{$opt{SOMATIC_SAMPLES}})){
@@ -184,33 +184,6 @@ sub runContra {
     }
 
     return $job_id;
-}
-
-### Read config and check input
-sub readConfiguration{
-    my $configuration = shift;
-    my %opt;
-
-    foreach my $key (keys %{$configuration}){
-	$opt{$key} = $configuration->{$key};
-    }
-
-    if(! $opt{GENOME}){ die "ERROR: No GENOME found in .ini file\n" }
-    elsif(! -e $opt{GENOME}){ die "ERROR: $opt{GENOME} does not exist\n"}
-    if(! $opt{CNVCHECK_QUEUE} ) { die "ERROR: $opt{CNVCHECK_QUEUE} does not exist\n"}
-    if(! $opt{CNVCHECK_THREADS} ) { die "ERROR: $opt{CNVCHECK_THREADS} does not exist\n"}
-    if(! $opt{CNV_CONTRA}){ die "ERROR: NO CNV_CONTRA found in .ini file\n" }
-    if($opt{CNV_CONTRA} eq "yes"){
-	if(! $opt{CONTRA_PATH}){ die "ERROR: NO CONTRA_PATH found in .ini file\n" }
-	if(! $opt{CONTRA_QUEUE}){ die "ERROR: NO CONTRA_QUEUE found in .ini file\n" }
-	if(! $opt{CONTRA_THREADS}){ die "ERROR: NO CONTRA_THREADS found in .ini file\n" }
-	if(! $opt{CONTRA_TARGETS}){ die "ERROR: NO CONTRA_TARGETS found in .ini file\n" }
-	if(! $opt{CONTRA_FLAGS}){ die "ERROR: NO CONTRA_FLAGS found in .ini file\n" }
-    }
-    if(! $opt{OUTPUT_DIR}){ die "ERROR: No OUTPUT_DIR found in .conf file\n" }
-    if(! $opt{MAIL}){ die "ERROR: No MAIL address specified in .conf file\n" }
-
-    return \%opt;
 }
 
 ############

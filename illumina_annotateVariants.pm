@@ -14,21 +14,20 @@ package illumina_annotateVariants;
 use strict;
 use POSIX qw(tmpnam);
 
-
 sub runAnnotateVariants {
     my $configuration = shift;
-    my %opt = %{readConfiguration($configuration)};
+    my %opt = %{$configuration};
     my $runName = (split("/", $opt{OUTPUT_DIR}))[-1];
     my @runningJobs;
     my $command;
     my $jobID = "AV_".get_job_id();
-    
+
     ### Skip variant annotation if .done file exists.
     if (-e "$opt{OUTPUT_DIR}/logs/VariantAnnotation.done"){
 	warn "WARNING: $opt{OUTPUT_DIR}/logs/VariantAnnotation.done exists, skipping \n";
 	return $jobID;
     }
-    
+
     ### vcf file
     my $invcf;
     my $outvcf;
@@ -37,17 +36,17 @@ sub runAnnotateVariants {
 	if ( $opt{FILTER_MODE} eq "SNP" ) { $invcf = $runName.".filtered_snps.vcf"; }
 	if ( $opt{FILTER_MODE} eq "INDEL" ) { $invcf = $runName.".filtered_indels.vcf"; }
     } elsif ($opt{FILTER_VARIANTS} eq "no") { $invcf = $runName.".raw_variants.vcf"; }
-    
+
     ### Create main bash script
     my $bashFile = $opt{OUTPUT_DIR}."/jobs/AnnotateVariants_".$jobID.".sh";
     my $logDir = $opt{OUTPUT_DIR}."/logs";
-    
+
     open ANNOTATE_SH, ">$bashFile" or die "cannot open file $bashFile \n";
     print ANNOTATE_SH "#!/bin/bash\n\n";
     print ANNOTATE_SH "bash $opt{CLUSTER_PATH}/settings.sh\n\n";
     print ANNOTATE_SH "cd $opt{OUTPUT_DIR}/\n\n";
     print ANNOTATE_SH "echo \"Start variant annotation\t\" `date` \"\t$invcf\t\" `uname -n` >> $opt{OUTPUT_DIR}/logs/$runName.log\n\n";
-    
+
     ### basic eff prediction and annotation
     if($opt{ANNOTATE_SNPEFF} eq "yes"){
 	$outvcf = $invcf;
@@ -140,49 +139,6 @@ sub runAnnotateVariants {
     }
 
     return $jobID;
-}
-
-sub readConfiguration{
-    my $configuration = shift;
-
-    my %opt;
-
-    foreach my $key (keys %{$configuration}){
-	$opt{$key} = $configuration->{$key};
-    }
-    if(! $opt{SNPEFF_PATH}){ die "ERROR: No SNPEFF_PATH found in .ini file\n" }
-    if(! $opt{IGVTOOLS_PATH}){ die "ERROR: No IGVTOOLS_PATH found in .ini file\n" }
-    if(! $opt{ANNOTATE_QUEUE}){ die "ERROR: No ANNOTATE_QUEUE found in .ini file\n" }
-    if(! $opt{ANNOTATE_THREADS}){ die "ERROR: No ANNOTATE_THREADS found in .ini file\n" }
-    if(! $opt{ANNOTATE_MEM}){ die "ERROR: No ANNOTATE_MEM found in .ini file\n" }
-    if(! $opt{CLUSTER_RESERVATION}){ die "ERROR: No CLUSTER_RESERVATION found in .ini file\n" }
-    if(! $opt{ANNOTATE_SNPEFF}){ die "ERROR: No ANNOTATE_SNPEFF found in .ini file\n" }
-    if($opt{ANNOTATE_SNPEFF} eq "yes"){
-	if(! $opt{ANNOTATE_DB}){ die "ERROR: No ANNOTATE_DB found in .ini file\n" }
-	if(! $opt{ANNOTATE_FLAGS}){ die "ERROR: No ANNOTATE_FLAGS found in .ini file\n" }
-    }
-    if(! $opt{ANNOTATE_SNPSIFT}){ die "ERROR: No ANNOTATE_SNPSIFT found in .ini file\n" }
-    if($opt{ANNOTATE_SNPSIFT} eq "yes"){
-	if(! $opt{ANNOTATE_DBNSFP}){ die "ERROR: No ANNOTATE_DBNSFP found in .ini file\n" }
-	elsif( $opt{ANNOTATE_DBNSFP} && ! -e $opt{ANNOTATE_DBNSFP}) { die"ERROR: $opt{ANNOTATE_DBNSFP} does not exist\n" }
-	if(! $opt{ANNOTATE_FIELDS}){ die "ERROR: No ANNOTATE_FIELDS found in .ini file\n" }
-    }
-    if(! $opt{ANNOTATE_FREQUENCIES}){ die "ERROR: No ANNOTATE_FREQUENCIES found in .ini file\n" }
-    if($opt{ANNOTATE_FREQUENCIES} eq "yes"){
-	if(! $opt{ANNOTATE_FREQNAME}){ die "ERROR: No ANNOTATE_FREQNAME found in .ini file\n" }
-	if(! $opt{ANNOTATE_FREQDB}){ die "ERROR: No ANNOTATE_FREQDB found in .ini file\n" }
-	elsif( $opt{ANNOTATE_FREQDB} && ! -e $opt{ANNOTATE_FREQDB}) { die"ERROR: $opt{ANNOTATE_FREQDB} does not exist\n" }
-	if(! $opt{ANNOTATE_FREQINFO}){ die "ERROR: No ANNOTATE_FREQINFO found in .ini file\n" }
-    }
-    if(! $opt{ANNOTATE_IDFIELD}){ die "ERROR: No ANNOTATE_IDFIELD found in .ini file\n" }
-    if($opt{ANNOTATE_IDFIELD} eq "yes"){
-	if(! $opt{ANNOTATE_IDNAME}){ die "ERROR: No ANNOTATE_IDNAME found in .ini file\n" }
-	if(! $opt{ANNOTATE_IDDB}){ die "ERROR: No ANNOTATE_IDDB found in .ini file\n" }
-    }
-    if(! $opt{OUTPUT_DIR}){ die "ERROR: No OUTPUT_DIR found in .conf file\n" }
-    if(! $opt{MAIL}){die "ERROR: No MAIL address found in .ini file \n" }
-
-    return \%opt;
 }
 
 ############

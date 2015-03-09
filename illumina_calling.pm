@@ -16,7 +16,7 @@ use POSIX qw(tmpnam);
 
 sub runVariantCalling {
     my $configuration = shift;
-    my %opt = %{readConfiguration($configuration)};
+    my %opt = %{$configuration};
     my $runName = (split("/", $opt{OUTPUT_DIR}))[-1];
     my @sampleBams;
     my @runningJobs;
@@ -130,44 +130,12 @@ sub runVariantCalling {
 
 sub runVcfPrep {
     my $configuration = shift;
-    my %opt = %{readConfiguration($configuration)};
+    my %opt = %{$configuration};
     my $runName = (split("/", $opt{OUTPUT_DIR}))[-1];
 
     symlink($opt{VCF},"$opt{OUTPUT_DIR}/$runName.raw_variants.vcf");
     @{$opt{SAMPLES}} = ($runName);
     
-    return \%opt;
-}
-
-sub readConfiguration{
-    my $configuration = shift;
-    my %opt;
-
-    foreach my $key (keys %{$configuration}){
-	$opt{$key} = $configuration->{$key};
-    }
-
-    if(! $opt{QUEUE_PATH}){ die "ERROR: No PICARD_PATH found in .ini file\n" }
-    if(! $opt{CALLING_MASTERQUEUE}){ die "ERROR: No CALLING_MASTERQUEUE found in .ini file\n" }
-    if(! $opt{CALLING_MASTERTHREADS}){ die "ERROR: No CALLING_MASTERTHREADS found in .ini file\n" }
-    if(! $opt{CALLING_QUEUE}){ die "ERROR: No CALLING_QUEUE found in .ini file\n" }
-    if(! $opt{CALLING_THREADS}){ die "ERROR: No CALLING_THREADS found in .ini file\n" }
-    if(! $opt{CALLING_MEM}){ die "ERROR: No CALLING_QUEUE found in .ini file\n" }
-    if(! $opt{CALLING_SCATTER}){ die "ERROR: No CALLING_SCATTER found in .ini file\n" }
-    if(! $opt{CALLING_GVCF}){ die "ERROR: No CALLING_GVCF found in .ini file\n"}
-    if(! $opt{CALLING_SCALA}){ die "ERROR: No CALLING_SCALA found in .ini file\n" }
-    if($opt{CALLING_UGMODE}){ 
-	if($opt{CALLING_UGMODE} ne "SNP" and $opt{CALLING_UGMODE} ne "INDEL" and $opt{CALLING_UGMODE} ne "BOTH"){ die "ERROR: UGMODE: $opt{CALLING_UGMODE} does not exist use SNP, INDEL or BOTH\n"}
-    }
-    if(! $opt{CALLING_STANDCALLCONF}){ die "ERROR: No CALLING_STANDCALLCONF found in .ini file\n" }
-    if(! $opt{CALLING_STANDEMITCONF}){ die "ERROR: No CALLING_STANDEMITCONF found in .ini file\n" }
-    if( $opt{CALLING_TARGETS} && ! -e $opt{CALLING_TARGETS}) { die"ERROR: $opt{CALLING_TARGETS} does not exist\n" }
-    if( $opt{CALLING_DBSNP} && ! -e $opt{CALLING_DBSNP}) { die"ERROR: $opt{CALLING_DBSNP} does not exist\n" }
-    if(! $opt{QUEUE_RETRY}){ die "ERROR: No QUEUE_RETRY found in .ini file\n" }
-    if(! $opt{GENOME}){ die "ERROR: No GENOME found in .ini file\n" }
-    elsif(! -e $opt{GENOME}){ die"ERROR: $opt{GENOME} does not exist\n"}
-    if(! $opt{OUTPUT_DIR}){ die "ERROR: No OUTPUT_DIR found in .conf file\n" }
-    if(! $opt{MAIL}){ die "ERROR: No MAIL address specified in .conf file\n" }
     return \%opt;
 }
 

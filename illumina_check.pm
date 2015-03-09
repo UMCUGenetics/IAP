@@ -17,7 +17,7 @@ use FindBin;
 
 sub runCheck {
     my $configuration = shift;
-    my %opt = %{readConfiguration($configuration)};
+    my %opt = %{$configuration};
     my $runName = (split("/", $opt{OUTPUT_DIR}))[-1];
     my $doneFile;
     my @runningJobs;
@@ -127,7 +127,7 @@ sub runCheck {
 	    push( @runningJobs, @{$opt{RUNNING_JOBS}->{'somVar'}} );
 	}
     }
-    if($opt{CNV} eq "yes"){
+    if($opt{COPY_NUMBER} eq "yes"){
 	print BASH "echo \"Copy Number Analysis:\" >>$logFile\n";
 	foreach my $sample (keys(%{$opt{SOMATIC_SAMPLES}})){
 	    foreach my $sample_tumor (@{$opt{SOMATIC_SAMPLES}{$sample}{'tumor'}}){
@@ -204,21 +204,6 @@ sub runCheck {
     } else {
 	system "qsub -q $opt{CHECKING_QUEUE} -m a -M $opt{MAIL} -pe threaded $opt{CHECKING_THREADS} -o /dev/null -e /dev/null -N check_$jobID $bashFile";
     }
-}
-
-sub readConfiguration{
-    my $configuration = shift;
-    my %opt;
-
-    foreach my $key (keys %{$configuration}){
-	$opt{$key} = $configuration->{$key};
-    }
-
-    if(! $opt{CHECKING_QUEUE}){ die "ERROR: No CHECKING_QUEUE found in .conf file\n" }
-    if(! $opt{CHECKING_THREADS}){ die "ERROR: No CHECKING_THREADS found in .ini file\n" }
-    if(! $opt{OUTPUT_DIR}){ die "ERROR: No OUTPUT_DIR found in .conf file\n" }
-    if(! $opt{MAIL}){ die "ERROR: No MAIL address specified in .conf file\n" }
-    return \%opt;
 }
 
 ############

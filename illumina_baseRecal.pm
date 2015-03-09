@@ -17,8 +17,8 @@ use POSIX qw(tmpnam);
 
 sub runBaseRecalibration {
     my $configuration = shift;
-    my %opt = %{readConfiguration($configuration)};
-    
+    my %opt = %{$configuration};
+
     print "Running base recalibration for the following BAM-files:\n";
     
     foreach my $sample (@{$opt{SAMPLES}}){
@@ -116,34 +116,6 @@ sub runBaseRecalibration {
     }
     return \%opt;
 }
-
-
-sub readConfiguration{
-    my $configuration = shift;
-    my %opt;
-
-    foreach my $key (keys %{$configuration}){
-	$opt{$key} = $configuration->{$key};
-    }
-
-    if(! $opt{SAMBAMBA_PATH}){ die "ERROR: No SAMBAMBA_PATH found in .ini file\n" }
-    if(! $opt{BASERECALIBRATION_MASTERQUEUE}){ die "ERROR: No BASERECALIBRATION_QUEUE found in .ini file\n" }
-    if(! $opt{BASERECALIBRATION_MASTERTHREADS}){ die "ERROR: No BASERECALIBRATION_THREADS found in .ini file\n" }
-    if(! $opt{BASERECALIBRATION_QUEUE}){ die "ERROR: No BASERECALIBRATION_QUEUE found in .ini file\n" }
-    if(! $opt{BASERECALIBRATION_THREADS}){ die "ERROR: No BASERECALIBRATION_THREADS found in .ini file\n" }
-    if(! $opt{BASERECALIBRATION_MEM}){ die "ERROR: No BASERECALIBRATION_MEM found in .ini file\n" }
-    if(! $opt{BASERECALIBRATION_SCALA}){ die "ERROR: No BASERECALIBRATION_SCALA found in .ini file\n" }
-    if(! $opt{BASERECALIBRATION_SCATTER}){ die "ERROR: No BASERECALIBRATION_SCATTER found in .ini file\n" }
-    if(! $opt{CLUSTER_PATH}){ die "ERROR: No CLUSTER_PATH found in .ini file\n" }
-    if(! $opt{QUEUE_RETRY}){ die "ERROR: No QUEUE_RETRY found in .ini file\n" }
-    if(! $opt{GENOME}){ die "ERROR: No GENOME found in .ini file\n" }
-    elsif(! -e $opt{GENOME}){ die"ERROR: $opt{GENOME} does not exist\n"}
-    if(! $opt{OUTPUT_DIR}){ die "ERROR: No OUTPUT_DIR found in .conf file\n" }
-    if(! $opt{SAMPLES}){ die "ERROR: No SAMPLES found\n" }
-    if(! $opt{MAIL}){ die "ERROR: No MAIL address specified in .conf file\n" }
-    return \%opt;
-}
-
 
 ############
 sub get_job_id {

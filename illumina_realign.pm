@@ -17,7 +17,7 @@ use POSIX qw(tmpnam);
 
 sub runRealignment {
     my $configuration = shift;
-    my %opt = %{readConfiguration($configuration)};
+    my %opt = %{$configuration};
     my $realignJobs = {};
     my $javaMem = $opt{REALIGNMENT_MASTERTHREADS} * $opt{REALIGNMENT_MEM};
     my $runName = (split("/", $opt{OUTPUT_DIR}))[-1];
@@ -228,35 +228,6 @@ sub runRealignment {
     
     return \%opt;
 }
-
-sub readConfiguration{
-    my $configuration = shift;
-    my %opt;
-
-    foreach my $key (keys %{$configuration}){
-	$opt{$key} = $configuration->{$key};
-    }
-
-    if(! $opt{SAMBAMBA_PATH}){ die "ERROR: No SAMBAMBA_PATH found in .ini file\n" }
-    if(! $opt{REALIGNMENT_MASTERQUEUE}){ die "ERROR: No REALIGNMENT_MASTERQUEUE found in .ini file\n" }
-    if(! $opt{REALIGNMENT_MASTERTHREADS}){ die "ERROR: No REALIGNMENT_MASTERTHREADS found in .ini file\n" }
-    if(! $opt{REALIGNMENT_QUEUE}){ die "ERROR: No REALIGNMENT_QUEUE found in .ini file\n" }
-    if(! $opt{REALIGNMENT_PROJECT}){ die "ERROR: No REALIGNMENT_PROJECT found in .ini file\n" }
-    if(! $opt{REALIGNMENT_THREADS}){ die "ERROR: No REALIGNMENT_THREADS found in .ini file\n" }
-    if(! $opt{REALIGNMENT_MERGETHREADS}){ die "ERROR: No REALIGNMENT_MERGETHREADS found in .ini file\n" }
-    if(! $opt{REALIGNMENT_MEM}){ die "ERROR: No REALIGNMENT_MEM found in .ini file\n" }
-    if(! $opt{REALIGNMENT_SCALA}){ die "ERROR: No REALIGNMENT_SCALA found in .ini file\n" }
-    if(! $opt{REALIGNMENT_SCATTER}){ die "ERROR: No REALIGNMENT_SCATTER found in .ini file\n" }
-    if(! $opt{REALIGNMENT_MODE}){ die "ERROR: No REALIGNMENT_MODE found in .ini file\n" }
-    if(! $opt{QUEUE_RETRY}){ die "ERROR: No QUEUE_RETRY found in .ini file\n" }
-    if(! $opt{CLUSTER_PATH}){ die "ERROR: No CLUSTER_PATH found in .ini file\n" }
-    if(! $opt{GENOME}){ die "ERROR: No GENOME found in .ini file\n" }
-    elsif(! -e $opt{GENOME}){ die"ERROR: $opt{GENOME} does not exist\n"}
-    if(! $opt{OUTPUT_DIR}){ die "ERROR: No OUTPUT_DIR found in .conf file\n" }
-    if(! $opt{MAIL}){ die "ERROR: No MAIL address specified in .conf file\n" }
-    return \%opt;
-}
-
 
 ############
 sub get_job_id {

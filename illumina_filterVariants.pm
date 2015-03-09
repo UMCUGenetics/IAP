@@ -17,7 +17,7 @@ use POSIX qw(tmpnam);
 
 sub runFilterVariants {
     my $configuration = shift;
-    my %opt = %{readConfiguration($configuration)};
+    my %opt = %{$configuration};
     my $runName = (split("/", $opt{OUTPUT_DIR}))[-1];
     my @runningJobs;
     my $jobID = "FV_".get_job_id();
@@ -127,41 +127,6 @@ sub runFilterVariants {
     }
 
     return $jobID;
-}
-
-sub readConfiguration{
-    my $configuration = shift;
-    my %opt;
-
-    foreach my $key (keys %{$configuration}){
-	$opt{$key} = $configuration->{$key};
-    }
-
-    if(! $opt{QUEUE_PATH}){ die "ERROR: No PICARD_PATH found in .ini file\n" }
-    if(! $opt{FILTER_MASTERQUEUE}){ die "ERROR: No FILTER_MASTERQUEUE found in .ini file\n" }
-    if(! $opt{FILTER_MASTERTHREADS}){ die "ERROR: No FILTER_MASTERTHREADS found in .ini file\n" }    
-    if(! $opt{FILTER_QUEUE}){ die "ERROR: No FILTER_QUEUE found in .ini file\n" }
-    if(! $opt{FILTER_THREADS}){ die "ERROR: No FILTER_THREADS found in .ini file\n" }
-    if(! $opt{FILTER_MEM}){ die "ERROR: No FILTER_QUEUE found in .ini file\n" }
-    if(! $opt{FILTER_SCATTER}){ die "ERROR: No FILTER_SCATTER found in .ini file\n" }
-    if(! $opt{FILTER_SCALA}){ die "ERROR: No FILTER_SCALA found in .ini file\n" }
-    if(! $opt{FILTER_MODE}){ die "ERROR: No FILTER_MODE  found in .ini file\n" }
-    if($opt{FILTER_MODE} ne "SNP" and $opt{FILTER_MODE} ne "INDEL" and $opt{FILTER_MODE} ne "BOTH"){ die "ERROR: FILTER_MODE $opt{FILTER_MODE} does not exist use SNP, INDEL or BOTH\n"}
-    if ($opt{FILTER_MODE} eq "SNP" || $opt{FILTER_MODE} eq "BOTH") {
-	if(! $opt{FILTER_SNPNAME}){ die "ERROR: No FILTER_SNPNAME found in .ini file\n" }
-	if(! $opt{FILTER_SNPEXPR}){ die "ERROR: No FILTER_SNPEXPR  found in .ini file\n" }
-    }
-    if ($opt{FILTER_MODE} eq "INDEL" || $opt{FILTER_MODE} eq "BOTH") {
-	if(! $opt{FILTER_INDELNAME}){ die "ERROR: No FILTER_INDELNAME found in .ini file\n" }
-	if(! $opt{FILTER_INDELEXPR}){ die "ERROR: No FILTER_INDELEXPR found in .ini file\n" }
-    }
-    if(! $opt{QUEUE_RETRY}){ die "ERROR: No QUEUE_RETRY found in .ini file\n" }
-    if(! $opt{GENOME}){ die "ERROR: No GENOME found in .ini file\n" }
-    elsif(! -e $opt{GENOME}){ die"ERROR: $opt{GENOME} does not exist\n"}
-    if(! $opt{OUTPUT_DIR}){ die "ERROR: No OUTPUT_DIR found in .conf file\n" }
-    if(! $opt{MAIL}){die "ERROR: No MAIL address specified in .conf file\n"}
-
-    return \%opt;
 }
 
 ############
