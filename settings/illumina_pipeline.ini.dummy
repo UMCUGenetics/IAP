@@ -22,6 +22,7 @@ INDELREALIGNMENT	yes
 BASEQUALITYRECAL	yes
 VARIANT_CALLING	yes
 SOMATIC_VARIANTS	yes
+COPY_NUMBER	yes
 FILTER_VARIANTS	yes
 ANNOTATE_VARIANTS	yes
 CHECKING	yes
@@ -146,6 +147,18 @@ FREEBAYES_GERMLINEFILTER	--filter 'r.tumor.dp>=20 and r.normal.dp>=20 and qual>=
 ## Merge vcfs
 SOMVARMERGE_QUEUE	veryshort
 SOMVARMERGE_THREADS	2
+
+####COPY NUMBER VARIANTION CONFIGURATION####
+CNVCHECK_QUEUE	veryshort
+CNVCHECK_THREADS	1
+
+## Contra
+CNV_CONTRA	yes
+CONTRA_THREADS	7
+CONTRA_QUEUE	short
+CONTRA_PATH	/hpc/local/CentOS6/cog_bioinf/CONTRA.v2.0.6/
+CONTRA_TARGETS	/hpc/cog_bioinf/data/ies/DESIGNS/sureselect/catalog_designs/SS_all_exon_v5/annotated_S04380110_Covered_genenames.bed
+CONTRA_FLAGS	--nomultimapped --largeDeletion --plot
 
 ####VARIANT ANNOTATION CONFIGURATION####
 ANNOTATE_QUEUE	veryshort
