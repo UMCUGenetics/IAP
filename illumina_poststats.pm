@@ -26,6 +26,7 @@ sub runPostStats {
 	foreach my $sample (@{$opt{SAMPLES}}){
 	    my $sampleBam = "$opt{OUTPUT_DIR}/$sample/mapping/$opt{BAM_FILES}->{$sample}";
 	    $command .= "-bam $sampleBam ";
+	    push(@runningJobs, join(",",@{$opt{RUNNING_JOBS}->{$sample}}));
 	}
 	$command .= "-output_dir $opt{OUTPUT_DIR}/QCStats/ ";
 	$command .= "-run_name $runName ";
@@ -34,6 +35,7 @@ sub runPostStats {
 	$command .= "-queue_threads $opt{POSTSTATS_THREADS} ";
 	$command .= "-queue_mem $opt{POSTSTATS_MEM} ";
 	$command .= "-picard_path $opt{PICARD_PATH} ";
+	#$command .= "-debug ";
 	
 	if ( ($opt{POSTSTATS_TARGETS}) && ($opt{POSTSTATS_BAITS}) ) {
 	    $command .= "-capture ";
