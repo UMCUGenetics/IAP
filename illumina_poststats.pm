@@ -116,9 +116,9 @@ sub bashAndSubmit {
     print OUT "$command\n";
     
     if ( @{$opt{RUNNING_JOBS}->{$sample}} ){
-	system "qsub -q $opt{POSTSTATS_QUEUE} -pe threaded $opt{POSTSTATS_THREADS} -o $logDir/PostStats_$sample.out -e $logDir/PostStats_$sample.err -N $jobID -hold_jid ".join(",",@{$opt{RUNNING_JOBS}->{$sample} })." $bashFile";
+	system "qsub -q $opt{POSTSTATS_QUEUE} -pe threaded $opt{POSTSTATS_THREADS} -o $logDir/PostStats_".$sample."_".$jobID.".out -e $logDir/PostStats_$sample\_$jobID.err -N $jobID -hold_jid ".join(",",@{$opt{RUNNING_JOBS}->{$sample} })." $bashFile";
     } else {
-	system "qsub -q $opt{POSTSTATS_QUEUE} -pe threaded $opt{POSTSTATS_THREADS} -o $logDir/PostStats_$sample.out -e $logDir/PostStats_$sample.err -N $jobID $bashFile";
+	system "qsub -q $opt{POSTSTATS_QUEUE} -pe threaded $opt{POSTSTATS_THREADS} -o $logDir/PostStats_".$sample."_".$jobID.".out -e $logDir/PostStats_$sample\_$jobID.err -N $jobID $bashFile";
     }
     return $jobID;
 }
