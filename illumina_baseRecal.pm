@@ -32,6 +32,7 @@ sub runBaseRecalibration {
 	(my $outFlagstat = $inBam) =~ s/bam/recalibrated.flagstat/;
 	
 	print "\t$opt{OUTPUT_DIR}/$sample/mapping/$inBam\n";
+	$opt{BAM_FILES}->{$sample} = $outBam;
 	
 	### Check output .bam files
 	if (-e "$opt{OUTPUT_DIR}/$sample/logs/BaseRecalibration_$sample.done"){
@@ -112,7 +113,6 @@ sub runBaseRecalibration {
 	}
 
 	push(@{$opt{RUNNING_JOBS}->{$sample}}, $jobID);
-	$opt{BAM_FILES}->{$sample} = $outBam;
     }
     return \%opt;
 }
