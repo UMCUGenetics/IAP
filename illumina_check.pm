@@ -113,6 +113,10 @@ sub runCheck {
 	print BASH "echo \"Somatic Variants:\" >>$logFile\n";
 	foreach my $sample (keys(%{$opt{SOMATIC_SAMPLES}})){
 	    foreach my $sample_tumor (@{$opt{SOMATIC_SAMPLES}{$sample}{'tumor'}}){
+		# Check correct sample ref
+		if (! $opt{SOMATIC_SAMPLES}{$sample}{'ref'}){
+		    next;
+		}
 		my $sample_tumor_name = "$opt{SOMATIC_SAMPLES}{$sample}{'ref'}\_$sample_tumor";
 		my $done_file = "$opt{OUTPUT_DIR}/somaticVariants/$sample_tumor_name/logs/$sample_tumor_name.done";
 		print BASH "if [ -f $done_file ]; then\n";
@@ -131,6 +135,10 @@ sub runCheck {
 	print BASH "echo \"Copy Number Analysis:\" >>$logFile\n";
 	foreach my $sample (keys(%{$opt{SOMATIC_SAMPLES}})){
 	    foreach my $sample_tumor (@{$opt{SOMATIC_SAMPLES}{$sample}{'tumor'}}){
+		# Check correct sample ref
+		if (! $opt{SOMATIC_SAMPLES}{$sample}{'ref'}){
+		    next;
+		}
 		my $sample_tumor_name = "$opt{SOMATIC_SAMPLES}{$sample}{'ref'}\_$sample_tumor";
 		my $done_file = "$opt{OUTPUT_DIR}/copyNumber/$sample_tumor_name/logs/$sample_tumor_name.done";
 		print BASH "if [ -f $done_file ]; then\n";
