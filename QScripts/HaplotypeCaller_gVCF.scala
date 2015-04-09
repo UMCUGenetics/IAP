@@ -94,7 +94,7 @@ class VariantCaller extends QScript {
 	
 	genotypeGVCFs.V = gvcfFiles
 	genotypeGVCFs.reference_sequence = referenceFile
-	//genotypeGVCFs.scatterCount = numScatters // Probably don't need scatters.
+	genotypeGVCFs.scatterCount = numScatters // Probably don't need scatters.
 	genotypeGVCFs.num_threads = numCPUThreads //for now use numCPUThreads, maybe change to new numDataThreads variable
 	
 	genotypeGVCFs.out = qscript.out + ".raw_variants.vcf"
