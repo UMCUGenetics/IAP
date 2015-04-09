@@ -22,8 +22,6 @@ sub runBaseRecalibration {
     print "Running base recalibration for the following BAM-files:\n";
     
     foreach my $sample (@{$opt{SAMPLES}}){
-	my $jobID = "BR_".$sample."_".get_job_id();
-	
 	### Check input .bam files
 	my $inBam = $opt{BAM_FILES}->{$sample};
 	(my $inFlagstat = $inBam) =~ s/bam/flagstat/;
@@ -64,6 +62,7 @@ sub runBaseRecalibration {
 	$command .= "-run";
 
 	### Create bash script
+	my $jobID = "BR_".$sample."_".get_job_id();
 	my $bashFile = $opt{OUTPUT_DIR}."/".$sample."/jobs/".$jobID.".sh";
 	my $logDir = $opt{OUTPUT_DIR}."/".$sample."/logs";
 
@@ -78,31 +77,7 @@ sub runBaseRecalibration {
 	print BASERECAL_SH "\t$command\n";
 	print BASERECAL_SH "else\n";
 	print BASERECAL_SH "\techo \"ERROR: $opt{OUTPUT_DIR}/$sample/mapping/$inBam does not exist.\" >&2\n";
-	print BASERECAL_SH "fi\n\n";
-
-	### Generate FlagStats if gatk .done file present
-	print BASERECAL_SH "if [ -f $opt{OUTPUT_DIR}/$sample/tmp/.$outBam.done ]\n";
-	print BASERECAL_SH "then\n";
-	print BASERECAL_SH "\t$opt{SAMBAMBA_PATH}/sambamba flagstat -t $opt{BASERECALIBRATION_THREADS} $opt{OUTPUT_DIR}/$sample/tmp/$outBam > $opt{OUTPUT_DIR}/$sample/mapping/$outFlagstat\n";
-	print BASERECAL_SH "fi\n\n";
-
-	### Check FlagStats and move files if correct else print error
-	print BASERECAL_SH "if [ -s $opt{OUTPUT_DIR}/$sample/mapping/$inFlagstat ] && [ -s $opt{OUTPUT_DIR}/$sample/mapping/$outFlagstat ]\n";
-	print BASERECAL_SH "then\n";
-	print BASERECAL_SH "\tFS1=\`grep -m 1 -P \"\\d+ \" $opt{OUTPUT_DIR}/$sample/mapping/$inFlagstat | awk '{{split(\$0,columns , \"+\")} print columns[1]}'\`\n";
-	print BASERECAL_SH "\tFS2=\`grep -m 1 -P \"\\d+ \" $opt{OUTPUT_DIR}/$sample/mapping/$outFlagstat | awk '{{split(\$0,columns , \"+\")} print columns[1]}'\`\n";
-	print BASERECAL_SH "\tif [ \$FS1 -eq \$FS2 ]\n";
-	print BASERECAL_SH "\tthen\n";
-	print BASERECAL_SH "\t\tmv $opt{OUTPUT_DIR}/$sample/tmp/$outBam $opt{OUTPUT_DIR}/$sample/mapping/\n";
-	print BASERECAL_SH "\t\tmv $opt{OUTPUT_DIR}/$sample/tmp/$outBai $opt{OUTPUT_DIR}/$sample/mapping/\n";
-	print BASERECAL_SH "\t\ttouch $opt{OUTPUT_DIR}/$sample/logs/BaseRecalibration_$sample.done\n";
-	print BASERECAL_SH "\telse\n";
-	print BASERECAL_SH "\t\techo \"ERROR: $opt{OUTPUT_DIR}/$sample/mapping/$inFlagstat and $opt{OUTPUT_DIR}/$sample/mapping/$outFlagstat do not have the same read counts\" >>../logs/BaseRecalibration_$sample.err\n";
-	print BASERECAL_SH "\tfi\n";
-	print BASERECAL_SH "else\n";
-	print BASERECAL_SH "\techo \"ERROR: Either $opt{OUTPUT_DIR}/$sample/mapping/$inFlagstat or $opt{OUTPUT_DIR}/$sample/mapping/$outFlagstat is empty.\" >> ../logs/BaseRecalibration_$sample.err\n";
-	print BASERECAL_SH "fi\n\n";
-	print BASERECAL_SH "echo \"End base recalibration\t\" `date` \"\t$inBam\t\" `uname -n` >> ../logs/$sample.log\n";
+	print BASERECAL_SH "fi\n";
 	close BASERECAL_SH;
 	
 	### Submit bash script
@@ -111,8 +86,42 @@ sub runBaseRecalibration {
 	} else {
 	    system "qsub -q $opt{BASERECALIBRATION_MASTERQUEUE} -m a -M $opt{MAIL} -pe threaded $opt{BASERECALIBRATION_MASTERTHREADS} -o $logDir/BaseRecalibration_$sample.out -e $logDir/BaseRecalibration_$sample.err -N $jobID $bashFile";
 	}
+	
+	### Create flagstat bash script
+	my $jobIDFS = "BRFS_".$sample."_".get_job_id();
+	my $bashFileFS = $opt{OUTPUT_DIR}."/".$sample."/jobs/".$jobID.".sh";
+	open BASERECALFS_SH, ">$bashFileFS" or die "cannot open file $bashFileFS \n";
+	### Generate FlagStats if gatk .done file present
+	print BASERECALFS_SH "cd $opt{OUTPUT_DIR}/$sample/tmp/\n";
+	print BASERECALFS_SH "if [ -f $opt{OUTPUT_DIR}/$sample/tmp/.$outBam.done ]\n";
+	print BASERECALFS_SH "then\n";
+	print BASERECALFS_SH "\t$opt{SAMBAMBA_PATH}/sambamba flagstat -t $opt{BASERECALIBRATION_THREADS} $opt{OUTPUT_DIR}/$sample/tmp/$outBam > $opt{OUTPUT_DIR}/$sample/mapping/$outFlagstat\n";
+	print BASERECALFS_SH "fi\n\n";
+
+	### Check FlagStats and move files if correct else print error
+	print BASERECALFS_SH "if [ -s $opt{OUTPUT_DIR}/$sample/mapping/$inFlagstat ] && [ -s $opt{OUTPUT_DIR}/$sample/mapping/$outFlagstat ]\n";
+	print BASERECALFS_SH "then\n";
+	print BASERECALFS_SH "\tFS1=\`grep -m 1 -P \"\\d+ \" $opt{OUTPUT_DIR}/$sample/mapping/$inFlagstat | awk '{{split(\$0,columns , \"+\")} print columns[1]}'\`\n";
+	print BASERECALFS_SH "\tFS2=\`grep -m 1 -P \"\\d+ \" $opt{OUTPUT_DIR}/$sample/mapping/$outFlagstat | awk '{{split(\$0,columns , \"+\")} print columns[1]}'\`\n";
+	print BASERECALFS_SH "\tif [ \$FS1 -eq \$FS2 ]\n";
+	print BASERECALFS_SH "\tthen\n";
+	print BASERECALFS_SH "\t\tmv $opt{OUTPUT_DIR}/$sample/tmp/$outBam $opt{OUTPUT_DIR}/$sample/mapping/\n";
+	print BASERECALFS_SH "\t\tmv $opt{OUTPUT_DIR}/$sample/tmp/$outBai $opt{OUTPUT_DIR}/$sample/mapping/\n";
+	print BASERECALFS_SH "\t\ttouch $opt{OUTPUT_DIR}/$sample/logs/BaseRecalibration_$sample.done\n";
+	print BASERECALFS_SH "\telse\n";
+	print BASERECALFS_SH "\t\techo \"ERROR: $opt{OUTPUT_DIR}/$sample/mapping/$inFlagstat and $opt{OUTPUT_DIR}/$sample/mapping/$outFlagstat do not have the same read counts\" >>../logs/BaseRecalibration_$sample.err\n";
+	print BASERECALFS_SH "\tfi\n";
+	print BASERECALFS_SH "else\n";
+	print BASERECALFS_SH "\techo \"ERROR: Either $opt{OUTPUT_DIR}/$sample/mapping/$inFlagstat or $opt{OUTPUT_DIR}/$sample/mapping/$outFlagstat is empty.\" >> ../logs/BaseRecalibration_$sample.err\n";
+	print BASERECALFS_SH "fi\n\n";
+	print BASERECALFS_SH "echo \"End base recalibration\t\" `date` \"\t$inBam\t\" `uname -n` >> ../logs/$sample.log\n";
+	close BASERECALFS_SH;
+	
+	### Submit flagstat bash script
+	system "qsub -q $opt{BASERECALIBRATION_QUEUE} -m a -M $opt{MAIL} -pe threaded $opt{BASERECALIBRATION_THREADS} -o $logDir/BaseRecalibrationFS_$sample.out -e $logDir/BaseRecalibrationFS_$sample.err -N $jobIDFS -hold_jid $jobID $bashFileFS";
 
 	push(@{$opt{RUNNING_JOBS}->{$sample}}, $jobID);
+	push(@{$opt{RUNNING_JOBS}->{$sample}}, $jobIDFS);
     }
     return \%opt;
 }
