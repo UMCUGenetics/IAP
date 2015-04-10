@@ -526,24 +526,47 @@ sub runBamPrep {
     my %opt = %{$configuration};
     my $jobIds = {};
     foreach my $input (keys %{$opt{BAM}}){
+	# Input Bam
 	my $bamFile = (split("/", $input))[-1];
+	my $input_bai = $input;
+	my $input_flagstat = $input;
+	$input_bai =~ s/\.bam/\.bai/g;
+	$input_flagstat =~ s/\.bam/\.flagstat/g;
+	# Ouput bam used in IAP
 	my $sample = $bamFile;
 	$sample =~ s/\.bam//g;
 	$opt{BAM_FILES}->{$sample} = "$sample.bam";
-	symlink($input,"$opt{OUTPUT_DIR}/$sample/mapping/$opt{BAM_FILES}->{$sample}");
+	my $sample_bai = "$opt{OUTPUT_DIR}/$sample/mapping/$sample.bai";
+	my $sample_flagstat = "$opt{OUTPUT_DIR}/$sample/mapping/$sample.flagstat";
 	
-	#index and flagstat
-	my $jobId = "PrepBam_$sample\_".get_job_id();
-	open BAM_SH,">$opt{OUTPUT_DIR}/$sample/jobs/$jobId.sh" or die "Couldn't create $opt{OUTPUT_DIR}/$sample/jobs/$jobId.sh\n";
-	print BAM_SH "cd $opt{OUTPUT_DIR}/$sample/\n";
-	print BAM_SH "$opt{SAMBAMBA_PATH}/sambamba index -t $opt{MAPPING_THREADS} mapping/$sample.bam mapping/$sample.bai\n";
-	print BAM_SH "$opt{SAMBAMBA_PATH}/sambamba flagstat -t $opt{MAPPING_THREADS} mapping/$sample.bam > mapping/$sample.flagstat\n";
-	close BAM_SH;
+	### Check input and symlink
+	if (-e $input){
+	    symlink($input,"$opt{OUTPUT_DIR}/$sample/mapping/$opt{BAM_FILES}->{$sample}");
+	} else {
+	    die "ERROR: $input does not exist.";
+	}
+	if (-e $input_bai){
+	    symlink($input_bai,"$sample_bai");
+	}
+	if (-e $input_flagstat){
+	    symlink($input_flagstat,"$sample_flagstat");
+	}
 	
-	system "qsub -q $opt{MAPPING_QUEUE} -P $opt{MAPPING_PROJECT} -m a -M $opt{MAIL} -pe threaded $opt{MAPPING_THREADS} -R $opt{CLUSTER_RESERVATION} -o $opt{OUTPUT_DIR}/$sample/logs/PrepBam_$sample.out -e $opt{OUTPUT_DIR}/$sample/logs/PrepBam_$sample.err -N $jobId $opt{OUTPUT_DIR}/$sample/jobs/$jobId.sh";
+	### Index and Flagstat
+	if (-e "$sample_bai" && -e "$sample_flagstat" ) {
+	    next;
+	} else {
+	    my $jobId = "PrepBam_$sample\_".get_job_id();
+	    open BAM_SH,">$opt{OUTPUT_DIR}/$sample/jobs/$jobId.sh" or die "Couldn't create $opt{OUTPUT_DIR}/$sample/jobs/$jobId.sh\n";
+	    print BAM_SH "cd $opt{OUTPUT_DIR}/$sample/\n";
+	    if (! -e "$sample_bai" ) { print BAM_SH "$opt{SAMBAMBA_PATH}/sambamba index -t $opt{MAPPING_THREADS} mapping/$sample.bam $sample_bai\n"; }
+	    if (! -e "$sample_flagstat" ) { print BAM_SH "$opt{SAMBAMBA_PATH}/sambamba flagstat -t $opt{MAPPING_THREADS} mapping/$sample.bam > $sample_flagstat\n"; }
+	    close BAM_SH;
 	
-	push(@{$opt{RUNNING_JOBS}->{$sample}}, $jobId);
+	    system "qsub -q $opt{MAPPING_QUEUE} -P $opt{MAPPING_PROJECT} -m a -M $opt{MAIL} -pe threaded $opt{MAPPING_THREADS} -R $opt{CLUSTER_RESERVATION} -o $opt{OUTPUT_DIR}/$sample/logs/PrepBam_$sample.out -e $opt{OUTPUT_DIR}/$sample/logs/PrepBam_$sample.err -N $jobId $opt{OUTPUT_DIR}/$sample/jobs/$jobId.sh";
 	
+	    push(@{$opt{RUNNING_JOBS}->{$sample}}, $jobId);
+	}
     }
     return \%opt;
 }
