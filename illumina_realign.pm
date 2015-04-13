@@ -30,12 +30,13 @@ sub runRealignment {
 	@knownIndelFiles = split('\t', $opt{REALIGNMENT_KNOWN});
     }
     
-    my $mainJobID = "$opt{OUTPUT_DIR}/jobs/RealignMainJob_".get_job_id().".sh";
-    open (QSUB,">$mainJobID") or die "ERROR: Couldn't create $mainJobID\n";
-    print QSUB "\#!/bin/sh\n\n. $opt{CLUSTER_PATH}/settings.sh\n\n";
     
     #MULTI SAMPLE - MULTI OUTPUT
     if($opt{REALIGNMENT_MODE} eq 'multi'){
+	my $mainJobID = "$opt{OUTPUT_DIR}/jobs/RealignMainJob_".get_job_id().".sh";
+	open (QSUB,">$mainJobID") or die "ERROR: Couldn't create $mainJobID\n";
+	print QSUB "\#!/bin/sh\n\n. $opt{CLUSTER_PATH}/settings.sh\n\n";
+
 	my $jobId = "RE_".get_job_id();
 	my $cleanupJobId = "REALIGN_CLEANUP\_".get_job_id();
 	my $mergeJobs = "";
@@ -136,7 +137,7 @@ sub runRealignment {
 	print QSUB "qsub -q $opt{REALIGNMENT_MASTERQUEUE} -P $opt{REALIGNMENT_PROJECT} -m a -M $opt{MAIL} -pe threaded $opt{REALIGNMENT_MASTERTHREADS} -o $opt{OUTPUT_DIR}/logs -e $opt{OUTPUT_DIR}/logs -N $cleanupJobId -hold_jid $jobId $opt{OUTPUT_DIR}/jobs/$cleanupJobId.sh\n";
 	print QSUB $mergeJobs."\n";
 	
-    
+	system("sh $mainJobID");
     }
     
     #SINGLE SAMPLE - MULTI OUPUT
@@ -193,9 +194,9 @@ sub runRealignment {
 
 	    ### Submit realign bash script
 	    if ( @{$opt{RUNNING_JOBS}->{$sample}} ){
-		print QSUB "qsub -q $opt{REALIGNMENT_MASTERQUEUE} -P $opt{REALIGNMENT_PROJECT} -m a -M $opt{MAIL} -pe threaded $opt{REALIGNMENT_MASTERTHREADS} -o $logDir/Realignment_$sample.out -e $logDir/Realignment_$sample.err -N $jobID -hold_jid ".join(",",@{$opt{RUNNING_JOBS}->{$sample}})." $bashFile\n";
+		system "qsub -q $opt{REALIGNMENT_MASTERQUEUE} -P $opt{REALIGNMENT_PROJECT} -m a -M $opt{MAIL} -pe threaded $opt{REALIGNMENT_MASTERTHREADS} -o $logDir/Realignment_$sample.out -e $logDir/Realignment_$sample.err -N $jobID -hold_jid ".join(",",@{$opt{RUNNING_JOBS}->{$sample}})." $bashFile";
 	    } else {
-		print QSUB "qsub -q $opt{REALIGNMENT_MASTERQUEUE} -P $opt{REALIGNMENT_PROJECT} -m a -M $opt{MAIL} -pe threaded $opt{REALIGNMENT_MASTERTHREADS} -o $logDir/Realignment_$sample.out -e $logDir/Realignment_$sample.err -N $jobID $bashFile\n";
+		system "qsub -q $opt{REALIGNMENT_MASTERQUEUE} -P $opt{REALIGNMENT_PROJECT} -m a -M $opt{MAIL} -pe threaded $opt{REALIGNMENT_MASTERTHREADS} -o $logDir/Realignment_$sample.out -e $logDir/Realignment_$sample.err -N $jobID $bashFile";
 	    }
 	    
 	    ### Create flagstat bash script
@@ -232,7 +233,7 @@ sub runRealignment {
 	    close REALIGNFS_SH;
 	    
 	    ### Submit flagstat bash script
-	    print QSUB "qsub -q $opt{FLAGSTAT_QUEUE} -m a -M $opt{MAIL} -pe threaded $opt{FLAGSTAT_THREADS} -o $logDir/RealignmentFS_$sample.out -e $logDir/RealignmentFS_$sample.err -N $jobIDFS -hold_jid $jobID $bashFileFS\n";
+	    system "qsub -q $opt{FLAGSTAT_QUEUE} -m a -M $opt{MAIL} -pe threaded $opt{FLAGSTAT_THREADS} -o $logDir/RealignmentFS_$sample.out -e $logDir/RealignmentFS_$sample.err -N $jobIDFS -hold_jid $jobID $bashFileFS";
 	    
 	    push(@{$opt{RUNNING_JOBS}->{$sample}}, $jobID);
 	    push(@{$opt{RUNNING_JOBS}->{$sample}}, $jobIDFS);
@@ -241,8 +242,6 @@ sub runRealignment {
     }else{
 	die "ERROR: Invalid REALIGNMENT_MODE $opt{REALIGNMENT_MODE} , use 'single' or 'multi'\n";
     }
-    
-    system("sh $mainJobID");
     
     return \%opt;
 }
