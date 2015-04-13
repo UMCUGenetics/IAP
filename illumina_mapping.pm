@@ -402,11 +402,11 @@ sub submitSingleJobs{
     print FS1_SH "\#!/bin/sh\n\n";
     print FS1_SH "cd $opt{OUTPUT_DIR}/$sampleName/mapping \n";
     print FS1_SH "echo \"Start flagstat\t\" `date` \"\t$coreName.bam\t\" `uname -n` >> $opt{OUTPUT_DIR}/$sampleName/logs/$sampleName.log\n";
-    print FS1_SH "$opt{SAMBAMBA_PATH}/sambamba flagstat -t $opt{MAPPING_THREADS} $coreName.bam > $coreName.flagstat\n";
+    print FS1_SH "$opt{SAMBAMBA_PATH}/sambamba flagstat -t $opt{FLAGSTAT_THREADS} $coreName.bam > $coreName.flagstat\n";
     print FS1_SH "echo \"End Flagstat \t\" `date` \"\t$coreName.bam\t\" `uname -n` >> $opt{OUTPUT_DIR}/$sampleName/logs/$sampleName.log\n\n";
     close FS1_SH;
     
-    print $QSUB "qsub -q $opt{MAPPING_QUEUE} -P $opt{MAPPING_PROJECT} -m a -M $opt{MAIL} -pe threaded $opt{MAPPING_THREADS} -R $opt{CLUSTER_RESERVATION} -o $opt{OUTPUT_DIR}/$sampleName/logs/Mapping_$coreName.out -e $opt{OUTPUT_DIR}/$sampleName/logs/Mapping_$coreName.err -N $mappingFSJobId -hold_jid $mappingJobId $opt{OUTPUT_DIR}/$sampleName/jobs/$mappingFSJobId.sh\n";
+    print $QSUB "qsub -q $opt{FLAGSTAT_QUEUE} -P $opt{MAPPING_PROJECT} -m a -M $opt{MAIL} -pe threaded $opt{FLAGSTAT_THREADS} -R $opt{CLUSTER_RESERVATION} -o $opt{OUTPUT_DIR}/$sampleName/logs/Mapping_$coreName.out -e $opt{OUTPUT_DIR}/$sampleName/logs/Mapping_$coreName.err -N $mappingFSJobId -hold_jid $mappingJobId $opt{OUTPUT_DIR}/$sampleName/jobs/$mappingFSJobId.sh\n";
     ##################################
     
     ###############SORT JOB###############
@@ -427,11 +427,11 @@ sub submitSingleJobs{
     print FS2_SH "\#!/bin/sh\n\n";
     print FS2_SH "cd $opt{OUTPUT_DIR}/$sampleName/mapping \n";
     print FS2_SH "echo \"Start flagstat\t \" `date` \"\t$coreName\_sorted.bam\t\" `uname -n` >> $opt{OUTPUT_DIR}/$sampleName/logs/$sampleName.log\n";
-    print FS2_SH "$opt{SAMBAMBA_PATH}/sambamba flagstat -t $opt{MAPPING_THREADS} $coreName\_sorted.bam > $coreName\_sorted.flagstat\n";
+    print FS2_SH "$opt{SAMBAMBA_PATH}/sambamba flagstat -t $opt{FLAGSTAT_THREADS} $coreName\_sorted.bam > $coreName\_sorted.flagstat\n";
     print FS2_SH "echo \"End flagstat\t \" `date` \"\t$coreName\_sorted.bam\t\" `uname -n` >> $opt{OUTPUT_DIR}/$sampleName/logs/$sampleName.log\n\n";
     close FS2_SH;
     
-    print $QSUB "qsub -q $opt{MAPPING_QUEUE} -P $opt{MAPPING_PROJECT} -m a -M $opt{MAIL} -pe threaded $opt{MAPPING_THREADS} -R $opt{CLUSTER_RESERVATION} -o $opt{OUTPUT_DIR}/$sampleName/logs/Mapping_$coreName.out -e $opt{OUTPUT_DIR}/$sampleName/logs/Mapping_$coreName.err -N $sortFSJobId -hold_jid $sortJobId $opt{OUTPUT_DIR}/$sampleName/jobs/$sortFSJobId.sh\n";
+    print $QSUB "qsub -q $opt{FLAGSTAT_QUEUE} -P $opt{MAPPING_PROJECT} -m a -M $opt{MAIL} -pe threaded $opt{FLAGSTAT_THREADS} -R $opt{CLUSTER_RESERVATION} -o $opt{OUTPUT_DIR}/$sampleName/logs/Mapping_$coreName.out -e $opt{OUTPUT_DIR}/$sampleName/logs/Mapping_$coreName.err -N $sortFSJobId -hold_jid $sortJobId $opt{OUTPUT_DIR}/$sampleName/jobs/$sortFSJobId.sh\n";
     #################################
     
     ###############INDEX JOB###############
@@ -465,11 +465,11 @@ sub submitSingleJobs{
 	print FS3_SH "\#!/bin/sh\n\n";
 	print FS3_SH "cd $opt{OUTPUT_DIR}/$sampleName/mapping \n";
 	print FS3_SH "echo \"Start flagstat\t\" `date` \"\t$coreName\_sorted_dedup.bam\t\" `uname -n` >> $opt{OUTPUT_DIR}/$sampleName/logs/$sampleName.log\n";
-	print FS3_SH "$opt{SAMBAMBA_PATH}/sambamba flagstat -t $opt{MAPPING_THREADS} $coreName\_sorted_dedup.bam > $coreName\_sorted_dedup.flagstat\n";
+	print FS3_SH "$opt{SAMBAMBA_PATH}/sambamba flagstat -t $opt{FLAGSTAT_THREADS} $coreName\_sorted_dedup.bam > $coreName\_sorted_dedup.flagstat\n";
 	print FS3_SH "echo \"End flagstat\t\" `date` \"\t$coreName\_sorted_dedup.bam\t\" `uname -n` >> $opt{OUTPUT_DIR}/$sampleName/logs/$sampleName.log\n";
 	close FS3_SH;
     
-	print $QSUB "qsub -q $opt{MAPPING_QUEUE} -P $opt{MAPPING_PROJECT} -m a -M $opt{MAIL} -pe threaded $opt{MAPPING_THREADS} -R $opt{CLUSTER_RESERVATION} -o $opt{OUTPUT_DIR}/$sampleName/logs/Mapping_$coreName.out -e $opt{OUTPUT_DIR}/$sampleName/logs/Mapping_$coreName.err -N $markdupFSJobId -hold_jid $markdupJobId $opt{OUTPUT_DIR}/$sampleName/jobs/$markdupFSJobId.sh\n";
+	print $QSUB "qsub -q $opt{FLAGSTAT_QUEUE} -P $opt{MAPPING_PROJECT} -m a -M $opt{MAIL} -pe threaded $opt{FLAGSTAT_THREADS} -R $opt{CLUSTER_RESERVATION} -o $opt{OUTPUT_DIR}/$sampleName/logs/Mapping_$coreName.out -e $opt{OUTPUT_DIR}/$sampleName/logs/Mapping_$coreName.err -N $markdupFSJobId -hold_jid $markdupJobId $opt{OUTPUT_DIR}/$sampleName/jobs/$markdupFSJobId.sh\n";
     }
     ###############################
     

@@ -310,6 +310,10 @@ sub checkConfig{
 	if(! $opt{MAPPING_PROJECT}){ print "ERROR: No MAPPING_PROJECT option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{MAPPING_MODE}){ print "ERROR: No MAPPING_MODE option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{MAPPING_MARKDUP}){ print "ERROR: No MAPPING_MARKDUP option found in config files.\n"; $checkFailed = 1; }
+	if($opt{MAPPING_MODE} eq 'single'){
+	    if(! $opt{FLAGSTAT_QUEUE}){ print "ERROR: No FLAGSTAT_QUEUE option found in config files.\n"; $checkFailed = 1; }
+	    if(! $opt{FLAGSTAT_THREADS}){ print "ERROR: No FLAGSTAT_THREADS option found in config files.\n"; $checkFailed = 1; }
+	}
     }
     ## POSTSTATS
     if($opt{POSTSTATS} eq "yes"){
@@ -336,6 +340,8 @@ sub checkConfig{
 	if(! $opt{REALIGNMENT_SCATTER}){ print "ERROR: No REALIGNMENT_SCATTER option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{REALIGNMENT_MODE}){ print "ERROR: No REALIGNMENT_MODE option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{QUEUE_RETRY}){ print "ERROR: No QUEUE_RETRY option found in config files.\n"; $checkFailed = 1; }
+	if(! $opt{FLAGSTAT_QUEUE}){ print "ERROR: No FLAGSTAT_QUEUE option found in config files.\n"; $checkFailed = 1; }
+	if(! $opt{FLAGSTAT_THREADS}){ print "ERROR: No FLAGSTAT_THREADS option found in config files.\n"; $checkFailed = 1; }
     }
     ## BASEQUALITYRECAL
     if($opt{BASEQUALITYRECAL} eq "yes"){
@@ -347,6 +353,8 @@ sub checkConfig{
 	if(! $opt{BASERECALIBRATION_SCALA}){ print "ERROR: No BASERECALIBRATION_SCALA option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{BASERECALIBRATION_SCATTER}){ print "ERROR: No BASERECALIBRATION_SCATTER option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{QUEUE_RETRY}){ print "ERROR: No QUEUE_RETRY option found in config files.\n"; $checkFailed = 1; }
+	if(! $opt{FLAGSTAT_QUEUE}){ print "ERROR: No FLAGSTAT_QUEUE option found in config files.\n"; $checkFailed = 1; }
+	if(! $opt{FLAGSTAT_THREADS}){ print "ERROR: No FLAGSTAT_THREADS option found in config files.\n"; $checkFailed = 1; }
     }
     ## VARIANT_CALLING
     if($opt{VARIANT_CALLING} eq "yes"){

@@ -148,7 +148,7 @@ sub runRealignment {
 	    (my $realignedBai = $bam) =~ s/.bam/.realigned.bai/;
 	    (my $realignedFlagstat = $bam) =~ s/.bam/.realigned.flagstat/;
 	    $opt{BAM_FILES}->{$sample} = $realignedBam;
-	    
+
 	    print "\t$opt{OUTPUT_DIR}/$sample/mapping/$bam\n";
 
 	    ## Check for realigned bam file, skip sample if realigned bam file already exist.
@@ -157,10 +157,13 @@ sub runRealignment {
 		next;
 	    }
 	    
-	    my $jobId = "Realign_$sample\_".get_job_id();
+	    ### Create realign bash script
+	    my $logDir = $opt{OUTPUT_DIR}."/".$sample."/logs";
+	    my $jobID = "Realign_".$sample."_".get_job_id();
+	    my $bashFile = $opt{OUTPUT_DIR}."/".$sample."/jobs/".$jobID.".sh";
 
-	    open REALIGN_SH,">$opt{OUTPUT_DIR}/$sample/jobs/$jobId.sh" or die "Couldn't create $opt{OUTPUT_DIR}/$sample/jobs/$jobId.sh\n";
-	    
+	    open REALIGN_SH,">$bashFile" or die "Couldn't create $bashFile\n";
+
 	    print REALIGN_SH "\#!/bin/bash\n\n";
 	    print REALIGN_SH ". $opt{CLUSTER_PATH}/settings.sh\n\n";
 	    print REALIGN_SH "cd $opt{OUTPUT_DIR}/$sample/tmp \n\n";
@@ -176,48 +179,63 @@ sub runRealignment {
 		    else { print REALIGN_SH "-known $knownIndelFile " }
 		}
 	    }
-	    
+
 	    if($opt{QUEUE_RETRY} eq 'yes'){
 		print REALIGN_SH "-retry 1 ";
 	    }
-	    
+
 	    print REALIGN_SH "-run -I $opt{OUTPUT_DIR}/$sample/mapping/$bam -jobRunner GridEngine\n";
 	    print REALIGN_SH "else\n";
 	    print REALIGN_SH "echo \"ERROR: $opt{OUTPUT_DIR}/$sample/mapping/$bam does not exist.\" >&2\n";
 	    print REALIGN_SH "fi\n\n";
-
-	    print REALIGN_SH "if [ -f $opt{OUTPUT_DIR}/$sample/tmp/$realignedBam ]\n";
-	    print REALIGN_SH "then\n";
-	    print REALIGN_SH "\t$opt{SAMBAMBA_PATH}/sambamba flagstat -t $opt{REALIGNMENT_THREADS} $opt{OUTPUT_DIR}/$sample/tmp/$realignedBam > $opt{OUTPUT_DIR}/$sample/mapping/$realignedFlagstat\n";
-	    print REALIGN_SH "\tmv $opt{OUTPUT_DIR}/$sample/tmp/$realignedBam $opt{OUTPUT_DIR}/$sample/mapping/$realignedBam\n";
-	    print REALIGN_SH "\tmv $opt{OUTPUT_DIR}/$sample/tmp/$realignedBai $opt{OUTPUT_DIR}/$sample/mapping/$realignedBai\n";
-	    print REALIGN_SH "fi\n\n";
-
-	    print REALIGN_SH "if [ -s $opt{OUTPUT_DIR}/$sample/mapping/$flagstat ] && [ -s $opt{OUTPUT_DIR}/$sample/mapping/$realignedFlagstat ]\n";
-	    print REALIGN_SH "then\n";
-	    print REALIGN_SH "\tFS1=\`grep -m 1 -P \"\\d+ \" $opt{OUTPUT_DIR}/$sample/mapping/$flagstat | awk '{{split(\$0,columns , \"+\")} print columns[1]}'\`\n";
-	    print REALIGN_SH "\tFS2=\`grep -m 1 -P \"\\d+ \" $opt{OUTPUT_DIR}/$sample/mapping/$realignedFlagstat | awk '{{split(\$0,columns , \"+\")} print columns[1]}'\`\n";
-	    print REALIGN_SH "\tif [ \$FS1 -eq \$FS2 ]\n";
-	    print REALIGN_SH "\tthen\n";
-	    print REALIGN_SH "\t\ttouch $opt{OUTPUT_DIR}/$sample/logs/Realignment_$sample.done\n";
-	    print REALIGN_SH "\t\tmv $opt{OUTPUT_DIR}/$sample/tmp/IndelRealigner.jobreport.txt $opt{OUTPUT_DIR}/$sample/logs/IndelRealigner.jobreport.txt\n";
-	    print REALIGN_SH "\t\tmv $opt{OUTPUT_DIR}/$sample/tmp/IndelRealigner.jobreport.pdf $opt{OUTPUT_DIR}/$sample/logs/IndelRealigner.jobreport.pdf\n";
-	    print REALIGN_SH "\telse\n";
-	    print REALIGN_SH "\t\techo \"ERROR: $opt{OUTPUT_DIR}/$sample/mapping/$flagstat and $opt{OUTPUT_DIR}/$sample/mapping/$realignedFlagstat do not have the same read counts\" >>../logs/Realignment_$sample.err\n";
-	    print REALIGN_SH "\tfi\n";
-	    print REALIGN_SH "else\n";
-	    print REALIGN_SH "\techo \"ERROR: Either $opt{OUTPUT_DIR}/$sample/mapping/$flagstat or $opt{OUTPUT_DIR}/$sample/mapping/$realignedFlagstat is empty.\" >> ../logs/Realignment_$sample.err\n";
-	    print REALIGN_SH "fi\n\n";
-
-	    print REALIGN_SH "echo \"End indel realignment\t\" `date` \"\t$sample\_dedup.bam\t\" `uname -n` >> ../logs/$sample.log\n"; 
-	    close REALIGN_SH;
 	    
+	    close REALIGN_SH;
+
+	    ### Submit realign bash script
 	    if ( @{$opt{RUNNING_JOBS}->{$sample}} ){
-		print QSUB "qsub -q $opt{REALIGNMENT_MASTERQUEUE} -P $opt{REALIGNMENT_PROJECT} -m a -M $opt{MAIL} -pe threaded $opt{REALIGNMENT_MASTERTHREADS} -o $opt{OUTPUT_DIR}/$sample/logs/Realignment_$sample.out -e $opt{OUTPUT_DIR}/$sample/logs/Realignment_$sample.err -N $jobId -hold_jid ".join(",",@{$opt{RUNNING_JOBS}->{$sample}})." $opt{OUTPUT_DIR}/$sample/jobs/$jobId.sh\n";
+		print QSUB "qsub -q $opt{REALIGNMENT_MASTERQUEUE} -P $opt{REALIGNMENT_PROJECT} -m a -M $opt{MAIL} -pe threaded $opt{REALIGNMENT_MASTERTHREADS} -o $logDir/Realignment_$sample.out -e $logDir/Realignment_$sample.err -N $jobID -hold_jid ".join(",",@{$opt{RUNNING_JOBS}->{$sample}})." $bashFile\n";
 	    } else {
-		print QSUB "qsub -q $opt{REALIGNMENT_MASTERQUEUE} -P $opt{REALIGNMENT_PROJECT} -m a -M $opt{MAIL} -pe threaded $opt{REALIGNMENT_MASTERTHREADS} -o $opt{OUTPUT_DIR}/$sample/logs/Realignment_$sample.out -e $opt{OUTPUT_DIR}/$sample/logs/Realignment_$sample.err -N $jobId $opt{OUTPUT_DIR}/$sample/jobs/$jobId.sh\n";
+		print QSUB "qsub -q $opt{REALIGNMENT_MASTERQUEUE} -P $opt{REALIGNMENT_PROJECT} -m a -M $opt{MAIL} -pe threaded $opt{REALIGNMENT_MASTERTHREADS} -o $logDir/Realignment_$sample.out -e $logDir/Realignment_$sample.err -N $jobID $bashFile\n";
 	    }
-	    push(@{$opt{RUNNING_JOBS}->{$sample}}, $jobId);
+	    
+	    ### Create flagstat bash script
+	    my $jobIDFS = "RealignFS_".$sample."_".get_job_id();
+	    my $bashFileFS = $opt{OUTPUT_DIR}."/".$sample."/jobs/".$jobIDFS.".sh";
+
+	    open REALIGNFS_SH, ">$bashFileFS" or die "cannot open file $bashFileFS \n";
+	    print REALIGNFS_SH "cd $opt{OUTPUT_DIR}/tmp\n";
+	    
+	    print REALIGNFS_SH "if [ -f $opt{OUTPUT_DIR}/$sample/tmp/$realignedBam ]\n";
+	    print REALIGNFS_SH "then\n";
+	    print REALIGNFS_SH "\t$opt{SAMBAMBA_PATH}/sambamba flagstat -t $opt{REALIGNMENT_THREADS} $opt{OUTPUT_DIR}/$sample/tmp/$realignedBam > $opt{OUTPUT_DIR}/$sample/mapping/$realignedFlagstat\n";
+	    print REALIGNFS_SH "\tmv $opt{OUTPUT_DIR}/$sample/tmp/$realignedBam $opt{OUTPUT_DIR}/$sample/mapping/$realignedBam\n";
+	    print REALIGNFS_SH "\tmv $opt{OUTPUT_DIR}/$sample/tmp/$realignedBai $opt{OUTPUT_DIR}/$sample/mapping/$realignedBai\n";
+	    print REALIGNFS_SH "fi\n\n";
+	    
+	    print REALIGNFS_SH "if [ -s $opt{OUTPUT_DIR}/$sample/mapping/$flagstat ] && [ -s $opt{OUTPUT_DIR}/$sample/mapping/$realignedFlagstat ]\n";
+	    print REALIGNFS_SH "then\n";
+	    print REALIGNFS_SH "\tFS1=\`grep -m 1 -P \"\\d+ \" $opt{OUTPUT_DIR}/$sample/mapping/$flagstat | awk '{{split(\$0,columns , \"+\")} print columns[1]}'\`\n";
+	    print REALIGNFS_SH "\tFS2=\`grep -m 1 -P \"\\d+ \" $opt{OUTPUT_DIR}/$sample/mapping/$realignedFlagstat | awk '{{split(\$0,columns , \"+\")} print columns[1]}'\`\n";
+	    print REALIGNFS_SH "\tif [ \$FS1 -eq \$FS2 ]\n";
+	    print REALIGNFS_SH "\tthen\n";
+	    print REALIGNFS_SH "\t\ttouch $opt{OUTPUT_DIR}/$sample/logs/Realignment_$sample.done\n";
+	    print REALIGNFS_SH "\t\tmv $opt{OUTPUT_DIR}/$sample/tmp/IndelRealigner.jobreport.txt $opt{OUTPUT_DIR}/$sample/logs/IndelRealigner.jobreport.txt\n";
+	    print REALIGNFS_SH "\t\tmv $opt{OUTPUT_DIR}/$sample/tmp/IndelRealigner.jobreport.pdf $opt{OUTPUT_DIR}/$sample/logs/IndelRealigner.jobreport.pdf\n";
+	    print REALIGNFS_SH "\telse\n";
+	    print REALIGNFS_SH "\t\techo \"ERROR: $opt{OUTPUT_DIR}/$sample/mapping/$flagstat and $opt{OUTPUT_DIR}/$sample/mapping/$realignedFlagstat do not have the same read counts\" >>../logs/Realignment_$sample.err\n";
+	    print REALIGNFS_SH "\tfi\n";
+	    print REALIGNFS_SH "else\n";
+	    print REALIGNFS_SH "\techo \"ERROR: Either $opt{OUTPUT_DIR}/$sample/mapping/$flagstat or $opt{OUTPUT_DIR}/$sample/mapping/$realignedFlagstat is empty.\" >> ../logs/Realignment_$sample.err\n";
+	    print REALIGNFS_SH "fi\n\n";
+	    
+	    print REALIGNFS_SH "echo \"End indel realignment\t\" `date` \"\t$sample\_dedup.bam\t\" `uname -n` >> ../logs/$sample.log\n"; 
+	    close REALIGNFS_SH;
+	    
+	    ### Submit flagstat bash script
+	    print QSUB "qsub -q $opt{FLAGSTAT_QUEUE} -m a -M $opt{MAIL} -pe threaded $opt{FLAGSTAT_THREADS} -o $logDir/RealignmentFS_$sample.out -e $logDir/RealignmentFS_$sample.err -N $jobIDFS -hold_jid $jobID $bashFileFS\n";
+	    
+	    push(@{$opt{RUNNING_JOBS}->{$sample}}, $jobID);
+	    push(@{$opt{RUNNING_JOBS}->{$sample}}, $jobIDFS);
 	}
 	
     }else{
