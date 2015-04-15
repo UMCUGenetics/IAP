@@ -376,100 +376,127 @@ sub submitSingleJobs{
     }
     
     ###############BWA JOB###############
-    open BWA_SH,">$opt{OUTPUT_DIR}/$sampleName/jobs/$mappingJobId.sh" or die "Couldn't create $opt{OUTPUT_DIR}/$sampleName/jobs/$mappingJobId.sh\n";
-    print BWA_SH "\#!/bin/sh\n\n";
-    print BWA_SH "cd $opt{OUTPUT_DIR}/$sampleName/mapping \n";
-    print BWA_SH "echo \"Start mapping \t\" `date` \"\t$coreName\t\" `uname -n` >> $opt{OUTPUT_DIR}/$sampleName/logs/$sampleName.log\n\n";
-    
-    if($R2){
-        print "\t$R1\n\t$R2\n";
-        print BWA_SH "$opt{BWA_PATH}/bwa mem -t $opt{MAPPING_THREADS} -c 100 -M -R \"\@RG\tID:$RG_ID\tSM:$RG_SM\tPL:$RG_PL\tLB:$RG_LB\tPU:$RG_PU\" $opt{GENOME} $R1 $R2 2>>$opt{OUTPUT_DIR}/$sampleName/logs/$coreName\_bwa_log | $opt{SAMBAMBA_PATH}/sambamba view -t $opt{MAPPING_THREADS} --format=bam -S -o $coreName.bam.tmp /dev/stdin\n";
-        print BWA_SH "mv $coreName.bam.tmp $coreName.bam\n";
-    }else{
-        print "\t$R1\n";
-        print BWA_SH "$opt{BWA_PATH}/bwa mem -t $opt{MAPPING_THREADS} -c 100 -M -R \"\@RG\tID:$RG_ID\tSM:$RG_SM\tPL:$RG_PL\tLB:$RG_LB\tPU:$RG_PU\" $opt{GENOME} $R1 2>>$opt{OUTPUT_DIR}/$sampleName/logs/$coreName\_bwa_log | $opt{SAMBAMBA_PATH}/sambamba view -t $opt{MAPPING_THREADS} --format=bam -S -o $coreName.bam.tmp /dev/stdin\n";
-        print BWA_SH "mv $coreName.bam.tmp $coreName.bam\n";
-    }
+    if (! -e "$opt{OUTPUT_DIR}/$sampleName/logs/$coreName\_bwa.done"){
+	open BWA_SH,">$opt{OUTPUT_DIR}/$sampleName/jobs/$mappingJobId.sh" or die "Couldn't create $opt{OUTPUT_DIR}/$sampleName/jobs/$mappingJobId.sh\n";
+	print BWA_SH "\#!/bin/sh\n\n";
+	print BWA_SH "cd $opt{OUTPUT_DIR}/$sampleName/mapping \n";
+	print BWA_SH "echo \"Start mapping \t\" `date` \"\t$coreName\t\" `uname -n` >> $opt{OUTPUT_DIR}/$sampleName/logs/$sampleName.log\n\n";
 
-    print BWA_SH "echo \"End mapping\t\" `date` \"\t$coreName\t\" `uname -n` >> $opt{OUTPUT_DIR}/$sampleName/logs/$sampleName.log\n\n";
-    close BWA_SH;
-    
-    print $QSUB "qsub -q $opt{MAPPING_QUEUE} -P $opt{MAPPING_PROJECT} -m a -M $opt{MAIL} -pe threaded $opt{MAPPING_THREADS} -R $opt{CLUSTER_RESERVATION} -o $opt{OUTPUT_DIR}/$sampleName/logs/Mapping_$coreName.out -e $opt{OUTPUT_DIR}/$sampleName/logs/Mapping_$coreName.err -N $mappingJobId $opt{OUTPUT_DIR}/$sampleName/jobs/$mappingJobId.sh\n";
+	if($R2){
+	    print "\t$R1\n\t$R2\n";
+	    print BWA_SH "$opt{BWA_PATH}/bwa mem -t $opt{MAPPING_THREADS} -c 100 -M -R \"\@RG\tID:$RG_ID\tSM:$RG_SM\tPL:$RG_PL\tLB:$RG_LB\tPU:$RG_PU\" $opt{GENOME} $R1 $R2 2>>$opt{OUTPUT_DIR}/$sampleName/logs/$coreName\_bwa_log | $opt{SAMBAMBA_PATH}/sambamba view -t $opt{MAPPING_THREADS} --format=bam -S -o $coreName.bam.tmp /dev/stdin\n\n";
+	}else{
+	    print "\t$R1\n";
+	    print BWA_SH "$opt{BWA_PATH}/bwa mem -t $opt{MAPPING_THREADS} -c 100 -M -R \"\@RG\tID:$RG_ID\tSM:$RG_SM\tPL:$RG_PL\tLB:$RG_LB\tPU:$RG_PU\" $opt{GENOME} $R1 2>>$opt{OUTPUT_DIR}/$sampleName/logs/$coreName\_bwa_log | $opt{SAMBAMBA_PATH}/sambamba view -t $opt{MAPPING_THREADS} --format=bam -S -o $coreName.bam.tmp /dev/stdin\n\n";
+	}
+
+	### Check bwa completion
+	print BWA_SH "if grep -Fq '[main] Real time:' $opt{OUTPUT_DIR}/$sampleName/logs/$coreName\_bwa_log\n";
+	print BWA_SH "then\n";
+	print BWA_SH "\tmv $coreName.bam.tmp $coreName.bam\n";
+	print BWA_SH "\ttouch $opt{OUTPUT_DIR}/$sampleName/logs/$coreName\_bwa.done\n";
+	print BWA_SH "fi\n";
+	print BWA_SH "echo \"End mapping\t\" `date` \"\t$coreName\t\" `uname -n` >> $opt{OUTPUT_DIR}/$sampleName/logs/$sampleName.log\n\n";
+	close BWA_SH;
+
+	print $QSUB "qsub -q $opt{MAPPING_QUEUE} -P $opt{MAPPING_PROJECT} -m a -M $opt{MAIL} -pe threaded $opt{MAPPING_THREADS} -R $opt{CLUSTER_RESERVATION} -o $opt{OUTPUT_DIR}/$sampleName/logs/Mapping_$coreName.out -e $opt{OUTPUT_DIR}/$sampleName/logs/Mapping_$coreName.err -N $mappingJobId $opt{OUTPUT_DIR}/$sampleName/jobs/$mappingJobId.sh\n";
+    } else {
+	warn "\t$opt{OUTPUT_DIR}/$sampleName/logs/$coreName\_bwa.done exists, skipping bwa\n";
+    }
     ###################################
-    
+
     ###############FLAGSTAT AFTER MAPPING JOB###############
-    open FS1_SH,">$opt{OUTPUT_DIR}/$sampleName/jobs/$mappingFSJobId.sh" or die "Couldn't create $opt{OUTPUT_DIR}/$sampleName/jobs/$mappingFSJobId.sh\n";
-    print FS1_SH "\#!/bin/sh\n\n";
-    print FS1_SH "cd $opt{OUTPUT_DIR}/$sampleName/mapping \n";
-    print FS1_SH "echo \"Start flagstat\t\" `date` \"\t$coreName.bam\t\" `uname -n` >> $opt{OUTPUT_DIR}/$sampleName/logs/$sampleName.log\n";
-    print FS1_SH "$opt{SAMBAMBA_PATH}/sambamba flagstat -t $opt{FLAGSTAT_THREADS} $coreName.bam > $coreName.flagstat\n";
-    print FS1_SH "echo \"End Flagstat \t\" `date` \"\t$coreName.bam\t\" `uname -n` >> $opt{OUTPUT_DIR}/$sampleName/logs/$sampleName.log\n\n";
-    close FS1_SH;
-    
-    print $QSUB "qsub -q $opt{FLAGSTAT_QUEUE} -P $opt{MAPPING_PROJECT} -m a -M $opt{MAIL} -pe threaded $opt{FLAGSTAT_THREADS} -R $opt{CLUSTER_RESERVATION} -o $opt{OUTPUT_DIR}/$sampleName/logs/Mapping_$coreName.out -e $opt{OUTPUT_DIR}/$sampleName/logs/Mapping_$coreName.err -N $mappingFSJobId -hold_jid $mappingJobId $opt{OUTPUT_DIR}/$sampleName/jobs/$mappingFSJobId.sh\n";
+    if ((! -e "$opt{OUTPUT_DIR}/$sampleName/mapping/$coreName.flagstat") || (-z "$opt{OUTPUT_DIR}/$sampleName/mapping/$coreName.flagstat")){
+	open FS1_SH,">$opt{OUTPUT_DIR}/$sampleName/jobs/$mappingFSJobId.sh" or die "Couldn't create $opt{OUTPUT_DIR}/$sampleName/jobs/$mappingFSJobId.sh\n";
+	print FS1_SH "\#!/bin/sh\n\n";
+	print FS1_SH "cd $opt{OUTPUT_DIR}/$sampleName/mapping \n";
+	print FS1_SH "echo \"Start flagstat\t\" `date` \"\t$coreName.bam\t\" `uname -n` >> $opt{OUTPUT_DIR}/$sampleName/logs/$sampleName.log\n";
+	print FS1_SH "$opt{SAMBAMBA_PATH}/sambamba flagstat -t $opt{FLAGSTAT_THREADS} $coreName.bam > $coreName.flagstat\n";
+	print FS1_SH "echo \"End Flagstat \t\" `date` \"\t$coreName.bam\t\" `uname -n` >> $opt{OUTPUT_DIR}/$sampleName/logs/$sampleName.log\n\n";
+	close FS1_SH;
+
+	print $QSUB "qsub -q $opt{FLAGSTAT_QUEUE} -P $opt{MAPPING_PROJECT} -m a -M $opt{MAIL} -pe threaded $opt{FLAGSTAT_THREADS} -R $opt{CLUSTER_RESERVATION} -o $opt{OUTPUT_DIR}/$sampleName/logs/Mapping_$coreName.out -e $opt{OUTPUT_DIR}/$sampleName/logs/Mapping_$coreName.err -N $mappingFSJobId -hold_jid $mappingJobId $opt{OUTPUT_DIR}/$sampleName/jobs/$mappingFSJobId.sh\n";
+    } else {
+	warn "\t$opt{OUTPUT_DIR}/$sampleName/mapping/$coreName.flagstat exist and is not empty, skipping bwa flagstat\n";
+    }
     ##################################
-    
+
     ###############SORT JOB###############
-    open SORT_SH,">$opt{OUTPUT_DIR}/$sampleName/jobs/$sortJobId.sh" or die "Couldn't create $opt{OUTPUT_DIR}/$sampleName/jobs/$sortJobId.sh\n";
-    print SORT_SH "\#!/bin/sh\n\n";
-    print SORT_SH "cd $opt{OUTPUT_DIR}/$sampleName/mapping \n";
-    print SORT_SH "echo \"Start sort\t\" `date` \"\t$coreName\t\" `uname -n` >> $opt{OUTPUT_DIR}/$sampleName/logs/$sampleName.log\n";
-    #print SORT_SH "$opt{SAMBAMBA_PATH}/sambamba sort -m $opt{MAPPING_MEM}GB -t $opt{MAPPING_THREADS} -o $coreName\_sorted.bam $coreName.bam 1>>$opt{OUTPUT_DIR}/$sampleName/logs/$coreName\_sort.log 2>>$opt{OUTPUT_DIR}/$sampleName/logs/$coreName\_sort.err\n";
-    print SORT_SH "$opt{SAMBAMBA_PATH}/sambamba sort --tmpdir=$opt{OUTPUT_DIR}/$sampleName/tmp/ -m $opt{MAPPING_MEM}GB -t $opt{MAPPING_THREADS} -o $coreName\_sorted.bam $coreName.bam\n";
-    print SORT_SH "echo \"End sort\t\" `date` \"\t$coreName\t\" `uname -n` >> $opt{OUTPUT_DIR}/$sampleName/logs/$sampleName.log\n";
-    close SORT_SH;
-    
-    print $QSUB "qsub -q $opt{MAPPING_QUEUE} -P $opt{MAPPING_PROJECT} -m a -M $opt{MAIL} -pe threaded $opt{MAPPING_THREADS} -R $opt{CLUSTER_RESERVATION} -o $opt{OUTPUT_DIR}/$sampleName/logs/Mapping_$coreName.out -e $opt{OUTPUT_DIR}/$sampleName/logs/Mapping_$coreName.err -N $sortJobId -hold_jid $mappingJobId $opt{OUTPUT_DIR}/$sampleName/jobs/$sortJobId.sh\n";
+    if ((! -e "$opt{OUTPUT_DIR}/$sampleName/mapping/$coreName\_sorted.bam") || (-z "$opt{OUTPUT_DIR}/$sampleName/mapping/$coreName\_sorted.bam")) {
+	open SORT_SH,">$opt{OUTPUT_DIR}/$sampleName/jobs/$sortJobId.sh" or die "Couldn't create $opt{OUTPUT_DIR}/$sampleName/jobs/$sortJobId.sh\n";
+	print SORT_SH "\#!/bin/sh\n\n";
+	print SORT_SH "cd $opt{OUTPUT_DIR}/$sampleName/mapping \n";
+	print SORT_SH "echo \"Start sort\t\" `date` \"\t$coreName\t\" `uname -n` >> $opt{OUTPUT_DIR}/$sampleName/logs/$sampleName.log\n";
+	print SORT_SH "$opt{SAMBAMBA_PATH}/sambamba sort --tmpdir=$opt{OUTPUT_DIR}/$sampleName/tmp/ -m $opt{MAPPING_MEM}GB -t $opt{MAPPING_THREADS} -o $coreName\_sorted.bam $coreName.bam\n";
+	print SORT_SH "echo \"End sort\t\" `date` \"\t$coreName\t\" `uname -n` >> $opt{OUTPUT_DIR}/$sampleName/logs/$sampleName.log\n";
+	close SORT_SH;
+
+	print $QSUB "qsub -q $opt{MAPPING_QUEUE} -P $opt{MAPPING_PROJECT} -m a -M $opt{MAIL} -pe threaded $opt{MAPPING_THREADS} -R $opt{CLUSTER_RESERVATION} -o $opt{OUTPUT_DIR}/$sampleName/logs/Mapping_$coreName.out -e $opt{OUTPUT_DIR}/$sampleName/logs/Mapping_$coreName.err -N $sortJobId -hold_jid $mappingJobId $opt{OUTPUT_DIR}/$sampleName/jobs/$sortJobId.sh\n";
+    } else {
+        warn "\t$opt{OUTPUT_DIR}/$sampleName/mapping/$coreName\_sorted.bam exist and is not empty, skipping sort\n";
+    }
     ##################################
     
     ###############FLAGSTAT AFTER SORT JOB###############
-    open FS2_SH,">$opt{OUTPUT_DIR}/$sampleName/jobs/$sortFSJobId.sh" or die "Couldn't create $opt{OUTPUT_DIR}/$sampleName/jobs/$sortFSJobId.sh\n";
-    print FS2_SH "\#!/bin/sh\n\n";
-    print FS2_SH "cd $opt{OUTPUT_DIR}/$sampleName/mapping \n";
-    print FS2_SH "echo \"Start flagstat\t \" `date` \"\t$coreName\_sorted.bam\t\" `uname -n` >> $opt{OUTPUT_DIR}/$sampleName/logs/$sampleName.log\n";
-    print FS2_SH "$opt{SAMBAMBA_PATH}/sambamba flagstat -t $opt{FLAGSTAT_THREADS} $coreName\_sorted.bam > $coreName\_sorted.flagstat\n";
-    print FS2_SH "echo \"End flagstat\t \" `date` \"\t$coreName\_sorted.bam\t\" `uname -n` >> $opt{OUTPUT_DIR}/$sampleName/logs/$sampleName.log\n\n";
-    close FS2_SH;
-    
-    print $QSUB "qsub -q $opt{FLAGSTAT_QUEUE} -P $opt{MAPPING_PROJECT} -m a -M $opt{MAIL} -pe threaded $opt{FLAGSTAT_THREADS} -R $opt{CLUSTER_RESERVATION} -o $opt{OUTPUT_DIR}/$sampleName/logs/Mapping_$coreName.out -e $opt{OUTPUT_DIR}/$sampleName/logs/Mapping_$coreName.err -N $sortFSJobId -hold_jid $sortJobId $opt{OUTPUT_DIR}/$sampleName/jobs/$sortFSJobId.sh\n";
+    if ((! -e "$opt{OUTPUT_DIR}/$sampleName/mapping/$coreName\_sorted.flagstat") || (-z "$opt{OUTPUT_DIR}/$sampleName/mapping/$coreName\_sorted.flagstat")){
+	open FS2_SH,">$opt{OUTPUT_DIR}/$sampleName/jobs/$sortFSJobId.sh" or die "Couldn't create $opt{OUTPUT_DIR}/$sampleName/jobs/$sortFSJobId.sh\n";
+	print FS2_SH "\#!/bin/sh\n\n";
+	print FS2_SH "cd $opt{OUTPUT_DIR}/$sampleName/mapping \n";
+	print FS2_SH "echo \"Start flagstat\t \" `date` \"\t$coreName\_sorted.bam\t\" `uname -n` >> $opt{OUTPUT_DIR}/$sampleName/logs/$sampleName.log\n";
+	print FS2_SH "$opt{SAMBAMBA_PATH}/sambamba flagstat -t $opt{FLAGSTAT_THREADS} $coreName\_sorted.bam > $coreName\_sorted.flagstat\n";
+	print FS2_SH "echo \"End flagstat\t \" `date` \"\t$coreName\_sorted.bam\t\" `uname -n` >> $opt{OUTPUT_DIR}/$sampleName/logs/$sampleName.log\n\n";
+	close FS2_SH;
+
+	print $QSUB "qsub -q $opt{FLAGSTAT_QUEUE} -P $opt{MAPPING_PROJECT} -m a -M $opt{MAIL} -pe threaded $opt{FLAGSTAT_THREADS} -R $opt{CLUSTER_RESERVATION} -o $opt{OUTPUT_DIR}/$sampleName/logs/Mapping_$coreName.out -e $opt{OUTPUT_DIR}/$sampleName/logs/Mapping_$coreName.err -N $sortFSJobId -hold_jid $sortJobId $opt{OUTPUT_DIR}/$sampleName/jobs/$sortFSJobId.sh\n";
+    } else {
+	warn "\t$opt{OUTPUT_DIR}/$sampleName/mapping/$coreName\_sorted.flagstat exist and is not empty, skipping sorted bam flagstat\n";
+    }
     #################################
     
     ###############INDEX JOB###############
-    open INDEX_SH,">$opt{OUTPUT_DIR}/$sampleName/jobs/$indexJobId.sh" or die "Couldn't create $opt{OUTPUT_DIR}/$sampleName/jobs/$indexJobId.sh\n";
-    print INDEX_SH "\#!/bin/sh\n\n";
-    print INDEX_SH "cd $opt{OUTPUT_DIR}/$sampleName/mapping \n";
-    print INDEX_SH "echo \"Start index\t\" `date` \"\t$coreName\_sorted.bam\t\" `uname -n` >> $opt{OUTPUT_DIR}/$sampleName/logs/$sampleName.log\n";
-    #print INDEX_SH "$opt{SAMBAMBA_PATH}/sambamba index -t $opt{MAPPING_THREADS} $coreName\_sorted.bam $coreName\_sorted.bai 1>>$opt{OUTPUT_DIR}/$sampleName/logs/$coreName\_index.log 2>>$opt{OUTPUT_DIR}/$sampleName/logs/$coreName\_index.err\n";
-    print INDEX_SH "$opt{SAMBAMBA_PATH}/sambamba index -t $opt{MAPPING_THREADS} $coreName\_sorted.bam $coreName\_sorted.bai \n";
-    print INDEX_SH "echo \"End index\t\" `date` \"\t$coreName\_sorted.bam\t\" `uname -n` >> $opt{OUTPUT_DIR}/$sampleName/logs/$sampleName.log\n";
-    close INDEX_SH;
-    
-    print $QSUB "qsub -q $opt{MAPPING_QUEUE} -P $opt{MAPPING_PROJECT} -m a -M $opt{MAIL} -pe threaded $opt{MAPPING_THREADS} -R $opt{CLUSTER_RESERVATION} -o $opt{OUTPUT_DIR}/$sampleName/logs/Mapping_$coreName.out -e $opt{OUTPUT_DIR}/$sampleName/logs/Mapping_$coreName.err -N $indexJobId -hold_jid $sortJobId $opt{OUTPUT_DIR}/$sampleName/jobs/$indexJobId.sh\n";
+    if ((! -e "$opt{OUTPUT_DIR}/$sampleName/mapping/$coreName\_sorted.bai") || (-z "$opt{OUTPUT_DIR}/$sampleName/mapping/$coreName\_sorted.bai")) {
+	open INDEX_SH,">$opt{OUTPUT_DIR}/$sampleName/jobs/$indexJobId.sh" or die "Couldn't create $opt{OUTPUT_DIR}/$sampleName/jobs/$indexJobId.sh\n";
+	print INDEX_SH "\#!/bin/sh\n\n";
+	print INDEX_SH "cd $opt{OUTPUT_DIR}/$sampleName/mapping \n";
+	print INDEX_SH "echo \"Start index\t\" `date` \"\t$coreName\_sorted.bam\t\" `uname -n` >> $opt{OUTPUT_DIR}/$sampleName/logs/$sampleName.log\n";
+	print INDEX_SH "$opt{SAMBAMBA_PATH}/sambamba index -t $opt{MAPPING_THREADS} $coreName\_sorted.bam $coreName\_sorted.bai \n";
+	print INDEX_SH "echo \"End index\t\" `date` \"\t$coreName\_sorted.bam\t\" `uname -n` >> $opt{OUTPUT_DIR}/$sampleName/logs/$sampleName.log\n";
+	close INDEX_SH;
+
+	print $QSUB "qsub -q $opt{MAPPING_QUEUE} -P $opt{MAPPING_PROJECT} -m a -M $opt{MAIL} -pe threaded $opt{MAPPING_THREADS} -R $opt{CLUSTER_RESERVATION} -o $opt{OUTPUT_DIR}/$sampleName/logs/Mapping_$coreName.out -e $opt{OUTPUT_DIR}/$sampleName/logs/Mapping_$coreName.err -N $indexJobId -hold_jid $sortJobId $opt{OUTPUT_DIR}/$sampleName/jobs/$indexJobId.sh\n";
+    } else {
+	warn "\t$opt{OUTPUT_DIR}/$sampleName/mapping/$coreName\_sorted.bai exist and is not empty, skipping sorted bam index\n";
+    }
     ################################
 
     ###############MARKDUP JOB###############
     if($opt{MAPPING_MARKDUP} eq "yes"){
-	open MARKDUP_SH,">$opt{OUTPUT_DIR}/$sampleName/jobs/$markdupJobId.sh" or die "Couldn't create $opt{OUTPUT_DIR}/$sampleName/jobs/$markdupJobId.sh\n";
-	print MARKDUP_SH "\#!/bin/sh\n\n";
-	print MARKDUP_SH "cd $opt{OUTPUT_DIR}/$sampleName/mapping \n";
-	print MARKDUP_SH "echo \"Start markdup\t\" `date` \"\t$coreName\_sorted.bam\t\" `uname -n` >> $opt{OUTPUT_DIR}/$sampleName/logs/$sampleName.log\n";
-	#print MARKDUP_SH "$opt{SAMBAMBA_PATH}/sambamba markdup -t $opt{MAPPING_THREADS} $coreName\_sorted.bam $coreName\_sorted_dedup.bam 1>>$opt{OUTPUT_DIR}/$sampleName/logs/$coreName\_dedup.log 2>>$opt{OUTPUT_DIR}/$sampleName/logs/$coreName\_dedup.err\n";
-	print MARKDUP_SH "$opt{SAMBAMBA_PATH}/sambamba markdup --overflow-list-size=500000 --tmpdir=$opt{OUTPUT_DIR}/$sampleName/tmp/ -t $opt{MAPPING_THREADS} $coreName\_sorted.bam $coreName\_sorted_dedup.bam \n";
-	print MARKDUP_SH "echo \"End markdup\t\" `date` \"\t$coreName\_sorted.bam\t\" `uname -n` >> $opt{OUTPUT_DIR}/$sampleName/logs/$sampleName.log\n";
-	close MARKDUP_SH;
+	if ((! -e "$opt{OUTPUT_DIR}/$sampleName/mapping/$coreName\_sorted_dedup.bam") || (-z "$opt{OUTPUT_DIR}/$sampleName/mapping/$coreName\_sorted_dedup.bam")) {
+	    open MARKDUP_SH,">$opt{OUTPUT_DIR}/$sampleName/jobs/$markdupJobId.sh" or die "Couldn't create $opt{OUTPUT_DIR}/$sampleName/jobs/$markdupJobId.sh\n";
+	    print MARKDUP_SH "\#!/bin/sh\n\n";
+	    print MARKDUP_SH "cd $opt{OUTPUT_DIR}/$sampleName/mapping \n";
+	    print MARKDUP_SH "echo \"Start markdup\t\" `date` \"\t$coreName\_sorted.bam\t\" `uname -n` >> $opt{OUTPUT_DIR}/$sampleName/logs/$sampleName.log\n";
+	    print MARKDUP_SH "$opt{SAMBAMBA_PATH}/sambamba markdup --overflow-list-size=500000 --tmpdir=$opt{OUTPUT_DIR}/$sampleName/tmp/ -t $opt{MAPPING_THREADS} $coreName\_sorted.bam $coreName\_sorted_dedup.bam \n";
+	    print MARKDUP_SH "echo \"End markdup\t\" `date` \"\t$coreName\_sorted.bam\t\" `uname -n` >> $opt{OUTPUT_DIR}/$sampleName/logs/$sampleName.log\n";
+	    close MARKDUP_SH;
 	
-	print $QSUB "qsub -q $opt{MAPPING_QUEUE} -P $opt{MAPPING_PROJECT} -m a -M $opt{MAIL} -pe threaded $opt{MAPPING_THREADS} -R $opt{CLUSTER_RESERVATION} -o $opt{OUTPUT_DIR}/$sampleName/logs/Mapping_$coreName.out -e $opt{OUTPUT_DIR}/$sampleName/logs/Mapping_$coreName.err -N $markdupJobId -hold_jid $indexJobId $opt{OUTPUT_DIR}/$sampleName/jobs/$markdupJobId.sh\n";
-
+	    print $QSUB "qsub -q $opt{MAPPING_QUEUE} -P $opt{MAPPING_PROJECT} -m a -M $opt{MAIL} -pe threaded $opt{MAPPING_THREADS} -R $opt{CLUSTER_RESERVATION} -o $opt{OUTPUT_DIR}/$sampleName/logs/Mapping_$coreName.out -e $opt{OUTPUT_DIR}/$sampleName/logs/Mapping_$coreName.err -N $markdupJobId -hold_jid $indexJobId $opt{OUTPUT_DIR}/$sampleName/jobs/$markdupJobId.sh\n";
+	} else {
+	    warn "\t$opt{OUTPUT_DIR}/$sampleName/mapping/$coreName\_sorted_dedup.bam exist and is not empty, skipping sort\n";
+	}
     ###############FLAGSTAT AFTER MARKDUP JOB###############
-	open FS3_SH,">$opt{OUTPUT_DIR}/$sampleName/jobs/$markdupFSJobId.sh" or die "Couldn't create $opt{OUTPUT_DIR}/$sampleName/jobs/$markdupFSJobId.sh\n";
-	print FS3_SH "\#!/bin/sh\n\n";
-	print FS3_SH "cd $opt{OUTPUT_DIR}/$sampleName/mapping \n";
-	print FS3_SH "echo \"Start flagstat\t\" `date` \"\t$coreName\_sorted_dedup.bam\t\" `uname -n` >> $opt{OUTPUT_DIR}/$sampleName/logs/$sampleName.log\n";
-	print FS3_SH "$opt{SAMBAMBA_PATH}/sambamba flagstat -t $opt{FLAGSTAT_THREADS} $coreName\_sorted_dedup.bam > $coreName\_sorted_dedup.flagstat\n";
-	print FS3_SH "echo \"End flagstat\t\" `date` \"\t$coreName\_sorted_dedup.bam\t\" `uname -n` >> $opt{OUTPUT_DIR}/$sampleName/logs/$sampleName.log\n";
-	close FS3_SH;
-    
-	print $QSUB "qsub -q $opt{FLAGSTAT_QUEUE} -P $opt{MAPPING_PROJECT} -m a -M $opt{MAIL} -pe threaded $opt{FLAGSTAT_THREADS} -R $opt{CLUSTER_RESERVATION} -o $opt{OUTPUT_DIR}/$sampleName/logs/Mapping_$coreName.out -e $opt{OUTPUT_DIR}/$sampleName/logs/Mapping_$coreName.err -N $markdupFSJobId -hold_jid $markdupJobId $opt{OUTPUT_DIR}/$sampleName/jobs/$markdupFSJobId.sh\n";
+	if ((! -e "$opt{OUTPUT_DIR}/$sampleName/mapping/$coreName\_sorted_dedup.flagstat") || (-z "$opt{OUTPUT_DIR}/$sampleName/mapping/$coreName\_sorted_dedup.flagstat")){
+	    open FS3_SH,">$opt{OUTPUT_DIR}/$sampleName/jobs/$markdupFSJobId.sh" or die "Couldn't create $opt{OUTPUT_DIR}/$sampleName/jobs/$markdupFSJobId.sh\n";
+	    print FS3_SH "\#!/bin/sh\n\n";
+	    print FS3_SH "cd $opt{OUTPUT_DIR}/$sampleName/mapping \n";
+	    print FS3_SH "echo \"Start flagstat\t\" `date` \"\t$coreName\_sorted_dedup.bam\t\" `uname -n` >> $opt{OUTPUT_DIR}/$sampleName/logs/$sampleName.log\n";
+	    print FS3_SH "$opt{SAMBAMBA_PATH}/sambamba flagstat -t $opt{FLAGSTAT_THREADS} $coreName\_sorted_dedup.bam > $coreName\_sorted_dedup.flagstat\n";
+	    print FS3_SH "echo \"End flagstat\t\" `date` \"\t$coreName\_sorted_dedup.bam\t\" `uname -n` >> $opt{OUTPUT_DIR}/$sampleName/logs/$sampleName.log\n";
+	    close FS3_SH;
+	    print $QSUB "qsub -q $opt{FLAGSTAT_QUEUE} -P $opt{MAPPING_PROJECT} -m a -M $opt{MAIL} -pe threaded $opt{FLAGSTAT_THREADS} -R $opt{CLUSTER_RESERVATION} -o $opt{OUTPUT_DIR}/$sampleName/logs/Mapping_$coreName.out -e $opt{OUTPUT_DIR}/$sampleName/logs/Mapping_$coreName.err -N $markdupFSJobId -hold_jid $markdupJobId $opt{OUTPUT_DIR}/$sampleName/jobs/$markdupFSJobId.sh\n";
+	} else {
+	    warn "\t$opt{OUTPUT_DIR}/$sampleName/mapping/$coreName\_sorted_dedup.flagstat exist and is not empty, skipping dedup flagstat\n";
+	}
     }
     ###############################
     
@@ -502,7 +529,7 @@ sub submitSingleJobs{
 	print CLEAN_SH "\tif [ \$FS1 -eq \$FS2 ]\n";
 	print CLEAN_SH "\tthen\n";
 	print CLEAN_SH "\t\trm $coreName\_sorted.bam\n";
-	print CLEAN_SH "\t\trm $coreName\_sorted.bai\n";
+	print CLEAN_SH "\t\trm $coreName\_sorted.bam.bai\n";
 	print CLEAN_SH "\telse\n";
 	print CLEAN_SH "\t\techo \"ERROR: $coreName\_sorted.flagstat and $coreName\_sorted_dedup.flagstat do not have the same read counts\" >> $opt{OUTPUT_DIR}/$sampleName/logs/$coreName\_cleanup.err\n";
 	print CLEAN_SH "\tfi\n";
