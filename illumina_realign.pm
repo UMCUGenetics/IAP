@@ -168,7 +168,7 @@ sub runRealignment {
 	    print REALIGN_SH "\#!/bin/bash\n\n";
 	    print REALIGN_SH ". $opt{CLUSTER_PATH}/settings.sh\n\n";
 	    print REALIGN_SH "cd $opt{OUTPUT_DIR}/$sample/tmp \n\n";
-	    print REALIGN_SH "echo \"Start indel realignment\t\" `date` \"\t$bam\t\" `uname -n` >> ../logs/$sample.log\n\n";
+	    print REALIGN_SH "echo \"Start indel realignment\t\" `date` \"\t$bam\t\" `uname -n` >> $logDir/$sample.log\n\n";
 	    
 	    print REALIGN_SH "if [ -f $opt{OUTPUT_DIR}/$sample/mapping/$bam ]\n";
 	    print REALIGN_SH "then\n";
@@ -204,7 +204,7 @@ sub runRealignment {
 	    my $bashFileFS = $opt{OUTPUT_DIR}."/".$sample."/jobs/".$jobIDFS.".sh";
 
 	    open REALIGNFS_SH, ">$bashFileFS" or die "cannot open file $bashFileFS \n";
-	    print REALIGNFS_SH "cd $opt{OUTPUT_DIR}/tmp\n";
+	    print REALIGNFS_SH "cd $opt{OUTPUT_DIR}/$sample/tmp\n";
 	    
 	    print REALIGNFS_SH "if [ -f $opt{OUTPUT_DIR}/$sample/tmp/$realignedBam ]\n";
 	    print REALIGNFS_SH "then\n";
@@ -229,11 +229,11 @@ sub runRealignment {
 	    print REALIGNFS_SH "\techo \"ERROR: Either $opt{OUTPUT_DIR}/$sample/mapping/$flagstat or $opt{OUTPUT_DIR}/$sample/mapping/$realignedFlagstat is empty.\" >> ../logs/Realignment_$sample.err\n";
 	    print REALIGNFS_SH "fi\n\n";
 	    
-	    print REALIGNFS_SH "echo \"End indel realignment\t\" `date` \"\t$sample\_dedup.bam\t\" `uname -n` >> ../logs/$sample.log\n"; 
+	    print REALIGNFS_SH "echo \"End indel realignment\t\" `date` \"\t$sample\_dedup.bam\t\" `uname -n` >> $logDir/$sample.log\n"; 
 	    close REALIGNFS_SH;
 	    
 	    ### Submit flagstat bash script
-	    system "qsub -q $opt{FLAGSTAT_QUEUE} -m a -M $opt{MAIL} -pe threaded $opt{FLAGSTAT_THREADS} -o $logDir/RealignmentFS_$sample.out -e $logDir/RealignmentFS_$sample.err -N $jobIDFS -hold_jid $jobID $bashFileFS";
+	    system "qsub -q $opt{FLAGSTAT_QUEUE} -m a -M $opt{MAIL} -pe threaded $opt{FLAGSTAT_THREADS} -R $opt{CLUSTER_RESERVATION} -o $logDir/RealignmentFS_$sample.out -e $logDir/RealignmentFS_$sample.err -N $jobIDFS -hold_jid $jobID $bashFileFS";
 	    
 	    push(@{$opt{RUNNING_JOBS}->{$sample}}, $jobID);
 	    push(@{$opt{RUNNING_JOBS}->{$sample}}, $jobIDFS);
