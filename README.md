@@ -1,5 +1,5 @@
 ## IAP
-Illumina variant calling pipeline.
+Illumina variant calling pipeline. 
 
 ## Download
 Seperate releases can be downloaded here: https://github.com/CuppenResearch/IAP/releases or use git clone:
@@ -7,7 +7,8 @@ Seperate releases can be downloaded here: https://github.com/CuppenResearch/IAP/
 git clone git@github.com:CuppenResearch/IAP.git
 ```
 
-## Usage:
+## Usage
+IAP is configured using ini files and on run/analysis level using a config file. The idea is to have one ini file per run/analysis type (e.g. exome sequencing). Every setting can be reconfigured in the run/analysis config file. All ini files are located in the [settings subfolder](https://github.com/CuppenResearch/IAP/tree/master/settings). The run/analysis config is created using the illumina_createConfig script and is stored in the ouput directory.
 #### View available ini files
 ```bash
 perl illumina_createConfig.pl
