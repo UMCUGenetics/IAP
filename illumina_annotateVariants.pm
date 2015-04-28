@@ -24,7 +24,7 @@ sub runAnnotateVariants {
 
     ### Skip variant annotation if .done file exists.
     if (-e "$opt{OUTPUT_DIR}/logs/VariantAnnotation.done"){
-	warn "WARNING: $opt{OUTPUT_DIR}/logs/VariantAnnotation.done exists, skipping \n";
+	print "WARNING: $opt{OUTPUT_DIR}/logs/VariantAnnotation.done exists, skipping \n";
 	return $jobID;
     }
 

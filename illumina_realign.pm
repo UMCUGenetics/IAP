@@ -77,7 +77,7 @@ sub runRealignment {
 	    
 	    ## Check for realigned bam file, skip sample if realigned bam file already exist.
 	    if (-e "$opt{OUTPUT_DIR}/$sample/logs/Realignment_$sample.done"){
-		warn "\t WARNING: $opt{OUTPUT_DIR}/$sample/logs/Realignment_$sample.done exists, skipping\n";
+		print "\t WARNING: $opt{OUTPUT_DIR}/$sample/logs/Realignment_$sample.done exists, skipping\n";
 		next;
 	    }
 
@@ -154,7 +154,7 @@ sub runRealignment {
 
 	    ## Check for realigned bam file, skip sample if realigned bam file already exist.
 	    if (-e "$opt{OUTPUT_DIR}/$sample/logs/Realignment_$sample.done"){
-		warn "\t WARNING: $opt{OUTPUT_DIR}/$sample/logs/Realignment_$sample.done exists, skipping\n";
+		print "\t WARNING: $opt{OUTPUT_DIR}/$sample/logs/Realignment_$sample.done exists, skipping\n";
 		next;
 	    }
 	    

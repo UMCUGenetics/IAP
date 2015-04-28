@@ -34,7 +34,7 @@ sub runBaseRecalibration {
 	
 	### Check output .bam files
 	if (-e "$opt{OUTPUT_DIR}/$sample/logs/BaseRecalibration_$sample.done"){
-	    warn "\t WARNING: $opt{OUTPUT_DIR}/$sample/logs/BaseRecalibration_$sample.done exists, skipping \n";
+	    print "\t WARNING: $opt{OUTPUT_DIR}/$sample/logs/BaseRecalibration_$sample.done exists, skipping \n";
 	    next;
 	}
 	
