@@ -473,7 +473,10 @@ sub checkConfig{
 	    if(! $opt{ANNOTATE_IDDB}){ print "ERROR: No ANNOTATE_IDDB option found in config files.\n"; $checkFailed = 1; }
 	}
     }
-    if ($checkFailed) { die "One or more options not found in config files." }
+    if ($checkFailed) { 
+	print "One or more options not found in config files.";
+	die;
+    }
 }
 
 1;
