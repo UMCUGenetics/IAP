@@ -34,7 +34,7 @@ sub runBaseRecalibration {
 	
 	### Check output .bam files
 	if (-e "$opt{OUTPUT_DIR}/$sample/logs/BaseRecalibration_$sample.done"){
-	    warn "\t WARNING: $opt{OUTPUT_DIR}/$sample/logs/BaseRecalibration_$sample.done exists, skipping \n";
+	    print "\t WARNING: $opt{OUTPUT_DIR}/$sample/logs/BaseRecalibration_$sample.done exists, skipping \n";
 	    next;
 	}
 	
@@ -80,7 +80,7 @@ sub runBaseRecalibration {
 	print BASERECAL_SH "fi\n";
 	close BASERECAL_SH;
 	
-	### Submit bash script
+	### Submit baserecal bash script
 	if ( @{$opt{RUNNING_JOBS}->{$sample}} ){
 	    system "qsub -q $opt{BASERECALIBRATION_MASTERQUEUE} -m a -M $opt{MAIL} -pe threaded $opt{BASERECALIBRATION_MASTERTHREADS} -o $logDir/BaseRecalibration_$sample.out -e $logDir/BaseRecalibration_$sample.err -N $jobID -hold_jid ".join(",",@{$opt{RUNNING_JOBS}->{$sample}})." $bashFile";
 	} else {
@@ -89,13 +89,13 @@ sub runBaseRecalibration {
 	
 	### Create flagstat bash script
 	my $jobIDFS = "BRFS_".$sample."_".get_job_id();
-	my $bashFileFS = $opt{OUTPUT_DIR}."/".$sample."/jobs/".$jobID.".sh";
+	my $bashFileFS = $opt{OUTPUT_DIR}."/".$sample."/jobs/".$jobIDFS.".sh";
 	open BASERECALFS_SH, ">$bashFileFS" or die "cannot open file $bashFileFS \n";
 	### Generate FlagStats if gatk .done file present
 	print BASERECALFS_SH "cd $opt{OUTPUT_DIR}/$sample/tmp/\n";
 	print BASERECALFS_SH "if [ -f $opt{OUTPUT_DIR}/$sample/tmp/.$outBam.done ]\n";
 	print BASERECALFS_SH "then\n";
-	print BASERECALFS_SH "\t$opt{SAMBAMBA_PATH}/sambamba flagstat -t $opt{BASERECALIBRATION_THREADS} $opt{OUTPUT_DIR}/$sample/tmp/$outBam > $opt{OUTPUT_DIR}/$sample/mapping/$outFlagstat\n";
+	print BASERECALFS_SH "\t$opt{SAMBAMBA_PATH}/sambamba flagstat -t $opt{FLAGSTAT_THREADS} $opt{OUTPUT_DIR}/$sample/tmp/$outBam > $opt{OUTPUT_DIR}/$sample/mapping/$outFlagstat\n";
 	print BASERECALFS_SH "fi\n\n";
 
 	### Check FlagStats and move files if correct else print error
@@ -118,7 +118,7 @@ sub runBaseRecalibration {
 	close BASERECALFS_SH;
 	
 	### Submit flagstat bash script
-	system "qsub -q $opt{BASERECALIBRATION_QUEUE} -m a -M $opt{MAIL} -pe threaded $opt{BASERECALIBRATION_THREADS} -o $logDir/BaseRecalibrationFS_$sample.out -e $logDir/BaseRecalibrationFS_$sample.err -N $jobIDFS -hold_jid $jobID $bashFileFS";
+	system "qsub -q $opt{FLAGSTAT_QUEUE} -m a -M $opt{MAIL} -pe threaded $opt{FLAGSTAT_THREADS} -o $logDir/BaseRecalibrationFS_$sample.out -e $logDir/BaseRecalibrationFS_$sample.err -N $jobIDFS -hold_jid $jobID $bashFileFS";
 
 	push(@{$opt{RUNNING_JOBS}->{$sample}}, $jobID);
 	push(@{$opt{RUNNING_JOBS}->{$sample}}, $jobIDFS);

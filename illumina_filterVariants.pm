@@ -25,7 +25,7 @@ sub runFilterVariants {
     ### Skip variant calling if .raw_variants.vcf already exists
     ### add .done file checking?
     if (-e "$opt{OUTPUT_DIR}/logs/VariantFilter.done"){
-	warn "WARNING: $opt{OUTPUT_DIR}/logs/VariantFilter.done exists, skipping \n";
+	print "WARNING: $opt{OUTPUT_DIR}/logs/VariantFilter.done exists, skipping \n";
 	return $jobID;
     }
 

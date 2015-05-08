@@ -310,6 +310,10 @@ sub checkConfig{
 	if(! $opt{MAPPING_PROJECT}){ print "ERROR: No MAPPING_PROJECT option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{MAPPING_MODE}){ print "ERROR: No MAPPING_MODE option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{MAPPING_MARKDUP}){ print "ERROR: No MAPPING_MARKDUP option found in config files.\n"; $checkFailed = 1; }
+	if($opt{MAPPING_MODE} eq 'single'){
+	    if(! $opt{FLAGSTAT_QUEUE}){ print "ERROR: No FLAGSTAT_QUEUE option found in config files.\n"; $checkFailed = 1; }
+	    if(! $opt{FLAGSTAT_THREADS}){ print "ERROR: No FLAGSTAT_THREADS option found in config files.\n"; $checkFailed = 1; }
+	}
     }
     ## POSTSTATS
     if($opt{POSTSTATS} eq "yes"){
@@ -318,7 +322,7 @@ sub checkConfig{
 	if(! $opt{POSTSTATS_MEM}){ print "ERROR: No POSTSTATS_MEM option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{POSTSTATS_QUEUE}){ print "ERROR: No POSTSTATS_THREADS option found in config files.\n"; $checkFailed = 1; }
 	if(! ($opt{POSTSTATS_TARGETS}) && ! ($opt{POSTSTATS_BAITS}) ){
-	    if(! $opt{POSTSTATS_COVERAGECAP}){ print "ERROR: No POSTSTATS_COVERAGECAP option found in config files.\n"; $checkFailed = 1; }
+	    if(! $opt{POSTSTATS_COVERAGECAP}){ print "ERROR: No POSTSTATS_COVERAGECAP or (POSTSTATS_TARGETS & POSTSTATS_BAITS) options found in config files.\n"; $checkFailed = 1; }
 	}
 	if( $opt{POSTSTATS_TARGETS} && ! -e $opt{POSTSTATS_TARGETS}){ print "ERROR: $opt{POSTSTATS_TARGETS} does Not exist\n"; $checkFailed = 1; }
 	if( $opt{POSTSTATS_BAITS} && ! -e $opt{POSTSTATS_BAITS}){ print "ERROR: $opt{POSTSTATS_BAITS} does Not exist\n"; $checkFailed = 1; }
@@ -336,6 +340,8 @@ sub checkConfig{
 	if(! $opt{REALIGNMENT_SCATTER}){ print "ERROR: No REALIGNMENT_SCATTER option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{REALIGNMENT_MODE}){ print "ERROR: No REALIGNMENT_MODE option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{QUEUE_RETRY}){ print "ERROR: No QUEUE_RETRY option found in config files.\n"; $checkFailed = 1; }
+	if(! $opt{FLAGSTAT_QUEUE}){ print "ERROR: No FLAGSTAT_QUEUE option found in config files.\n"; $checkFailed = 1; }
+	if(! $opt{FLAGSTAT_THREADS}){ print "ERROR: No FLAGSTAT_THREADS option found in config files.\n"; $checkFailed = 1; }
     }
     ## BASEQUALITYRECAL
     if($opt{BASEQUALITYRECAL} eq "yes"){
@@ -347,6 +353,8 @@ sub checkConfig{
 	if(! $opt{BASERECALIBRATION_SCALA}){ print "ERROR: No BASERECALIBRATION_SCALA option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{BASERECALIBRATION_SCATTER}){ print "ERROR: No BASERECALIBRATION_SCATTER option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{QUEUE_RETRY}){ print "ERROR: No QUEUE_RETRY option found in config files.\n"; $checkFailed = 1; }
+	if(! $opt{FLAGSTAT_QUEUE}){ print "ERROR: No FLAGSTAT_QUEUE option found in config files.\n"; $checkFailed = 1; }
+	if(! $opt{FLAGSTAT_THREADS}){ print "ERROR: No FLAGSTAT_THREADS option found in config files.\n"; $checkFailed = 1; }
     }
     ## VARIANT_CALLING
     if($opt{VARIANT_CALLING} eq "yes"){
@@ -465,7 +473,10 @@ sub checkConfig{
 	    if(! $opt{ANNOTATE_IDDB}){ print "ERROR: No ANNOTATE_IDDB option found in config files.\n"; $checkFailed = 1; }
 	}
     }
-    if ($checkFailed) { die "One or more options not found in config files." }
+    if ($checkFailed) { 
+	print "One or more options not found in config files.";
+	die;
+    }
 }
 
 1;

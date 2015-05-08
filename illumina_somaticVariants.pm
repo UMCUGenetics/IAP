@@ -24,17 +24,18 @@ sub parseSamples {
 
     foreach my $sample (@{$opt{SAMPLES}}){
 	# Parse cpct samples based on expected naming
-	my ($cpct_name,$origin) = ($sample =~ /(CPCT\d{8})([TR][IVX]*$)/);
+	#my ($cpct_name,$origin) = ($sample =~ /(CPCT\d{8})([TR][IVX]*$)/);
+	my ($cpct_name,$origin) = ($sample =~ /([R]*CPCT\d{4,8})([TR][IVX]*)/);
 	
 	if ( (! $cpct_name) || (! $origin) ){
-	    warn "WARNING: $sample is not passing somatic samplename parsing, skipping \n\n";
+	    print "WARNING: $sample is not passing somatic samplename parsing, skipping \n\n";
 	    next;
 	}
 	
 	# Reference sample
 	if ($origin =~ m/R.*/){
 	    if ($somatic_samples{$cpct_name}{"ref"}){
-		warn "\t WARNING: $cpct_name has multiple reference samples, using: $somatic_samples{$cpct_name}{'ref'} \n\n";
+		print "\t WARNING: $cpct_name has multiple reference samples, using: $somatic_samples{$cpct_name}{'ref'} \n\n";
 	    } else {
 		$somatic_samples{$cpct_name}{"ref"} = $sample;
 	    }
@@ -60,7 +61,7 @@ sub runSomaticVariantCallers {
 
 	# Check correct sample ref
 	if (! $opt{SOMATIC_SAMPLES}{$sample}{'ref'}){
-	    warn "WARNING: No ref sample for $sample, skipping \n";
+	    print "WARNING: No ref sample for $sample, skipping \n";
 	    next;
 	}
 
@@ -98,7 +99,7 @@ sub runSomaticVariantCallers {
 
 	    ## Skip Somatic Callers if .done file exist
 	    if (-e "$sample_tumor_log_dir/$sample_tumor_name.done"){
-		warn "WARNING: $sample_tumor_log_dir/$sample_tumor_name.done, skipping \n";
+		print "WARNING: $sample_tumor_log_dir/$sample_tumor_name.done, skipping \n";
 		next;
 	    }
 
@@ -167,7 +168,7 @@ sub runStrelka {
 
     ## Skip Strelka if .done file exist
     if (-e "$log_dir/strelka.done"){
-	warn "WARNING: $log_dir/strelka.done, skipping \n";
+	print "WARNING: $log_dir/strelka.done, skipping \n";
 	return;
     }
 
@@ -226,7 +227,7 @@ sub runVarscan {
 
     ## Skip varscan if .done file exist
     if ( -e "$log_dir/varscan.done" ){
-	warn "WARNING: $log_dir/varscan.done, skipping \n";
+	print "WARNING: $log_dir/varscan.done, skipping \n";
 	return;
     }
 
@@ -302,7 +303,7 @@ sub runFreeBayes {
 
     ## Skip freebayes if .done file exist
     if (-e "$log_dir/freebayes.done"){
-	warn "WARNING: $log_dir/freebayes.done, skipping \n";
+	print "WARNING: $log_dir/freebayes.done, skipping \n";
 	return;
     }
 
