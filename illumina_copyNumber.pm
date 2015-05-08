@@ -28,7 +28,7 @@ sub parseSamples {
 	my ($cpct_name,$origin) = ($sample =~ /([R]*CPCT\d{4,8})([TR][IVX]*)/);
 	
 	if ( (! $cpct_name) || (! $origin) ){
-	    print "WARNING: $sample is not passing somatic samplename parsing, skipping \n\n";
+	    print "WARNING: $sample is not passing copy number samplename parsing, skipping \n\n";
 	    next;
 	}
 	
