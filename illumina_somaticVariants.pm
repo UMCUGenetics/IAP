@@ -129,18 +129,37 @@ sub runSomaticVariantCallers {
 	    open MERGE_SH, ">$bash_file" or die "cannot open file $bash_file \n";
 	    print MERGE_SH "#!/bin/bash\n\n";
 	    print MERGE_SH "echo \"Start Merge\t\" `date` `uname -n` >> $sample_tumor_log_dir/merge.log\n\n";
+
 	    #Merge vcfs
-	    print MERGE_SH "java -Xmx6G -jar $opt{GATK_PATH}/GenomeAnalysisTK.jar -T CombineVariants -R $opt{GENOME} -o $sample_tumor_out_dir/$sample_tumor_name\_merged_somatics.vcf --genotypemergeoption uniquify ";
+	    my $invcf;
+	    my $outvcf = "$sample_tumor_out_dir/$sample_tumor_name\_merged_somatics.vcf";
+	    print MERGE_SH "java -Xmx6G -jar $opt{GATK_PATH}/GenomeAnalysisTK.jar -T CombineVariants -R $opt{GENOME} -o $outvcf --genotypemergeoption uniquify ";
 	    if($opt{SOMVAR_STRELKA} eq "yes"){ print MERGE_SH "-V $sample_tumor_out_dir/strelka/passed.somatic.merged.vcf "; }
 	    if($opt{SOMVAR_VARSCAN} eq "yes"){ print MERGE_SH "-V $sample_tumor_out_dir/varscan/$sample_tumor_name.merged.Somatic.hc.vcf "; }
 	    if($opt{SOMVAR_FREEBAYES} eq "yes"){ print MERGE_SH "-V $sample_tumor_out_dir/freebayes/$sample_tumor_name\_somatic_filtered.vcf "; }
+
 	    #Filter vcf on target
 	    if($opt{SOMVAR_TARGETS}){
-		print MERGE_SH "\njava -Xmx6G -jar $opt{GATK_PATH}/GenomeAnalysisTK.jar -T SelectVariants -R $opt{GENOME} -L $opt{SOMVAR_TARGETS} -V $sample_tumor_out_dir/$sample_tumor_name\_merged_somatics.vcf -o $sample_tumor_out_dir/$sample_tumor_name\_filtered_merged_somatics.vcf\n";
-		print MERGE_SH "rm $sample_tumor_out_dir/$sample_tumor_name\_merged_somatics.vcf*";
+		$invcf = $outvcf;
+		$outvcf = "$sample_tumor_out_dir/$sample_tumor_name\_filtered_merged_somatics.vcf";
+		print MERGE_SH "\n\njava -Xmx6G -jar $opt{GATK_PATH}/GenomeAnalysisTK.jar -T SelectVariants -R $opt{GENOME} -L $opt{SOMVAR_TARGETS} -V $invcf -o $outvcf\n";
+		print MERGE_SH "rm $invcf*";
 	    }
-	    
-	    print MERGE_SH "\n\nif [ -f $sample_tumor_out_dir/$sample_tumor_name\_merged_somatics.vcf -o -f $sample_tumor_out_dir/$sample_tumor_name\_filtered_merged_somatics.vcf ]\n";
+
+	    #Annotate somatic vcf
+	    if($opt{SOMVAR_ANNOTATE} eq "yes"){
+		$invcf = $outvcf;
+		$outvcf =~ s/.vcf/_snpEff.vcf/;
+		print MERGE_SH "\n\njava -Xmx6G -jar $opt{SNPEFF_PATH}/snpEff.jar -c $opt{SNPEFF_PATH}/snpEff.config $opt{ANNOTATE_DB} -v $invcf $opt{ANNOTATE_FLAGS} > $outvcf\n";
+
+		$invcf = $outvcf;
+		my $suffix = "_$opt{ANNOTATE_IDNAME}.vcf";
+		$outvcf =~ s/.vcf/$suffix/;
+		print MERGE_SH "java -Xmx6G -jar $opt{GATK_PATH}/GenomeAnalysisTK.jar -T VariantAnnotator -nt $opt{SOMVARMERGE_THREADS} -R $opt{GENOME} -o $outvcf --variant $invcf --dbsnp $opt{ANNOTATE_IDDB} --alwaysAppendDbsnpId\n";
+		print MERGE_SH "if [ -f $outvcf ]\nthen\n\trm $invcf $invcf.idx \nfi";
+	    }
+
+	    print MERGE_SH "\n\nif [ -f $outvcf ]\n";
 	    print MERGE_SH "then\n";
 	    print MERGE_SH "\ttouch $sample_tumor_log_dir/$sample_tumor_name.done\n";
 	    print MERGE_SH "fi\n";
