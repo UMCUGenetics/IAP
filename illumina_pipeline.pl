@@ -88,7 +88,7 @@ system "cp $opt{INIFILE} $opt{OUTPUT_DIR}/logs";
 my $opt_ref;
 
 ### Mapping or bam input
-if(! ($opt{BAM} || $opt{VCF}) ){
+if( $opt{FASTQ} ){
     if($opt{PRESTATS} eq "yes"){
 	print "###SCHEDULING PRESTATS###\n";
 	illumina_prestats::runPreStats(\%opt);
@@ -100,14 +100,14 @@ if(! ($opt{BAM} || $opt{VCF}) ){
 	%opt = %$opt_ref;
     }
 
-} elsif ( $opt{BAM} ) {
+} if( $opt{BAM} ) {
     print "\n###SCHEDULING BAM PREP###\n";
     $opt_ref = illumina_mapping::runBamPrep(\%opt);
     %opt = %$opt_ref;
 }
 
 ### Post mapping
-if (! $opt{VCF} ){
+if(! $opt{VCF} ){
     if($opt{POSTSTATS} eq "yes"){
 	print "\n###SCHEDULING POSTSTATS###\n";
 	my $postStatsJob = illumina_poststats::runPostStats(\%opt);
@@ -195,7 +195,7 @@ sub getSamples{
     }
 
     #parse bam files
-    elsif ($opt{BAM}){
+    if ($opt{BAM}){
 	foreach my $input (keys %{$opt{BAM}}){
 	    my $bamFile = (split("/", $input))[-1];
 	    my $sampleName = $bamFile;
