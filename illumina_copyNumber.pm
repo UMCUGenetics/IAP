@@ -108,8 +108,10 @@ sub runCopyNumberTools {
 		print "\n###SCHEDULING CONTRA####\n";
 		my $contra_job = runContra($sample_tumor, $sample_tumor_out_dir, $sample_tumor_job_dir, $sample_tumor_log_dir, $sample_tumor_bam, $sample_ref_bam, \@running_jobs, \%opt);
 		if($contra_job){push(@cnv_jobs, $contra_job)};
+		
+		my $contravis_job = runContraVisualization($sample_tumor, $sample_tumor_out_dir, $sample_tumor_job_dir, $sample_tumor_log_dir,$contra_job, \%opt);
+		if($contravis_job){push(@cnv_jobs, $contravis_job)};
 	    }
-	    
 	    ## Check copy number analysis
 	    my $job_id = "CHECK_".$sample_tumor."_".get_job_id();
 	    my $bash_file = $sample_tumor_job_dir."/".$job_id.".sh";
@@ -117,7 +119,7 @@ sub runCopyNumberTools {
 	    open CHECK_SH, ">$bash_file" or die "cannot open file $bash_file \n";
 	    print CHECK_SH "#!/bin/bash\n\n";
 	    print CHECK_SH "echo \"Start Check\t\" `date` `uname -n` >> $sample_tumor_log_dir/check.log\n\n";
-	    print CHECK_SH "if [ -f $sample_tumor_log_dir/contra.done ]\n";
+	    print CHECK_SH "if [[ -f $sample_tumor_log_dir/contra.done && -f $sample_tumor_log_dir/contra_visualization.done ]]\n";
 	    print CHECK_SH "then\n";
 	    print CHECK_SH "\ttouch $sample_tumor_log_dir/$sample_tumor_name.done\n";
 	    print CHECK_SH "fi\n\n";
@@ -137,14 +139,15 @@ sub runCopyNumberTools {
     return \@check_cnv_jobs;
 }
 
-### Somatic Variant Callers
+### Copy number analysis tools
+## Contra
 sub runContra {
     my ($sample_tumor, $out_dir, $job_dir, $log_dir, $sample_tumor_bam, $sample_ref_bam, $running_jobs, $opt) = (@_);
     my @running_jobs = @{$running_jobs};
     my %opt = %{$opt};
     my $contra_out_dir = "$out_dir/contra";
 
-    ## Skip Strelka if .done file exist
+    ## Skip Contra if .done file exist
     if (-e "$log_dir/contra.done"){
 	print "WARNING: $log_dir/contra.done, skipping \n";
 	return;
@@ -168,13 +171,13 @@ sub runContra {
     print CONTRA_SH "\tthen\n";
     print CONTRA_SH "\t\ttouch $log_dir/contra.done\n";
     print CONTRA_SH "\tfi\n\n";
-    
+
     print CONTRA_SH "\techo \"End Contra\t\" `date` \"\t $sample_ref_bam \t $sample_tumor_bam\t\" `uname -n` >> $log_dir/contra.log\n\n";
-    
+
     print CONTRA_SH "else\n";
     print CONTRA_SH "\techo \"ERROR: $sample_tumor_bam or $sample_ref_bam does not exist.\" >&2\n";
     print CONTRA_SH "fi\n";
-    
+
     close CONTRA_SH;
 
     ## Run job
@@ -186,6 +189,39 @@ sub runContra {
 
     return $job_id;
 }
+## Contra Visualization
+sub runContraVisualization {
+    my ($sample_tumor, $out_dir, $job_dir, $log_dir, $contra_job, $opt) = (@_);
+    my %opt = %{$opt};
+    my $contra_out_dir = "$out_dir/contra";
+
+    ## Skip Contra if .done file exist
+    if (-e "$log_dir/contra_visualization.done"){
+	print "WARNING: $log_dir/contra_visualization.done, skipping \n";
+	return;
+    }
+    my $job_id = "CNTRVIS_".$sample_tumor."_".get_job_id();
+    my $bash_file = $job_dir."/".$job_id.".sh";
+
+    open CONTRAVIS_SH, ">$bash_file" or die "cannot open file $bash_file \n";
+    print CONTRAVIS_SH "#!/bin/bash\n\n";
+    print CONTRAVIS_SH "if [ -f $log_dir/contra.done ]\n";
+    print CONTRAVIS_SH "\tthen\n";
+    print CONTRAVIS_SH "\tperl $opt{CONTRA_PLOTSCRIPT} -input $contra_out_dir/table/$sample_tumor.CNATable.10rd.10bases.20bins.txt -d $opt{CONTRA_PLOTDESIGN}\n";
+    print CONTRAVIS_SH "touch $log_dir/contra_visualization.done\n";
+    print CONTRAVIS_SH "fi\n";
+    close CONTRAVIS_SH;
+
+    ## Run job
+    if ( $contra_job ){
+	system "qsub -q $opt{CONTRA_QUEUE} -m a -M $opt{MAIL} -pe threaded $opt{CONTRA_THREADS} -R $opt{CLUSTER_RESERVATION} -o $log_dir -e $log_dir -N $job_id -hold_jid $contra_job $bash_file";
+    } else {
+	system "qsub -q $opt{CONTRA_QUEUE} -m a -M $opt{MAIL} -pe threaded $opt{CONTRA_THREADS} -R $opt{CLUSTER_RESERVATION} -o $log_dir -e $log_dir -N $job_id $bash_file";
+    }
+
+    return $job_id;
+}
+
 
 ############
 sub get_job_id {
