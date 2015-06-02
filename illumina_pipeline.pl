@@ -88,7 +88,7 @@ system "cp $opt{INIFILE} $opt{OUTPUT_DIR}/logs";
 my $opt_ref;
 
 ### Mapping or bam input
-if(! ($opt{BAM} || $opt{VCF}) ){
+if( $opt{FASTQ} ){
     if($opt{PRESTATS} eq "yes"){
 	print "###SCHEDULING PRESTATS###\n";
 	illumina_prestats::runPreStats(\%opt);
@@ -100,14 +100,14 @@ if(! ($opt{BAM} || $opt{VCF}) ){
 	%opt = %$opt_ref;
     }
 
-} elsif ( $opt{BAM} ) {
+} if( $opt{BAM} ) {
     print "\n###SCHEDULING BAM PREP###\n";
     $opt_ref = illumina_mapping::runBamPrep(\%opt);
     %opt = %$opt_ref;
 }
 
 ### Post mapping
-if (! $opt{VCF} ){
+if(! $opt{VCF} ){
     if($opt{POSTSTATS} eq "yes"){
 	print "\n###SCHEDULING POSTSTATS###\n";
 	my $postStatsJob = illumina_poststats::runPostStats(\%opt);
@@ -195,7 +195,7 @@ sub getSamples{
     }
 
     #parse bam files
-    elsif ($opt{BAM}){
+    if ($opt{BAM}){
 	foreach my $input (keys %{$opt{BAM}}){
 	    my $bamFile = (split("/", $input))[-1];
 	    my $sampleName = $bamFile;
@@ -428,6 +428,13 @@ sub checkConfig{
 	}
 	if(! $opt{SOMVARMERGE_QUEUE}){ print "ERROR: No SOMVARMERGE_QUEUE option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{SOMVARMERGE_THREADS}){ print "ERROR: No SOMVARMERGE_THREADS option found in config files.\n"; $checkFailed = 1; }
+	if(! $opt{SOMVAR_ANNOTATE}){ print "ERROR: No SOMVAR_ANNOTATE option found in config files.\n"; $checkFailed = 1; }
+	if($opt{SOMVAR_ANNOTATE} eq "yes"){
+	    if(! $opt{ANNOTATE_DB}){ print "ERROR: No ANNOTATE_DB option found in config files.\n"; $checkFailed = 1; }
+	    if(! $opt{ANNOTATE_FLAGS}){ print "ERROR: No ANNOTATE_FLAGS option found in config files.\n"; $checkFailed = 1; }
+	    if(! $opt{ANNOTATE_IDNAME}){ print "ERROR: No ANNOTATE_IDNAME option found in config files.\n"; $checkFailed = 1; }
+	    if(! $opt{ANNOTATE_IDDB}){ print "ERROR: No ANNOTATE_IDDB option found in config files.\n"; $checkFailed = 1; }
+	}
     }
     ## COPY_NUMBER
     if($opt{COPY_NUMBER} eq "yes"){
@@ -440,6 +447,11 @@ sub checkConfig{
 	    if(! $opt{CONTRA_THREADS}){ print "ERROR: No CONTRA_THREADS option found in config files.\n"; $checkFailed = 1; }
 	    if(! $opt{CONTRA_TARGETS}){ print "ERROR: No CONTRA_TARGETS option found in config files.\n"; $checkFailed = 1; }
 	    if(! $opt{CONTRA_FLAGS}){ print "ERROR: No CONTRA_FLAGS option found in config files.\n"; $checkFailed = 1; }
+	    if(! $opt{CONTRA_VISUALIZATION}){ print "ERROR: No CONTRA_VISUALIZATION option found in config files.\n"; $checkFailed = 1; }
+	    if($opt{CONTRA_VISUALIZATION} eq "yes"){
+		if(! $opt{CONTRA_PLOTSCRIPT}){ print "ERROR: No CONTRA_PLOTSCRIPT option found in config files.\n"; $checkFailed = 1; }
+		if(! $opt{CONTRA_PLOTDESIGN}){ print "ERROR: No CONTRA_PLOTDESIGN option found in config files.\n"; $checkFailed = 1; }
+	    }
 	}
     }
     ## ANNOTATE_VARIANTS
