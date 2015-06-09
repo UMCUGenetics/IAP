@@ -453,6 +453,17 @@ sub checkConfig{
 		if(! $opt{CONTRA_PLOTDESIGN}){ print "ERROR: No CONTRA_PLOTDESIGN option found in config files.\n"; $checkFailed = 1; }
 	    }
 	}
+	if(! $opt{CNV_FREEC}){ print "ERROR: No CNV_FREEC  in config files.\n"; $checkFailed = 1; }
+	if($opt{CNV_FREEC} eq "yes"){
+	    if(! $opt{FREEC_PATH}){ print "ERROR: No FREEC_PATH option found in config files.\n"; $checkFailed = 1; }
+	    if(! $opt{FREEC_QUEUE}){ print "ERROR: No FREEC_QUEUE option found in config files.\n"; $checkFailed = 1; }
+	    if(! $opt{FREEC_THREADS}){ print "ERROR: No FREEC_THREADS option found in config files.\n"; $checkFailed = 1; }
+	    if(! $opt{FREEC_CHRLENFILE}){ print "ERROR: No FREEC_CHRLENFILE option found in config files.\n"; $checkFailed = 1; }
+	    if(! $opt{FREEC_CHRFILES}){ print "ERROR: No FREEC_CHRFILES option found in config files.\n"; $checkFailed = 1; }
+	    if(! $opt{FREEC_PLOIDY}){ print "ERROR: No FREEC_PLOIDY option found in config files.\n"; $checkFailed = 1; }
+	    if(! $opt{FREEC_WINDOW}){ print "ERROR: No FREEC_WINDOW option found in config files.\n"; $checkFailed = 1; }
+	    if(! $opt{FREEC_TELOCENTROMERIC}){ print "ERROR: No FREEC_TELOCENTROMERIC option found in config files.\n"; $checkFailed = 1; }
+	}
     }
     ## ANNOTATE_VARIANTS
     if($opt{ANNOTATE_VARIANTS} eq "yes"){

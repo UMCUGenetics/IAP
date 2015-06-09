@@ -112,6 +112,11 @@ sub runCopyNumberTools {
 		my $contravis_job = runContraVisualization($sample_tumor, $sample_tumor_out_dir, $sample_tumor_job_dir, $sample_tumor_log_dir,$contra_job, \%opt);
 		if($contravis_job){push(@cnv_jobs, $contravis_job)};
 	    }
+	    if($opt{CNV_FREEC} eq "yes"){
+		print "\n###SCHEDULING FREEC####\n";
+		my $freec_job = runFreec($sample_tumor, $sample_tumor_out_dir, $sample_tumor_job_dir, $sample_tumor_log_dir, $sample_tumor_bam, $sample_ref_bam, \@running_jobs, \%opt);
+		if($freec_job){push(@cnv_jobs, $freec_job)};
+	    }
 	    ## Check copy number analysis
 	    my $job_id = "CHECK_".$sample_tumor."_".get_job_id();
 	    my $bash_file = $sample_tumor_job_dir."/".$job_id.".sh";
@@ -119,7 +124,10 @@ sub runCopyNumberTools {
 	    open CHECK_SH, ">$bash_file" or die "cannot open file $bash_file \n";
 	    print CHECK_SH "#!/bin/bash\n\n";
 	    print CHECK_SH "echo \"Start Check\t\" `date` `uname -n` >> $sample_tumor_log_dir/check.log\n\n";
-	    print CHECK_SH "if [[ -f $sample_tumor_log_dir/contra.done && -f $sample_tumor_log_dir/contra_visualization.done ]]\n";
+	    print CHECK_SH "if [[ ";
+	    if($opt{CNV_CONTRA} eq "yes"){print CHECK_SH "-f $sample_tumor_log_dir/contra.done && -f $sample_tumor_log_dir/contra_visualization.done && "}
+	    if($opt{CNV_FREEC} eq "yes"){print CHECK_SH "-f $sample_tumor_log_dir/freec.done"}
+	    print CHECK_SH " ]]\n";
 	    print CHECK_SH "then\n";
 	    print CHECK_SH "\ttouch $sample_tumor_log_dir/$sample_tumor_name.done\n";
 	    print CHECK_SH "fi\n\n";
@@ -140,6 +148,93 @@ sub runCopyNumberTools {
 }
 
 ### Copy number analysis tools
+## FREEC
+sub runFreec {
+    my ($sample_tumor, $out_dir, $job_dir, $log_dir, $sample_tumor_bam, $sample_ref_bam, $running_jobs, $opt) = (@_);
+    my @running_jobs = @{$running_jobs};
+    my %opt = %{$opt};
+    my $freec_out_dir = "$out_dir/freec";
+    
+    ## Skip Contra if .done file exist
+    if (-e "$log_dir/freec.done"){
+	print "WARNING: $log_dir/freec.done, skipping \n";
+	return;
+    }
+
+    ## Create FREEC output directory
+    if(! -e $freec_out_dir){
+	make_path($freec_out_dir) or die "Couldn't create directory: $freec_out_dir\n";
+    }
+    
+    ## Create freec config
+    my $freec_config = $freec_out_dir."/freec_config.txt";
+    open FREEC_CONFIG, ">$freec_config" or die "cannot open file $freec_config \n";
+
+    print FREEC_CONFIG "[general]\n";
+    print FREEC_CONFIG "chrLenFile= $opt{FREEC_CHRLENFILE}\n";
+    print FREEC_CONFIG "ploidy=2\n";
+    print FREEC_CONFIG "samtools=$opt{SAMTOOLS_PATH}/samtools\n";
+    print FREEC_CONFIG "chrFiles= $opt{FREEC_CHRFILES}\n";
+    print FREEC_CONFIG "window=$opt{FREEC_WINDOW}\n";
+    print FREEC_CONFIG "maxThreads=$opt{FREEC_THREADS}\n";
+    print FREEC_CONFIG "telocentromeric=$opt{FREEC_TELOCENTROMERIC}\n";
+    print FREEC_CONFIG "BedGraphOutput=TRUE\n";
+    print FREEC_CONFIG "outputDir=$freec_out_dir\n";
+
+    print FREEC_CONFIG "[sample]\n";
+    print FREEC_CONFIG "mateFile=$sample_tumor_bam\n";
+    print FREEC_CONFIG "inputFormat=BAM\n";
+    print FREEC_CONFIG "mateOrientation=FR\n";
+
+    print FREEC_CONFIG "[control]\n";
+    print FREEC_CONFIG "mateFile=$sample_ref_bam\n";
+    print FREEC_CONFIG "inputFormat=BAM\n";
+    print FREEC_CONFIG "mateOrientation=FR\n";
+
+    if ($opt{CONTRA_TARGETS}){
+	print FREEC_CONFIG "[target]\n";
+	print FREEC_CONFIG "captureRegions=$opt{CONTRA_TARGETS}\n";
+    }
+
+    close FREEC_CONFIG;
+
+    ## Create freec bash script
+    my $job_id = "FREEC_".$sample_tumor."_".get_job_id();
+    my $bash_file = $job_dir."/".$job_id.".sh";
+    my $sample_tumor_bam_name = (split('/',$sample_tumor_bam))[-1];
+    my $sample_ref_bam_name = (split('/',$sample_ref_bam))[-1];
+    
+    open FREEC_SH, ">$bash_file" or die "cannot open file $bash_file \n";
+    
+    print FREEC_SH "#!/bin/bash\n\n";
+    print FREEC_SH "if [ -f $sample_tumor_bam -a -f $sample_ref_bam ]\n";
+    print FREEC_SH "then\n";
+    print FREEC_SH "\techo \"Start FREEC\t\" `date` \"\t $sample_ref_bam \t $sample_tumor_bam\t\" `uname -n` >> $log_dir/freec.log\n\n";
+    
+    print FREEC_SH "\t$opt{FREEC_PATH}/freec -conf $freec_config\n";
+    print FREEC_SH "cd $freec_out_dir\n";
+    print FREEC_SH "\tcat $opt{FREEC_PATH}/assess_significance.R | R --slave --args ".$sample_tumor_bam_name."_CNVs ".$sample_tumor_bam_name."_ratio.txt\n";
+    print FREEC_SH "\tcat $opt{FREEC_PATH}/makeGraph.R | R --slave --args 2 ".$sample_tumor_bam_name."_ratio.txt\n";
+    print FREEC_SH "touch $log_dir/freec.done\n";
+    print FREEC_SH "\techo \"End FREEC\t\" `date` \"\t $sample_ref_bam \t $sample_tumor_bam\t\" `uname -n` >> $log_dir/freec.log\n\n";
+    print FREEC_SH "else\n";
+    print FREEC_SH "\techo \"ERROR: $sample_tumor_bam or $sample_ref_bam does not exist.\" >> $log_dir/freec.log\n";
+    print FREEC_SH "fi\n";
+    
+    close FREEC_SH;
+    
+    ## Run job
+    if ( @running_jobs ){
+	system "qsub -q $opt{FREEC_QUEUE} -m a -M $opt{MAIL} -pe threaded $opt{FREEC_THREADS} -R $opt{CLUSTER_RESERVATION} -o $log_dir -e $log_dir -N $job_id -hold_jid ".join(",",@running_jobs)." $bash_file";
+    } else {
+	system "qsub -q $opt{FREEC_QUEUE} -m a -M $opt{MAIL} -pe threaded $opt{FREEC_THREADS} -R $opt{CLUSTER_RESERVATION} -o $log_dir -e $log_dir -N $job_id $bash_file";
+    }
+
+    return $job_id;
+}
+
+
+
 ## Contra
 sub runContra {
     my ($sample_tumor, $out_dir, $job_dir, $log_dir, $sample_tumor_bam, $sample_ref_bam, $running_jobs, $opt) = (@_);
@@ -153,7 +248,7 @@ sub runContra {
 	return;
     }
 
-    ## Create strelka bash script
+    ## Create contra bash script
     my $job_id = "CNTR_".$sample_tumor."_".get_job_id();
     my $bash_file = $job_dir."/".$job_id.".sh";
 
@@ -175,7 +270,7 @@ sub runContra {
     print CONTRA_SH "\techo \"End Contra\t\" `date` \"\t $sample_ref_bam \t $sample_tumor_bam\t\" `uname -n` >> $log_dir/contra.log\n\n";
 
     print CONTRA_SH "else\n";
-    print CONTRA_SH "\techo \"ERROR: $sample_tumor_bam or $sample_ref_bam does not exist.\" >&2\n";
+    print CONTRA_SH "\techo \"ERROR: $sample_tumor_bam or $sample_ref_bam does not exist.\" >> $log_dir/contra.log\n";
     print CONTRA_SH "fi\n";
 
     close CONTRA_SH;
