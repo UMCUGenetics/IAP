@@ -153,6 +153,18 @@ sub runCheck {
 	    push( @runningJobs, @{$opt{RUNNING_JOBS}->{'CNV'}} );
 	}
     }
+    if($opt{DX} eq "yes"){
+	$doneFile = $opt{OUTPUT_DIR}."/logs/DX.done";
+	print BASH "if [ -f $doneFile ]; then\n";
+	print BASH "\techo \"DX: done \" >>$logFile\n";
+	print BASH "else\n";
+	print BASH "\techo \"DX: failed \">>$logFile\n";
+	print BASH "\tfailed=true\n";
+	print BASH "fi\n";
+	if ( $opt{RUNNING_JOBS}->{'DX'} ){
+	    push( @runningJobs, $opt{RUNNING_JOBS}->{'DX'} );
+	}
+    }
     if($opt{FILTER_VARIANTS} eq "yes"){
 	$doneFile = $opt{OUTPUT_DIR}."/logs/VariantFilter.done";
 	print BASH "if [ -f $doneFile ]; then\n";

@@ -28,6 +28,7 @@ use illumina_filterVariants;
 use illumina_somaticVariants;
 use illumina_copyNumber;
 use illumina_annotateVariants;
+use illumina_dx;
 use illumina_check;
 
 ### Check correct usage
@@ -165,6 +166,13 @@ if($opt{FILTER_VARIANTS} eq "yes"){
     }
 }
 
+### DX step
+if($opt{DX} eq "yes"){
+    print "\n###SCHEDULING Dx Module Jobs####\n";
+    my $dx_job = illumina_dx::runDX(\%opt);
+    $opt{RUNNING_JOBS}->{'DX'} = $dx_job;
+}
+
 ### Annotate variants
 if($opt{ANNOTATE_VARIANTS} eq "yes"){
     print "\n###SCHEDULING VARIANT ANNOTATION####\n";
@@ -286,6 +294,7 @@ sub checkConfig{
     if(! $opt{SOMATIC_VARIANTS}){ print "ERROR: No SOMATIC_VARIANTS option found in config files. \n"; $checkFailed = 1; }
     if(! $opt{COPY_NUMBER}){ print "ERROR: No COPY_NUMBER option found in config files. \n"; $checkFailed = 1; }
     if(! $opt{ANNOTATE_VARIANTS}){ print "ERROR: No ANNOTATE_VARIANTS option found in config files. \n"; $checkFailed = 1; }
+    if(! $opt{DX}){ print "ERROR: No DX option found in config files. \n"; $checkFailed = 1; }
     if(! $opt{CHECKING}){ print "ERROR: No CHECKING option found in config files. \n"; $checkFailed = 1; }
 
     ### Module Settings / tools
@@ -317,6 +326,7 @@ sub checkConfig{
     }
     ## POSTSTATS
     if($opt{POSTSTATS} eq "yes"){
+	if(! $opt{BAMMETRICS_PATH}){ print "ERROR: No BAMMETRICS_PATH option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{PICARD_PATH}){ print "ERROR: No PICARD_PATH option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{POSTSTATS_THREADS}){ print "ERROR: No POSTSTATS_THREADS option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{POSTSTATS_MEM}){ print "ERROR: No POSTSTATS_MEM option found in config files.\n"; $checkFailed = 1; }
