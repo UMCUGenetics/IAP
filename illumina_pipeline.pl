@@ -28,7 +28,7 @@ use illumina_filterVariants;
 use illumina_somaticVariants;
 use illumina_copyNumber;
 use illumina_annotateVariants;
-use illumina_dx;
+use illumina_vcfutils;
 use illumina_check;
 
 ### Check correct usage
@@ -166,13 +166,6 @@ if($opt{FILTER_VARIANTS} eq "yes"){
     }
 }
 
-### DX step
-if($opt{DX} eq "yes"){
-    print "\n###SCHEDULING Dx Module Jobs####\n";
-    my $dx_job = illumina_dx::runDX(\%opt);
-    $opt{RUNNING_JOBS}->{'DX'} = $dx_job;
-}
-
 ### Annotate variants
 if($opt{ANNOTATE_VARIANTS} eq "yes"){
     print "\n###SCHEDULING VARIANT ANNOTATION####\n";
@@ -181,6 +174,13 @@ if($opt{ANNOTATE_VARIANTS} eq "yes"){
     foreach my $sample (@{$opt{SAMPLES}}){
 	push (@{$opt{RUNNING_JOBS}->{$sample}} , $AVJob);
     }
+}
+
+### VCFUTILS step
+if($opt{VCF_UTILS} eq "yes"){
+    print "\n###SCHEDULING VCF UTILS Module Jobs####\n";
+    my $vcfutils_job = illumina_vcfutils::runVcfUtils(\%opt);
+    $opt{RUNNING_JOBS}->{'VCF_UTILS'} = $vcfutils_job;
 }
 
 if($opt{CHECKING} eq "yes"){
@@ -294,7 +294,7 @@ sub checkConfig{
     if(! $opt{SOMATIC_VARIANTS}){ print "ERROR: No SOMATIC_VARIANTS option found in config files. \n"; $checkFailed = 1; }
     if(! $opt{COPY_NUMBER}){ print "ERROR: No COPY_NUMBER option found in config files. \n"; $checkFailed = 1; }
     if(! $opt{ANNOTATE_VARIANTS}){ print "ERROR: No ANNOTATE_VARIANTS option found in config files. \n"; $checkFailed = 1; }
-    if(! $opt{DX}){ print "ERROR: No DX option found in config files. \n"; $checkFailed = 1; }
+    if(! $opt{VCF_UTILS}){ print "ERROR: No VCF_UTILS option found in config files. \n"; $checkFailed = 1; }
     if(! $opt{CHECKING}){ print "ERROR: No CHECKING option found in config files. \n"; $checkFailed = 1; }
 
     ### Module Settings / tools
@@ -504,6 +504,23 @@ sub checkConfig{
 	if($opt{ANNOTATE_IDFIELD} eq "yes"){
 	    if(! $opt{ANNOTATE_IDNAME}){ print "ERROR: No ANNOTATE_IDNAME option found in config files.\n"; $checkFailed = 1; }
 	    if(! $opt{ANNOTATE_IDDB}){ print "ERROR: No ANNOTATE_IDDB option found in config files.\n"; $checkFailed = 1; }
+	}
+    }
+    ## VCF_UTILS
+    if($opt{VCF_UTILS} eq "yes"){
+	if(! $opt{VCFUTILS_QUEUE}){ print "ERROR: No VCFUTILS_QUEUE found in .ini file\n"; $checkFailed = 1; }
+	if(! $opt{VCFUTILS_THREADS}){ print "ERROR: No VCFUTILS_THREADS found in .ini file\n"; $checkFailed = 1; }
+	#if(! $opt{VCFUTILS_SCATTER}){ print "ERROR: No VCFUTILS_SCATTER found in .ini file\n"; $checkFailed = 1; }
+	if(! $opt{VCFUTILS_MEM}){ print "ERROR: No VCFUTILS_MEM found in .ini file\n"; $checkFailed = 1; }
+	
+	if(! $opt{VCFUTILS_KINSHIP}){ print "ERROR: No VCFUTILS_KINSHIP found in .ini file\n"; $checkFailed = 1; }
+	if ( $opt{VCFUTILS_KINSHIP} eq "yes" ) {
+	    if(! $opt{PLINK_PATH}){ print "ERROR: No PLINK_PATH found in .ini file\n"; $checkFailed = 1; }
+	    if(! $opt{VCFTOOLS_PATH}){ print "ERROR: No VCFTOOLS_PATH found in .ini file\n"; $checkFailed = 1; }
+	}
+	if(! $opt{VCFUTILS_PHASE}){ print "ERROR: No VCFUTILS_PHASE found in .ini file\n"; $checkFailed = 1; }
+	if ( $opt{VCFUTILS_PHASE} eq "yes" ) {
+	    if(! $opt{PED}){ print "ERROR: No PED found in .conf file\n"; $checkFailed = 1; }
 	}
     }
     if ($checkFailed) { 
