@@ -26,7 +26,9 @@ sub runPostStats {
 	foreach my $sample (@{$opt{SAMPLES}}){
 	    my $sampleBam = "$opt{OUTPUT_DIR}/$sample/mapping/$opt{BAM_FILES}->{$sample}";
 	    $command .= "-bam $sampleBam ";
-	    push(@runningJobs, join(",",@{$opt{RUNNING_JOBS}->{$sample}}));
+	    if (@{$opt{RUNNING_JOBS}->{$sample}}) {
+		push(@runningJobs, join(",",@{$opt{RUNNING_JOBS}->{$sample}}));
+	    }
 	}
 	$command .= "-output_dir $opt{OUTPUT_DIR}/QCStats/ ";
 	$command .= "-run_name $runName ";
@@ -48,6 +50,10 @@ sub runPostStats {
 	
 	if ( $opt{SINGLE_END} ) {
 	    $command .= "-single_end ";
+	}
+	
+	if ( $opt{CLUSTER_RESERVATION} eq "yes") {
+	    $command .= "-queue_reserve ";
 	}
 	
 	my $bashFile = $opt{OUTPUT_DIR}."/jobs/".$jobID.".sh";
