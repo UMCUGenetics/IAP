@@ -138,8 +138,10 @@ if(! $opt{VCF} ){
     }
     if($opt{COPY_NUMBER} eq "yes"){
 	print "\n###SCHEDULING COPY NUMBER TOOLS####\n";
-	$opt_ref = illumina_copyNumber::parseSamples(\%opt);
-	%opt = %$opt_ref;
+	if($opt{CNV_MODE} eq "SAMPLE_CONTROL"){
+	    $opt_ref = illumina_copyNumber::parseSamples(\%opt);
+	    %opt = %$opt_ref;
+	}
 	my $cnv_jobs = illumina_copyNumber::runCopyNumberTools(\%opt);
 	$opt{RUNNING_JOBS}->{'CNV'} = $cnv_jobs;
     }
@@ -451,11 +453,13 @@ sub checkConfig{
 	if(! $opt{CNVCHECK_QUEUE} ) { print "ERROR: No CNVCHECK_QUEUE in config files.\n"; $checkFailed = 1; }
 	if(! $opt{CNVCHECK_THREADS} ) { print "ERROR: No CNVCHECK_THREADS  in config files.\n"; $checkFailed = 1; }
 	if(! $opt{CNV_CONTRA}){ print "ERROR: No CNV_CONTRA  in config files.\n"; $checkFailed = 1; }
+	if(! $opt{CNV_MODE}){ print "ERROR: No CNV_MODE in config files. \n"; $checkFailed = 1; }
 	if($opt{CNV_CONTRA} eq "yes"){
+	    if($opt{CNV_MODE} eq "sample"){ print "ERROR: Running Contra in CNV_MODE sample is not possible.\n"; }
 	    if(! $opt{CONTRA_PATH}){ print "ERROR: No CONTRA_PATH option found in config files.\n"; $checkFailed = 1; }
 	    if(! $opt{CONTRA_QUEUE}){ print "ERROR: No CONTRA_QUEUE option found in config files.\n"; $checkFailed = 1; }
 	    if(! $opt{CONTRA_THREADS}){ print "ERROR: No CONTRA_THREADS option found in config files.\n"; $checkFailed = 1; }
-	    if(! $opt{CONTRA_TARGETS}){ print "ERROR: No CONTRA_TARGETS option found in config files.\n"; $checkFailed = 1; }
+	    if(! $opt{CNV_TARGETS}){ print "ERROR: No CNV_TARGETS option found in config files.\n"; $checkFailed = 1; }
 	    if(! $opt{CONTRA_FLAGS}){ print "ERROR: No CONTRA_FLAGS option found in config files.\n"; $checkFailed = 1; }
 	    if(! $opt{CONTRA_VISUALIZATION}){ print "ERROR: No CONTRA_VISUALIZATION option found in config files.\n"; $checkFailed = 1; }
 	    if($opt{CONTRA_VISUALIZATION} eq "yes"){
