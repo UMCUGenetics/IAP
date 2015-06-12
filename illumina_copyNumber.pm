@@ -103,7 +103,7 @@ sub runCopyNumberTools {
 
 		## Skip Copy number tools if .done file exist
 		if (-e "$sample_tumor_log_dir/$sample_tumor_name.done"){
-		    print "WARNING: $sample_tumor_log_dir/$sample_tumor_name.done, skipping \n";
+		    print "WARNING: $sample_tumor_log_dir/$sample_tumor_name.done exists, skipping \n";
 		    next;
 		}
 
@@ -177,7 +177,7 @@ sub runCopyNumberTools {
 
 		## Skip Copy number tools if .done file exist
 		if (-e "$sample_log_dir/$sample.done"){
-		    print "WARNING: $sample_log_dir/$sample.done, skipping \n";
+		    print "WARNING: $sample_log_dir/$sample.done exists, skipping \n";
 		    next;
 		}
 
@@ -221,7 +221,7 @@ sub runFreec {
     
     ## Skip Contra if .done file exist
     if (-e "$log_dir/freec.done"){
-	print "WARNING: $log_dir/freec.done, skipping \n";
+	print "WARNING: $log_dir/freec.done exists, skipping \n";
 	return;
     }
 
@@ -314,7 +314,7 @@ sub runContra {
 
     ## Skip Contra if .done file exist
     if (-e "$log_dir/contra.done"){
-	print "WARNING: $log_dir/contra.done, skipping \n";
+	print "WARNING: $log_dir/contra.done exists, skipping \n";
 	return;
     }
 
@@ -362,7 +362,7 @@ sub runContraVisualization {
 
     ## Skip Contra if .done file exist
     if (-e "$log_dir/contra_visualization.done"){
-	print "WARNING: $log_dir/contra_visualization.done, skipping \n";
+	print "WARNING: $log_dir/contra_visualization.done exists, skipping \n";
 	return;
     }
     my $job_id = "CNTRVIS_".$sample_tumor."_".get_job_id();

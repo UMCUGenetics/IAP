@@ -99,7 +99,7 @@ sub runSomaticVariantCallers {
 
 	    ## Skip Somatic Callers if .done file exist
 	    if (-e "$sample_tumor_log_dir/$sample_tumor_name.done"){
-		print "WARNING: $sample_tumor_log_dir/$sample_tumor_name.done, skipping \n";
+		print "WARNING: $sample_tumor_log_dir/$sample_tumor_name.done exists, skipping \n";
 		next;
 	    }
 
@@ -246,7 +246,7 @@ sub runVarscan {
 
     ## Skip varscan if .done file exist
     if ( -e "$log_dir/varscan.done" ){
-	print "WARNING: $log_dir/varscan.done, skipping \n";
+	print "WARNING: $log_dir/varscan.done exists, skipping \n";
 	return;
     }
 
@@ -322,7 +322,7 @@ sub runFreeBayes {
 
     ## Skip freebayes if .done file exist
     if (-e "$log_dir/freebayes.done"){
-	print "WARNING: $log_dir/freebayes.done, skipping \n";
+	print "WARNING: $log_dir/freebayes.done exists, skipping \n";
 	return;
     }
 
