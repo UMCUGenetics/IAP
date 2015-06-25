@@ -13,8 +13,6 @@ use FindBin;
 sub runPostStats {
     my $configuration = shift;
     my %opt = %{$configuration};
-    my $javaMem = $opt{POSTSTATS_THREADS} * $opt{POSTSTATS_MEM};
-    my $picard = "java -Xmx".$javaMem."G -jar $opt{PICARD_PATH}";
     my @runningJobs; #internal job array
     my $runName = (split("/", $opt{OUTPUT_DIR}))[-1];
     my $jobID = "PostStats_".get_job_id();
