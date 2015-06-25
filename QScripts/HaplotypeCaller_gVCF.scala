@@ -74,9 +74,6 @@ class VariantCaller extends QScript {
 	    haplotypeCaller.variant_index_parameter = 128000
 
 	    // Optional input
-	    if (dbsnpFile != null) {
-		haplotypeCaller.D = dbsnpFile
-	    }
 	    if (targetFile != null) {
 		haplotypeCaller.L :+= targetFile
 		haplotypeCaller.ip = intervalPadding
@@ -94,10 +91,20 @@ class VariantCaller extends QScript {
 	
 	genotypeGVCFs.V = gvcfFiles
 	genotypeGVCFs.reference_sequence = referenceFile
-	genotypeGVCFs.scatterCount = numScatters // Probably don't need scatters.
+	genotypeGVCFs.scatterCount = numScatters
 	genotypeGVCFs.num_threads = numCPUThreads //for now use numCPUThreads, maybe change to new numDataThreads variable
 	
 	genotypeGVCFs.out = qscript.out + ".raw_variants.vcf"
+	
+	// Optional input
+	if (dbsnpFile != null) {
+	    genotypeGVCFs.D = dbsnpFile
+	}
+	
+	if (targetFile != null) {
+	    genotypeGVCFs.L :+= targetFile
+	    genotypeGVCFs.ip = intervalPadding
+	}
 	
 	add(genotypeGVCFs)
     }
