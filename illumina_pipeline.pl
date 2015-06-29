@@ -311,7 +311,6 @@ sub checkConfig{
 	if(! $opt{PRESTATS_THREADS}){ print "ERROR: No PRESTATS_THREADS option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{PRESTATS_MEM}){ print "ERROR: No PRESTATS_MEM option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{PRESTATS_QUEUE}){ print "ERROR: No PRESTATS_QUEUE option found in config files.\n"; $checkFailed = 1; }
-	if(! $opt{PRESTATS_PROJECT}){ print "ERROR: No PRESTATS_PROJECT option found in config files.\n"; $checkFailed = 1; }
     }
     ## MAPPING
     if($opt{MAPPING} eq "yes"){
@@ -319,7 +318,6 @@ sub checkConfig{
 	if(! $opt{MAPPING_THREADS}){ print "ERROR: No MAPPING_THREADS option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{MAPPING_MEM}){ print "ERROR: No MAPPING_MEM option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{MAPPING_QUEUE}){ print "ERROR: No MAPPING_QUEUE option found in config files.\n"; $checkFailed = 1; }
-	if(! $opt{MAPPING_PROJECT}){ print "ERROR: No MAPPING_PROJECT option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{MAPPING_MODE}){ print "ERROR: No MAPPING_MODE option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{MAPPING_MARKDUP}){ print "ERROR: No MAPPING_MARKDUP option found in config files.\n"; $checkFailed = 1; }
 	if( ($opt{MAPPING_MARKDUP} ne "lane") && ($opt{MAPPING_MARKDUP} ne "sample") && ($opt{MAPPING_MARKDUP} ne "no")){
@@ -348,7 +346,6 @@ sub checkConfig{
 	if(! $opt{REALIGNMENT_MASTERQUEUE}){ print "ERROR: No REALIGNMENT_MASTERQUEUE option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{REALIGNMENT_MASTERTHREADS}){ print "ERROR: No REALIGNMENT_MASTERTHREADS option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{REALIGNMENT_QUEUE}){ print "ERROR: No REALIGNMENT_QUEUE option found in config files.\n"; $checkFailed = 1; }
-	if(! $opt{REALIGNMENT_PROJECT}){ print "ERROR: No REALIGNMENT_PROJECT option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{REALIGNMENT_THREADS}){ print "ERROR: No REALIGNMENT_THREADS option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{REALIGNMENT_MERGETHREADS}){ print "ERROR: No REALIGNMENT_MERGETHREADS option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{REALIGNMENT_MEM}){ print "ERROR: No REALIGNMENT_MEM option found in config files.\n"; $checkFailed = 1; }
