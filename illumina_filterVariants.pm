@@ -32,7 +32,7 @@ sub runFilterVariants {
     ### Build Queue command
     my $javaMem = $opt{FILTER_MASTERTHREADS} * $opt{FILTER_MEM};
     my $command = "java -Xmx".$javaMem."G -Xms".$opt{FILTER_MEM}."G -jar $opt{QUEUE_PATH}/Queue.jar "; ### Change memory allocation here!!!!!
-    $command .= "-jobQueue $opt{FILTER_QUEUE} -jobNative \"-pe threaded $opt{FILTER_THREADS}\" -jobRunner GridEngine -jobReport $opt{OUTPUT_DIR}/logs/VariantFilter.jobReport.txt "; #Queue options
+    $command .= "-jobQueue $opt{FILTER_QUEUE} -jobNative \"-pe threaded $opt{FILTER_THREADS} -P $opt{CLUSTER_PROJECT}\" -jobRunner GridEngine -jobReport $opt{OUTPUT_DIR}/logs/VariantFilter.jobReport.txt "; #Queue options
 
     ### Common settings
     $command .= "-S $opt{FILTER_SCALA} -R $opt{GENOME} -V $opt{OUTPUT_DIR}/$runName\.raw_variants.vcf -O $runName -mem $opt{FILTER_MEM} -nsc $opt{FILTER_SCATTER} -mode $opt{FILTER_MODE} ";
@@ -121,9 +121,9 @@ sub runFilterVariants {
 
     ### Start main bash script
     if (@runningJobs){
-	system "qsub -q $opt{FILTER_MASTERQUEUE} -m a -M $opt{MAIL} -pe threaded $opt{FILTER_MASTERTHREADS} -o $logDir/VariantFilter_$runName.out -e $logDir/VariantFilter_$runName.err -N $jobID -hold_jid ".join(",",@runningJobs)." $bashFile";
+	system "qsub -q $opt{FILTER_MASTERQUEUE} -m a -M $opt{MAIL} -pe threaded $opt{FILTER_MASTERTHREADS} -P $opt{CLUSTER_PROJECT} -o $logDir/VariantFilter_$runName.out -e $logDir/VariantFilter_$runName.err -N $jobID -hold_jid ".join(",",@runningJobs)." $bashFile";
     } else {
-	system "qsub -q $opt{FILTER_MASTERQUEUE} -m a -M $opt{MAIL} -pe threaded $opt{FILTER_MASTERTHREADS} -o $logDir/VariantFilter_$runName.out -e $logDir/VariantFilter_$runName.err -N $jobID $bashFile";
+	system "qsub -q $opt{FILTER_MASTERQUEUE} -m a -M $opt{MAIL} -pe threaded $opt{FILTER_MASTERTHREADS} -P $opt{CLUSTER_PROJECT} -o $logDir/VariantFilter_$runName.out -e $logDir/VariantFilter_$runName.err -N $jobID $bashFile";
     }
 
     return $jobID;

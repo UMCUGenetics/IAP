@@ -66,9 +66,9 @@ sub runPostStats {
 	close BM_SH;
 	
 	if (@runningJobs){
-	    system "qsub -q $opt{POSTSTATS_QUEUE} -m a -M $opt{MAIL} -pe threaded $opt{POSTSTATS_THREADS} -R $opt{CLUSTER_RESERVATION} -o $logDir/PostStats_$runName.out -e $logDir/PostStats_$runName.err -N $jobID -hold_jid ".join(",",@runningJobs)." $bashFile";
+	    system "qsub -q $opt{POSTSTATS_QUEUE} -m a -M $opt{MAIL} -pe threaded $opt{POSTSTATS_THREADS} -R $opt{CLUSTER_RESERVATION} -P $opt{CLUSTER_PROJECT} -o $logDir/PostStats_$runName.out -e $logDir/PostStats_$runName.err -N $jobID -hold_jid ".join(",",@runningJobs)." $bashFile";
 	} else {
-	    system "qsub -q $opt{POSTSTATS_QUEUE} -m a -M $opt{MAIL} -pe threaded $opt{POSTSTATS_THREADS} -R $opt{CLUSTER_RESERVATION} -o $logDir/PostStats_$runName.out -e $logDir/PostStats_$runName.err -N $jobID $bashFile";
+	    system "qsub -q $opt{POSTSTATS_QUEUE} -m a -M $opt{MAIL} -pe threaded $opt{POSTSTATS_THREADS} -R $opt{CLUSTER_RESERVATION} -P $opt{CLUSTER_PROJECT} -o $logDir/PostStats_$runName.out -e $logDir/PostStats_$runName.err -N $jobID $bashFile";
 	}
 	
 	### Check BamMetrics result
@@ -81,7 +81,7 @@ sub runPostStats {
 	print BMCHECK_SH "fi\n";
 	close BMCHECK_SH;
 
-	system "qsub -q $opt{POSTSTATS_QUEUE} -m a -M $opt{MAIL} -pe threaded $opt{POSTSTATS_THREADS} -R $opt{CLUSTER_RESERVATION} -o $logDir/PostStats_$runName.out -e $logDir/PostStats_$runName.err -N $jobIDCheck -hold_jid bamMetrics_report_".$runName.",$jobID $bashFileCheck";
+	system "qsub -q $opt{POSTSTATS_QUEUE} -m a -M $opt{MAIL} -pe threaded $opt{POSTSTATS_THREADS} -R $opt{CLUSTER_RESERVATION} -P $opt{CLUSTER_PROJECT} -o $logDir/PostStats_$runName.out -e $logDir/PostStats_$runName.err -N $jobIDCheck -hold_jid bamMetrics_report_".$runName.",$jobID $bashFileCheck";
 	return $jobIDCheck;
 
     } else {
@@ -111,9 +111,9 @@ sub bashAndSubmit {
     print OUT "$command\n";
     
     if ( @{$opt{RUNNING_JOBS}->{$sample}} ){
-	system "qsub -q $opt{POSTSTATS_QUEUE} -pe threaded $opt{POSTSTATS_THREADS} -R $opt{CLUSTER_RESERVATION} -o $logDir/PostStats_".$sample."_".$jobID.".out -e $logDir/PostStats_".$sample."_".$jobID.".err -N $jobID -hold_jid ".join(",",@{$opt{RUNNING_JOBS}->{$sample} })." $bashFile";
+	system "qsub -q $opt{POSTSTATS_QUEUE} -pe threaded $opt{POSTSTATS_THREADS} -R $opt{CLUSTER_RESERVATION} -P $opt{CLUSTER_PROJECT} -o $logDir/PostStats_".$sample."_".$jobID.".out -e $logDir/PostStats_".$sample."_".$jobID.".err -N $jobID -hold_jid ".join(",",@{$opt{RUNNING_JOBS}->{$sample} })." $bashFile";
     } else {
-	system "qsub -q $opt{POSTSTATS_QUEUE} -pe threaded $opt{POSTSTATS_THREADS} -R $opt{CLUSTER_RESERVATION} -o $logDir/PostStats_".$sample."_".$jobID.".out -e $logDir/PostStats_".$sample."_".$jobID.".err -N $jobID $bashFile";
+	system "qsub -q $opt{POSTSTATS_QUEUE} -pe threaded $opt{POSTSTATS_THREADS} -R $opt{CLUSTER_RESERVATION} -P $opt{CLUSTER_PROJECT} -o $logDir/PostStats_".$sample."_".$jobID.".out -e $logDir/PostStats_".$sample."_".$jobID.".err -N $jobID $bashFile";
     }
     return $jobID;
 }

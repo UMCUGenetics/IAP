@@ -84,9 +84,9 @@ sub runVcfUtils {
     
     ### Run job
     if (@runningJobs){
-	system "qsub -q $opt{VCFUTILS_QUEUE} -m a -M $opt{MAIL} -pe threaded $opt{VCFUTILS_THREADS} -o $logDir/VCFUTILS_$runName.out -e $logDir/VCFUTILS_$runName.err -N $jobID -hold_jid ".join(",",@runningJobs)." $bashFile";
+	system "qsub -q $opt{VCFUTILS_QUEUE} -m a -M $opt{MAIL} -pe threaded $opt{VCFUTILS_THREADS} -P $opt{CLUSTER_PROJECT} -o $logDir/VCFUTILS_$runName.out -e $logDir/VCFUTILS_$runName.err -N $jobID -hold_jid ".join(",",@runningJobs)." $bashFile";
     } else {
-	system "qsub -q $opt{VCFUTILS_QUEUE} -m a -M $opt{MAIL} -pe threaded $opt{VCFUTILS_THREADS} -o $logDir/VCFUTILS_$runName.out -e $logDir/VCFUTILS_$runName.err -N $jobID $bashFile";
+	system "qsub -q $opt{VCFUTILS_QUEUE} -m a -M $opt{MAIL} -pe threaded $opt{VCFUTILS_THREADS} -P $opt{CLUSTER_PROJECT} -o $logDir/VCFUTILS_$runName.out -e $logDir/VCFUTILS_$runName.err -N $jobID $bashFile";
     }
     
     return $jobID;

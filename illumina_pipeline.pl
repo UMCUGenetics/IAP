@@ -284,6 +284,7 @@ sub checkConfig{
     if(! $opt{CLUSTER_PATH}){ print "ERROR: No CLUSTER_PATH option found in config files.\n"; $checkFailed = 1; }
     if(! $opt{CLUSTER_TMP}){ print "ERROR: No CLUSTER_TMP option found in config files.\n"; $checkFailed = 1; }
     if(! $opt{CLUSTER_RESERVATION}){ print "ERROR: No CLUSTER_RESERVATION option found in config files.\n"; $checkFailed = 1; }
+    if(! $opt{CLUSTER_PROJECT}){ print "ERROR: No CLUSTER_PROJECT option found in config files.\n"; $checkFailed = 1; }
 
     ### Module yes or No
     if(! $opt{PRESTATS}){ print "ERROR: No PRESTATS option found in config files. \n"; $checkFailed = 1; }

@@ -47,7 +47,7 @@ sub runPreStats {
 	    print PS "echo \"End PreStats\t\" `date` \"\t$coreName\t\" `uname -n` >> $opt{OUTPUT_DIR}/$sampleName/logs/$sampleName.log\n";
 	    close PS;
 
-	    print QSUB "qsub -pe threaded $opt{PRESTATS_THREADS} -m a -M $opt{MAIL} -q $opt{PRESTATS_QUEUE} -P $opt{PRESTATS_PROJECT} -R $opt{CLUSTER_RESERVATION} -o $opt{OUTPUT_DIR}/$sampleName/logs/PreStat_$coreName.out -e $opt{OUTPUT_DIR}/$sampleName/logs/PreStats_$coreName.err -N $preStatsJobId $opt{OUTPUT_DIR}/$sampleName/jobs/$preStatsJobId.sh\n";
+	    print QSUB "qsub -pe threaded $opt{PRESTATS_THREADS} -m a -M $opt{MAIL} -q $opt{PRESTATS_QUEUE} -R $opt{CLUSTER_RESERVATION} -P $opt{CLUSTER_PROJECT} -o $opt{OUTPUT_DIR}/$sampleName/logs/PreStat_$coreName.out -e $opt{OUTPUT_DIR}/$sampleName/logs/PreStats_$coreName.err -N $preStatsJobId $opt{OUTPUT_DIR}/$sampleName/jobs/$preStatsJobId.sh\n";
 	} else {
 	    print "\t WARNING: FASTQC report for $input already exists, skipping.\n";
 	}

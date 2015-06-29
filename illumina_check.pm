@@ -231,9 +231,9 @@ sub runCheck {
     #Start main bash script
     my $logDir = $opt{OUTPUT_DIR}."/logs";
     if (@runningJobs){
-	system "qsub -q $opt{CHECKING_QUEUE} -m a -M $opt{MAIL} -pe threaded $opt{CHECKING_THREADS} -o /dev/null -e /dev/null -N check_$jobID -hold_jid ".join(",",@runningJobs)." $bashFile";
+	system "qsub -q $opt{CHECKING_QUEUE} -m a -M $opt{MAIL} -pe threaded $opt{CHECKING_THREADS} -P $opt{CLUSTER_PROJECT} -o /dev/null -e /dev/null -N check_$jobID -hold_jid ".join(",",@runningJobs)." $bashFile";
     } else {
-	system "qsub -q $opt{CHECKING_QUEUE} -m a -M $opt{MAIL} -pe threaded $opt{CHECKING_THREADS} -o /dev/null -e /dev/null -N check_$jobID $bashFile";
+	system "qsub -q $opt{CHECKING_QUEUE} -m a -M $opt{MAIL} -pe threaded $opt{CHECKING_THREADS} -P $opt{CLUSTER_PROJECT} -o /dev/null -e /dev/null -N check_$jobID $bashFile";
     }
 }
 
