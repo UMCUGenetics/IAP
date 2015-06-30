@@ -8,7 +8,7 @@ CLUSTER_PROJECT	cog_bioinf
 BWA_PATH	/data_fedor13/common_scripts/bwa/0.7.5a
 SAMBAMBA_PATH	/data_fedor13/common_scripts/sambamba/sambamba_v0.4.5-pre
 QUEUE_PATH	/data_fedor13/common_scripts/gatk/GenomeAnalysisTK-2.8-1-g932cd3a/Queue-2.8-1-g932cd3a
-PICARD_PATH	/data_fedor13/common_scripts/picard/picard-tools-1.98
+PICARD_PATH	/data_fedor13/common_scripts/picard/picard-tools-1.135
 BAMMETRICS_PATH	/hpc/cog_bioinf/data/robert/scripts/bamMetrics
 FASTQC_PATH	/data_fedor13/common_scripts/fastqc/FastQC_v0.10.1
 GATK_PATH	/data_fedor13/common_scripts/gatk/GenomeAnalysisTK-2.8-1-g932cd3a
