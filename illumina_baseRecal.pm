@@ -107,6 +107,10 @@ sub runBaseRecalibration {
 	print BASERECALFS_SH "\tthen\n";
 	print BASERECALFS_SH "\t\tmv $opt{OUTPUT_DIR}/$sample/tmp/$outBam $opt{OUTPUT_DIR}/$sample/mapping/\n";
 	print BASERECALFS_SH "\t\tmv $opt{OUTPUT_DIR}/$sample/tmp/$outBai $opt{OUTPUT_DIR}/$sample/mapping/\n";
+	print BASERECALFS_SH "\t\tmv $opt{OUTPUT_DIR}/$sample/tmp/*_baseRecalibration.pdf $opt{OUTPUT_DIR}/$sample/logs/\n";
+	print BASERECALFS_SH "\t\tmv $opt{OUTPUT_DIR}/$sample/tmp/*_post_recal_data.table $opt{OUTPUT_DIR}/$sample/logs/\n";
+	print BASERECALFS_SH "\t\tmv $opt{OUTPUT_DIR}/$sample/tmp/*_recal_data.table $opt{OUTPUT_DIR}/$sample/logs/\n";
+
 	print BASERECALFS_SH "\t\ttouch $opt{OUTPUT_DIR}/$sample/logs/BaseRecalibration_$sample.done\n";
 	print BASERECALFS_SH "\telse\n";
 	print BASERECALFS_SH "\t\techo \"ERROR: $opt{OUTPUT_DIR}/$sample/mapping/$inFlagstat and $opt{OUTPUT_DIR}/$sample/mapping/$outFlagstat do not have the same read counts\" >>../logs/BaseRecalibration_$sample.err\n";
