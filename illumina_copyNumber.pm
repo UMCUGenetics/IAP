@@ -373,6 +373,7 @@ sub runContraVisualization {
     print CONTRAVIS_SH "if [ -f $log_dir/contra.done ]\n";
     print CONTRAVIS_SH "\tthen\n";
     print CONTRAVIS_SH "\tperl $opt{CONTRA_PLOTSCRIPT} -input $contra_out_dir/table/$sample_tumor.CNATable.10rd.10bases.20bins.txt -d $opt{CONTRA_PLOTDESIGN}\n";
+    print CONTRAVIS_SH "\tchmod 644 $contra_out_dir/table/*\n";
     print CONTRAVIS_SH "touch $log_dir/contra_visualization.done\n";
     print CONTRAVIS_SH "fi\n";
     close CONTRAVIS_SH;
