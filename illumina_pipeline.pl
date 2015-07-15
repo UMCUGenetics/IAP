@@ -138,7 +138,7 @@ if(! $opt{VCF} ){
     }
     if($opt{COPY_NUMBER} eq "yes"){
 	print "\n###SCHEDULING COPY NUMBER TOOLS####\n";
-	if($opt{CNV_MODE} eq "SAMPLE_CONTROL"){
+	if($opt{CNV_MODE} eq "sample_control"){
 	    $opt_ref = illumina_copyNumber::parseSamples(\%opt);
 	    %opt = %$opt_ref;
 	}
