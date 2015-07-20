@@ -48,7 +48,7 @@ sub runRealignment {
 	print REALIGN_SH "cd $opt{OUTPUT_DIR}/tmp\n";
 	print REALIGN_SH "uname -n > ../logs/$jobId.host\n";
 	print REALIGN_SH "echo \"Start indel realignment\t\" `date` >> ../logs/$runName.log\n";
-	print REALIGN_SH "java -Djava.io.tmpdir=$opt{OUTPUT_DIR}/tmp/ -Xmx".$javaMem."G -jar $opt{QUEUE_PATH}/Queue.jar -R $opt{GENOME} -S $opt{REALIGNMENT_SCALA} -jobQueue $opt{REALIGNMENT_QUEUE} -nt $opt{REALIGNMENT_THREADS} -mem $opt{REALIGNMENT_MEM} -nsc $opt{REALIGNMENT_SCATTER} -mode $opt{REALIGNMENT_MODE} -jobNative \"-pe threaded $opt{REALIGNMENT_THREADS}\" -run ";
+	print REALIGN_SH "java -Djava.io.tmpdir=$opt{OUTPUT_DIR}/tmp/ -Xmx".$javaMem."G -jar $opt{QUEUE_PATH}/Queue.jar -R $opt{GENOME} -S $opt{REALIGNMENT_SCALA} -jobQueue $opt{REALIGNMENT_QUEUE} -nt $opt{REALIGNMENT_THREADS} -mem $opt{REALIGNMENT_MEM} -nsc $opt{REALIGNMENT_SCATTER} -mode $opt{REALIGNMENT_MODE} -jobNative \"-pe threaded $opt{REALIGNMENT_THREADS} -P $opt{CLUSTER_PROJECT}\" -run ";
 	
 	if($opt{REALIGNMENT_KNOWN}) {
 	    foreach my $knownIndelFile (@knownIndelFiles) {
@@ -118,7 +118,7 @@ sub runRealignment {
 	    print CLEAN_SH "\techo \"ERROR: $opt{OUTPUT_DIR}/$sample/mapping/$realignedBam didn't finish properly.\" >> $opt{OUTPUT_DIR}/logs/realn_cleanup.err\n";
 	    print CLEAN_SH "fi\n\n";
 	    
-	    $mergeJobs .= "qsub -q $opt{REALIGNMENT_QUEUE} -p 100 -P $opt{REALIGNMENT_PROJECT} -m a -M $opt{MAIL} -pe threaded $opt{REALIGNMENT_MERGETHREADS} -o $opt{OUTPUT_DIR}/$sample/logs -e $opt{OUTPUT_DIR}/$sample/logs -N $mergeJobId -hold_jid $jobId $opt{OUTPUT_DIR}/$sample/jobs/$mergeJobId.sh\n";
+	    $mergeJobs .= "qsub -q $opt{REALIGNMENT_QUEUE} -p 100 -m a -M $opt{MAIL} -pe threaded $opt{REALIGNMENT_MERGETHREADS} -P $opt{CLUSTER_PROJECT} -o $opt{OUTPUT_DIR}/$sample/logs -e $opt{OUTPUT_DIR}/$sample/logs -N $mergeJobId -hold_jid $jobId $opt{OUTPUT_DIR}/$sample/jobs/$mergeJobId.sh\n";
 	    push(@{$opt{RUNNING_JOBS}->{$sample}}, $mergeJobId);
 	}
 	
@@ -133,8 +133,8 @@ sub runRealignment {
 	print CLEAN_SH "fi\n";
 	close CLEAN_SH;
 	
-	print QSUB "qsub -q $opt{REALIGNMENT_MASTERQUEUE} -P $opt{REALIGNMENT_PROJECT} -m a -M $opt{MAIL} -pe threaded $opt{REALIGNMENT_MASTERTHREADS} -o $opt{OUTPUT_DIR}/logs -e $opt{OUTPUT_DIR}/logs -N $jobId -hold_jid ".join(",", @waitFor)." $opt{OUTPUT_DIR}/jobs/$jobId.sh\n";
-	print QSUB "qsub -q $opt{REALIGNMENT_MASTERQUEUE} -P $opt{REALIGNMENT_PROJECT} -m a -M $opt{MAIL} -pe threaded $opt{REALIGNMENT_MASTERTHREADS} -o $opt{OUTPUT_DIR}/logs -e $opt{OUTPUT_DIR}/logs -N $cleanupJobId -hold_jid $jobId $opt{OUTPUT_DIR}/jobs/$cleanupJobId.sh\n";
+	print QSUB "qsub -q $opt{REALIGNMENT_MASTERQUEUE} -m a -M $opt{MAIL} -pe threaded $opt{REALIGNMENT_MASTERTHREADS} -P $opt{CLUSTER_PROJECT} -o $opt{OUTPUT_DIR}/logs -e $opt{OUTPUT_DIR}/logs -N $jobId -hold_jid ".join(",", @waitFor)." $opt{OUTPUT_DIR}/jobs/$jobId.sh\n";
+	print QSUB "qsub -q $opt{REALIGNMENT_MASTERQUEUE} -m a -M $opt{MAIL} -pe threaded $opt{REALIGNMENT_MASTERTHREADS} -P $opt{CLUSTER_PROJECT} -o $opt{OUTPUT_DIR}/logs -e $opt{OUTPUT_DIR}/logs -N $cleanupJobId -hold_jid $jobId $opt{OUTPUT_DIR}/jobs/$cleanupJobId.sh\n";
 	print QSUB $mergeJobs."\n";
 	
 	system("sh $mainJobID");
@@ -172,7 +172,7 @@ sub runRealignment {
 	    
 	    print REALIGN_SH "if [ -f $opt{OUTPUT_DIR}/$sample/mapping/$bam ]\n";
 	    print REALIGN_SH "then\n";
-	    print REALIGN_SH "\tjava -Djava.io.tmpdir=$opt{OUTPUT_DIR}/$sample/tmp -Xmx".$javaMem."G -jar $opt{QUEUE_PATH}/Queue.jar -R $opt{GENOME} -S $opt{REALIGNMENT_SCALA} -jobQueue $opt{REALIGNMENT_QUEUE} -nt $opt{REALIGNMENT_THREADS} -mem $opt{REALIGNMENT_MEM} -nsc $opt{REALIGNMENT_SCATTER} -mode $opt{REALIGNMENT_MODE} -jobNative \"-pe threaded $opt{REALIGNMENT_THREADS}\" ";
+	    print REALIGN_SH "\tjava -Djava.io.tmpdir=$opt{OUTPUT_DIR}/$sample/tmp -Xmx".$javaMem."G -jar $opt{QUEUE_PATH}/Queue.jar -R $opt{GENOME} -S $opt{REALIGNMENT_SCALA} -jobQueue $opt{REALIGNMENT_QUEUE} -nt $opt{REALIGNMENT_THREADS} -mem $opt{REALIGNMENT_MEM} -nsc $opt{REALIGNMENT_SCATTER} -mode $opt{REALIGNMENT_MODE} -jobNative \"-pe threaded $opt{REALIGNMENT_THREADS} -P $opt{CLUSTER_PROJECT}\" ";
 	    
 	    if($opt{REALIGNMENT_KNOWN}) {
 		foreach my $knownIndelFile (@knownIndelFiles) {
@@ -194,9 +194,9 @@ sub runRealignment {
 
 	    ### Submit realign bash script
 	    if ( @{$opt{RUNNING_JOBS}->{$sample}} ){
-		system "qsub -q $opt{REALIGNMENT_MASTERQUEUE} -P $opt{REALIGNMENT_PROJECT} -m a -M $opt{MAIL} -pe threaded $opt{REALIGNMENT_MASTERTHREADS} -o $logDir/Realignment_$sample.out -e $logDir/Realignment_$sample.err -N $jobID -hold_jid ".join(",",@{$opt{RUNNING_JOBS}->{$sample}})." $bashFile";
+		system "qsub -q $opt{REALIGNMENT_MASTERQUEUE} -m a -M $opt{MAIL} -pe threaded $opt{REALIGNMENT_MASTERTHREADS} -P $opt{CLUSTER_PROJECT} -o $logDir/Realignment_$sample.out -e $logDir/Realignment_$sample.err -N $jobID -hold_jid ".join(",",@{$opt{RUNNING_JOBS}->{$sample}})." $bashFile";
 	    } else {
-		system "qsub -q $opt{REALIGNMENT_MASTERQUEUE} -P $opt{REALIGNMENT_PROJECT} -m a -M $opt{MAIL} -pe threaded $opt{REALIGNMENT_MASTERTHREADS} -o $logDir/Realignment_$sample.out -e $logDir/Realignment_$sample.err -N $jobID $bashFile";
+		system "qsub -q $opt{REALIGNMENT_MASTERQUEUE} -m a -M $opt{MAIL} -pe threaded $opt{REALIGNMENT_MASTERTHREADS} -P $opt{CLUSTER_PROJECT} -o $logDir/Realignment_$sample.out -e $logDir/Realignment_$sample.err -N $jobID $bashFile";
 	    }
 	    
 	    ### Create flagstat bash script
@@ -233,7 +233,7 @@ sub runRealignment {
 	    close REALIGNFS_SH;
 	    
 	    ### Submit flagstat bash script
-	    system "qsub -q $opt{FLAGSTAT_QUEUE} -m a -M $opt{MAIL} -pe threaded $opt{FLAGSTAT_THREADS} -R $opt{CLUSTER_RESERVATION} -o $logDir/RealignmentFS_$sample.out -e $logDir/RealignmentFS_$sample.err -N $jobIDFS -hold_jid $jobID $bashFileFS";
+	    system "qsub -q $opt{FLAGSTAT_QUEUE} -m a -M $opt{MAIL} -pe threaded $opt{FLAGSTAT_THREADS} -R $opt{CLUSTER_RESERVATION} -P $opt{CLUSTER_PROJECT} -o $logDir/RealignmentFS_$sample.out -e $logDir/RealignmentFS_$sample.err -N $jobIDFS -hold_jid $jobID $bashFileFS";
 	    
 	    push(@{$opt{RUNNING_JOBS}->{$sample}}, $jobID);
 	    push(@{$opt{RUNNING_JOBS}->{$sample}}, $jobIDFS);

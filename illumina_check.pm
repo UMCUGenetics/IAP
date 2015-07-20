@@ -64,18 +64,18 @@ sub runCheck {
 	    if($opt{INDELREALIGNMENT} eq "yes"){
 		$doneFile = $opt{OUTPUT_DIR}."/$sample/logs/Realignment_$sample.done";
 		print BASH "if [ -f $doneFile ]; then\n";
-		print BASH "\techo \"\t IndelRealignment: done \" >>$logFile\n";
+		print BASH "\techo \"\t Indel realignment: done \" >>$logFile\n";
 		print BASH "else\n";
-		print BASH "\techo \"\t IndelRealignment: failed \">>$logFile\n";
+		print BASH "\techo \"\t Indel realignment: failed \">>$logFile\n";
 		print BASH "\tfailed=true\n";
 		print BASH "fi\n";
 	    }
 	    if($opt{BASEQUALITYRECAL} eq "yes"){
 		$doneFile = $opt{OUTPUT_DIR}."/$sample/logs/BaseRecalibration_$sample.done";
 		print BASH "if [ -f $doneFile ]; then\n";
-		print BASH "\techo \"\t BaseRecalibration: done \" >>$logFile\n";
+		print BASH "\techo \"\t Base recalibration: done \" >>$logFile\n";
 		print BASH "else\n";
-		print BASH "\techo \"\t BaseRecalibration: failed \">>$logFile\n";
+		print BASH "\techo \"\t Base recalibration: failed \">>$logFile\n";
 		print BASH "\tfailed=true\n";
 		print BASH "fi\n";
 	    }
@@ -103,14 +103,14 @@ sub runCheck {
     if($opt{VARIANT_CALLING} eq "yes" && ! $opt{VCF}){
 	$doneFile = $opt{OUTPUT_DIR}."/logs/VariantCaller.done";
 	print BASH "if [ -f $doneFile ]; then\n";
-	print BASH "\techo \"VariantCaller: done \" >>$logFile\n";
+	print BASH "\techo \"Variant caller: done \" >>$logFile\n";
 	print BASH "else\n";
-	print BASH "\techo \"VariantCaller: failed \">>$logFile\n";
+	print BASH "\techo \"Variant caller: failed \">>$logFile\n";
 	print BASH "\tfailed=true\n";
 	print BASH "fi\n";
     }
     if($opt{SOMATIC_VARIANTS} eq "yes"){
-	print BASH "echo \"Somatic Variants:\" >>$logFile\n";
+	print BASH "echo \"Somatic variants:\" >>$logFile\n";
 	foreach my $sample (keys(%{$opt{SOMATIC_SAMPLES}})){
 	    foreach my $sample_tumor (@{$opt{SOMATIC_SAMPLES}{$sample}{'tumor'}}){
 		# Check correct sample ref
@@ -132,19 +132,31 @@ sub runCheck {
 	}
     }
     if($opt{COPY_NUMBER} eq "yes"){
-	print BASH "echo \"Copy Number Analysis:\" >>$logFile\n";
-	foreach my $sample (keys(%{$opt{SOMATIC_SAMPLES}})){
-	    foreach my $sample_tumor (@{$opt{SOMATIC_SAMPLES}{$sample}{'tumor'}}){
-		# Check correct sample ref
-		if (! $opt{SOMATIC_SAMPLES}{$sample}{'ref'}){
-		    next;
+	print BASH "echo \"Copy number analysis:\" >>$logFile\n";
+	if($opt{CNV_MODE} eq "sample_control"){
+	    foreach my $sample (keys(%{$opt{SOMATIC_SAMPLES}})){
+		foreach my $sample_tumor (@{$opt{SOMATIC_SAMPLES}{$sample}{'tumor'}}){
+		    # Check correct sample ref
+		    if (! $opt{SOMATIC_SAMPLES}{$sample}{'ref'}){
+			next;
+		    }
+		    my $sample_tumor_name = "$opt{SOMATIC_SAMPLES}{$sample}{'ref'}\_$sample_tumor";
+		    my $done_file = "$opt{OUTPUT_DIR}/copyNumber/$sample_tumor_name/logs/$sample_tumor_name.done";
+		    print BASH "if [ -f $done_file ]; then\n";
+		    print BASH "\techo \"\t $sample_tumor_name: done \" >>$logFile\n";
+		    print BASH "else\n";
+		    print BASH "\techo \"\t $sample_tumor_name: failed \">>$logFile\n";
+		    print BASH "\tfailed=true\n";
+		    print BASH "fi\n";
 		}
-		my $sample_tumor_name = "$opt{SOMATIC_SAMPLES}{$sample}{'ref'}\_$sample_tumor";
-		my $done_file = "$opt{OUTPUT_DIR}/copyNumber/$sample_tumor_name/logs/$sample_tumor_name.done";
+	    }
+	} elsif($opt{CNV_MODE} eq "sample"){
+	    foreach my $sample (@{$opt{SAMPLES}}){
+		my $done_file = "$opt{OUTPUT_DIR}/copyNumber/$sample/logs/$sample.done";
 		print BASH "if [ -f $done_file ]; then\n";
-		print BASH "\techo \"\t $sample_tumor_name: done \" >>$logFile\n";
+		print BASH "\techo \"\t $sample: done \" >>$logFile\n";
 		print BASH "else\n";
-		print BASH "\techo \"\t $sample_tumor_name: failed \">>$logFile\n";
+		print BASH "\techo \"\t $sample: failed \">>$logFile\n";
 		print BASH "\tfailed=true\n";
 		print BASH "fi\n";
 	    }
@@ -156,22 +168,33 @@ sub runCheck {
     if($opt{FILTER_VARIANTS} eq "yes"){
 	$doneFile = $opt{OUTPUT_DIR}."/logs/VariantFilter.done";
 	print BASH "if [ -f $doneFile ]; then\n";
-	print BASH "\techo \"VariantFilter: done \" >>$logFile\n";
+	print BASH "\techo \"Variant filter: done \" >>$logFile\n";
 	print BASH "else\n";
-	print BASH "\techo \"VariantFilter: failed \">>$logFile\n";
+	print BASH "\techo \"Variant filter: failed \">>$logFile\n";
 	print BASH "\tfailed=true\n";
 	print BASH "fi\n";
     }
     if($opt{ANNOTATE_VARIANTS} eq "yes"){
 	$doneFile = $opt{OUTPUT_DIR}."/logs/VariantAnnotation.done";
 	print BASH "if [ -f $doneFile ]; then\n";
-	print BASH "\techo \"VariantAnnotation: done \" >>$logFile\n";
+	print BASH "\techo \"Variant annotation: done \" >>$logFile\n";
 	print BASH "else\n";
-	print BASH "\techo \"VariantAnnotation: failed \">>$logFile\n";
+	print BASH "\techo \"Variant annotation: failed \">>$logFile\n";
 	print BASH "\tfailed=true\n";
 	print BASH "fi\n";
     }
-
+    if($opt{VCF_UTILS} eq "yes"){
+	$doneFile = $opt{OUTPUT_DIR}."/logs/VCF_UTILS.done";
+	print BASH "if [ -f $doneFile ]; then\n";
+	print BASH "\techo \"VCF Utils: done \" >>$logFile\n";
+	print BASH "else\n";
+	print BASH "\techo \"VCF Utils: failed \">>$logFile\n";
+	print BASH "\tfailed=true\n";
+	print BASH "fi\n";
+	if ( $opt{RUNNING_JOBS}->{'VCF_UTILS'} ){
+	    push( @runningJobs, $opt{RUNNING_JOBS}->{'VCF_UTILS'} );
+	}
+    }
     ### Check failed variable and mail report
     print BASH "echo \"\">>$logFile\n\n"; ## empty line after stats
 
@@ -208,9 +231,9 @@ sub runCheck {
     #Start main bash script
     my $logDir = $opt{OUTPUT_DIR}."/logs";
     if (@runningJobs){
-	system "qsub -q $opt{CHECKING_QUEUE} -m a -M $opt{MAIL} -pe threaded $opt{CHECKING_THREADS} -o /dev/null -e /dev/null -N check_$jobID -hold_jid ".join(",",@runningJobs)." $bashFile";
+	system "qsub -q $opt{CHECKING_QUEUE} -m a -M $opt{MAIL} -pe threaded $opt{CHECKING_THREADS} -P $opt{CLUSTER_PROJECT} -o /dev/null -e /dev/null -N check_$jobID -hold_jid ".join(",",@runningJobs)." $bashFile";
     } else {
-	system "qsub -q $opt{CHECKING_QUEUE} -m a -M $opt{MAIL} -pe threaded $opt{CHECKING_THREADS} -o /dev/null -e /dev/null -N check_$jobID $bashFile";
+	system "qsub -q $opt{CHECKING_QUEUE} -m a -M $opt{MAIL} -pe threaded $opt{CHECKING_THREADS} -P $opt{CLUSTER_PROJECT} -o /dev/null -e /dev/null -N check_$jobID $bashFile";
     }
 }
 

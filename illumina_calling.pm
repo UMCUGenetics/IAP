@@ -37,7 +37,7 @@ sub runVariantCalling {
     my $javaMem = $opt{CALLING_MASTERTHREADS} * $opt{CALLING_MEM};
     my $javaJobMem = $opt{CALLING_THREADS} * $opt{CALLING_MEM};
     my $command = "java -Xmx".$javaMem."G -Xms".$opt{CALLING_MEM}."G -jar $opt{QUEUE_PATH}/Queue.jar ";
-    $command .= "-jobQueue $opt{CALLING_QUEUE} -jobNative \"-pe threaded $opt{CALLING_THREADS}\" -jobRunner GridEngine -jobReport $opt{OUTPUT_DIR}/logs/VariantCaller.jobReport.txt -memLimit $javaJobMem "; #Queue options
+    $command .= "-jobQueue $opt{CALLING_QUEUE} -jobNative \"-pe threaded $opt{CALLING_THREADS} -P $opt{CLUSTER_PROJECT}\" -jobRunner GridEngine -jobReport $opt{OUTPUT_DIR}/logs/VariantCaller.jobReport.txt -memLimit $javaJobMem "; #Queue options
 
     ### Add caller and UG specific settings
     $command .= "-S $opt{CALLING_SCALA} ";
@@ -116,9 +116,9 @@ sub runVariantCalling {
     
     #Start main bash script
     if (@runningJobs){
-	system "qsub -q $opt{CALLING_MASTERQUEUE} -m a -M $opt{MAIL} -pe threaded $opt{CALLING_MASTERTHREADS} -o $logDir/VariantCaller_$runName.out -e $logDir/VariantCaller_$runName.err -N $jobID -hold_jid ".join(",",@runningJobs)." $bashFile";
+	system "qsub -q $opt{CALLING_MASTERQUEUE} -m a -M $opt{MAIL} -pe threaded $opt{CALLING_MASTERTHREADS} -P $opt{CLUSTER_PROJECT} -o $logDir/VariantCaller_$runName.out -e $logDir/VariantCaller_$runName.err -N $jobID -hold_jid ".join(",",@runningJobs)." $bashFile";
     } else {
-	system "qsub -q $opt{CALLING_MASTERQUEUE} -m a -M $opt{MAIL} -pe threaded $opt{CALLING_MASTERTHREADS} -o $logDir/VariantCaller_$runName.out -e $logDir/VariantCaller_$runName.err -N $jobID $bashFile";
+	system "qsub -q $opt{CALLING_MASTERQUEUE} -m a -M $opt{MAIL} -pe threaded $opt{CALLING_MASTERTHREADS} -P $opt{CLUSTER_PROJECT} -o $logDir/VariantCaller_$runName.out -e $logDir/VariantCaller_$runName.err -N $jobID $bashFile";
     }
     
     ### Store jobID

@@ -28,6 +28,7 @@ use illumina_filterVariants;
 use illumina_somaticVariants;
 use illumina_copyNumber;
 use illumina_annotateVariants;
+use illumina_vcfutils;
 use illumina_check;
 
 ### Check correct usage
@@ -137,8 +138,10 @@ if(! $opt{VCF} ){
     }
     if($opt{COPY_NUMBER} eq "yes"){
 	print "\n###SCHEDULING COPY NUMBER TOOLS####\n";
-	$opt_ref = illumina_copyNumber::parseSamples(\%opt);
-	%opt = %$opt_ref;
+	if($opt{CNV_MODE} eq "sample_control"){
+	    $opt_ref = illumina_copyNumber::parseSamples(\%opt);
+	    %opt = %$opt_ref;
+	}
 	my $cnv_jobs = illumina_copyNumber::runCopyNumberTools(\%opt);
 	$opt{RUNNING_JOBS}->{'CNV'} = $cnv_jobs;
     }
@@ -173,6 +176,13 @@ if($opt{ANNOTATE_VARIANTS} eq "yes"){
     foreach my $sample (@{$opt{SAMPLES}}){
 	push (@{$opt{RUNNING_JOBS}->{$sample}} , $AVJob);
     }
+}
+
+### VCFUTILS step
+if($opt{VCF_UTILS} eq "yes"){
+    print "\n###SCHEDULING VCF UTILS Module Jobs####\n";
+    my $vcfutils_job = illumina_vcfutils::runVcfUtils(\%opt);
+    $opt{RUNNING_JOBS}->{'VCF_UTILS'} = $vcfutils_job;
 }
 
 if($opt{CHECKING} eq "yes"){
@@ -274,6 +284,7 @@ sub checkConfig{
     if(! $opt{CLUSTER_PATH}){ print "ERROR: No CLUSTER_PATH option found in config files.\n"; $checkFailed = 1; }
     if(! $opt{CLUSTER_TMP}){ print "ERROR: No CLUSTER_TMP option found in config files.\n"; $checkFailed = 1; }
     if(! $opt{CLUSTER_RESERVATION}){ print "ERROR: No CLUSTER_RESERVATION option found in config files.\n"; $checkFailed = 1; }
+    if(! $opt{CLUSTER_PROJECT}){ print "ERROR: No CLUSTER_PROJECT option found in config files.\n"; $checkFailed = 1; }
 
     ### Module yes or No
     if(! $opt{PRESTATS}){ print "ERROR: No PRESTATS option found in config files. \n"; $checkFailed = 1; }
@@ -286,6 +297,7 @@ sub checkConfig{
     if(! $opt{SOMATIC_VARIANTS}){ print "ERROR: No SOMATIC_VARIANTS option found in config files. \n"; $checkFailed = 1; }
     if(! $opt{COPY_NUMBER}){ print "ERROR: No COPY_NUMBER option found in config files. \n"; $checkFailed = 1; }
     if(! $opt{ANNOTATE_VARIANTS}){ print "ERROR: No ANNOTATE_VARIANTS option found in config files. \n"; $checkFailed = 1; }
+    if(! $opt{VCF_UTILS}){ print "ERROR: No VCF_UTILS option found in config files. \n"; $checkFailed = 1; }
     if(! $opt{CHECKING}){ print "ERROR: No CHECKING option found in config files. \n"; $checkFailed = 1; }
 
     ### Module Settings / tools
@@ -299,7 +311,6 @@ sub checkConfig{
 	if(! $opt{PRESTATS_THREADS}){ print "ERROR: No PRESTATS_THREADS option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{PRESTATS_MEM}){ print "ERROR: No PRESTATS_MEM option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{PRESTATS_QUEUE}){ print "ERROR: No PRESTATS_QUEUE option found in config files.\n"; $checkFailed = 1; }
-	if(! $opt{PRESTATS_PROJECT}){ print "ERROR: No PRESTATS_PROJECT option found in config files.\n"; $checkFailed = 1; }
     }
     ## MAPPING
     if($opt{MAPPING} eq "yes"){
@@ -307,9 +318,11 @@ sub checkConfig{
 	if(! $opt{MAPPING_THREADS}){ print "ERROR: No MAPPING_THREADS option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{MAPPING_MEM}){ print "ERROR: No MAPPING_MEM option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{MAPPING_QUEUE}){ print "ERROR: No MAPPING_QUEUE option found in config files.\n"; $checkFailed = 1; }
-	if(! $opt{MAPPING_PROJECT}){ print "ERROR: No MAPPING_PROJECT option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{MAPPING_MODE}){ print "ERROR: No MAPPING_MODE option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{MAPPING_MARKDUP}){ print "ERROR: No MAPPING_MARKDUP option found in config files.\n"; $checkFailed = 1; }
+	if( ($opt{MAPPING_MARKDUP} ne "lane") && ($opt{MAPPING_MARKDUP} ne "sample") && ($opt{MAPPING_MARKDUP} ne "no")){
+	    print "ERROR: MAPPING_MARKDUP should be set to sample, lane or no.\n"; $checkFailed = 1;
+	}
 	if($opt{MAPPING_MODE} eq 'single'){
 	    if(! $opt{FLAGSTAT_QUEUE}){ print "ERROR: No FLAGSTAT_QUEUE option found in config files.\n"; $checkFailed = 1; }
 	    if(! $opt{FLAGSTAT_THREADS}){ print "ERROR: No FLAGSTAT_THREADS option found in config files.\n"; $checkFailed = 1; }
@@ -317,6 +330,7 @@ sub checkConfig{
     }
     ## POSTSTATS
     if($opt{POSTSTATS} eq "yes"){
+	if(! $opt{BAMMETRICS_PATH}){ print "ERROR: No BAMMETRICS_PATH option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{PICARD_PATH}){ print "ERROR: No PICARD_PATH option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{POSTSTATS_THREADS}){ print "ERROR: No POSTSTATS_THREADS option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{POSTSTATS_MEM}){ print "ERROR: No POSTSTATS_MEM option found in config files.\n"; $checkFailed = 1; }
@@ -332,7 +346,6 @@ sub checkConfig{
 	if(! $opt{REALIGNMENT_MASTERQUEUE}){ print "ERROR: No REALIGNMENT_MASTERQUEUE option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{REALIGNMENT_MASTERTHREADS}){ print "ERROR: No REALIGNMENT_MASTERTHREADS option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{REALIGNMENT_QUEUE}){ print "ERROR: No REALIGNMENT_QUEUE option found in config files.\n"; $checkFailed = 1; }
-	if(! $opt{REALIGNMENT_PROJECT}){ print "ERROR: No REALIGNMENT_PROJECT option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{REALIGNMENT_THREADS}){ print "ERROR: No REALIGNMENT_THREADS option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{REALIGNMENT_MERGETHREADS}){ print "ERROR: No REALIGNMENT_MERGETHREADS option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{REALIGNMENT_MEM}){ print "ERROR: No REALIGNMENT_MEM option found in config files.\n"; $checkFailed = 1; }
@@ -441,17 +454,30 @@ sub checkConfig{
 	if(! $opt{CNVCHECK_QUEUE} ) { print "ERROR: No CNVCHECK_QUEUE in config files.\n"; $checkFailed = 1; }
 	if(! $opt{CNVCHECK_THREADS} ) { print "ERROR: No CNVCHECK_THREADS  in config files.\n"; $checkFailed = 1; }
 	if(! $opt{CNV_CONTRA}){ print "ERROR: No CNV_CONTRA  in config files.\n"; $checkFailed = 1; }
+	if(! $opt{CNV_MODE}){ print "ERROR: No CNV_MODE in config files. \n"; $checkFailed = 1; }
 	if($opt{CNV_CONTRA} eq "yes"){
+	    if($opt{CNV_MODE} eq "sample"){ print "ERROR: Running Contra in CNV_MODE sample is not possible.\n"; }
 	    if(! $opt{CONTRA_PATH}){ print "ERROR: No CONTRA_PATH option found in config files.\n"; $checkFailed = 1; }
 	    if(! $opt{CONTRA_QUEUE}){ print "ERROR: No CONTRA_QUEUE option found in config files.\n"; $checkFailed = 1; }
 	    if(! $opt{CONTRA_THREADS}){ print "ERROR: No CONTRA_THREADS option found in config files.\n"; $checkFailed = 1; }
-	    if(! $opt{CONTRA_TARGETS}){ print "ERROR: No CONTRA_TARGETS option found in config files.\n"; $checkFailed = 1; }
+	    if(! $opt{CNV_TARGETS}){ print "ERROR: No CNV_TARGETS option found in config files.\n"; $checkFailed = 1; }
 	    if(! $opt{CONTRA_FLAGS}){ print "ERROR: No CONTRA_FLAGS option found in config files.\n"; $checkFailed = 1; }
 	    if(! $opt{CONTRA_VISUALIZATION}){ print "ERROR: No CONTRA_VISUALIZATION option found in config files.\n"; $checkFailed = 1; }
 	    if($opt{CONTRA_VISUALIZATION} eq "yes"){
 		if(! $opt{CONTRA_PLOTSCRIPT}){ print "ERROR: No CONTRA_PLOTSCRIPT option found in config files.\n"; $checkFailed = 1; }
 		if(! $opt{CONTRA_PLOTDESIGN}){ print "ERROR: No CONTRA_PLOTDESIGN option found in config files.\n"; $checkFailed = 1; }
 	    }
+	}
+	if(! $opt{CNV_FREEC}){ print "ERROR: No CNV_FREEC  in config files.\n"; $checkFailed = 1; }
+	if($opt{CNV_FREEC} eq "yes"){
+	    if(! $opt{FREEC_PATH}){ print "ERROR: No FREEC_PATH option found in config files.\n"; $checkFailed = 1; }
+	    if(! $opt{FREEC_QUEUE}){ print "ERROR: No FREEC_QUEUE option found in config files.\n"; $checkFailed = 1; }
+	    if(! $opt{FREEC_THREADS}){ print "ERROR: No FREEC_THREADS option found in config files.\n"; $checkFailed = 1; }
+	    if(! $opt{FREEC_CHRLENFILE}){ print "ERROR: No FREEC_CHRLENFILE option found in config files.\n"; $checkFailed = 1; }
+	    if(! $opt{FREEC_CHRFILES}){ print "ERROR: No FREEC_CHRFILES option found in config files.\n"; $checkFailed = 1; }
+	    if(! $opt{FREEC_PLOIDY}){ print "ERROR: No FREEC_PLOIDY option found in config files.\n"; $checkFailed = 1; }
+	    if(! $opt{FREEC_WINDOW}){ print "ERROR: No FREEC_WINDOW option found in config files.\n"; $checkFailed = 1; }
+	    if(! $opt{FREEC_TELOCENTROMERIC}){ print "ERROR: No FREEC_TELOCENTROMERIC option found in config files.\n"; $checkFailed = 1; }
 	}
     }
     ## ANNOTATE_VARIANTS
@@ -483,6 +509,23 @@ sub checkConfig{
 	if($opt{ANNOTATE_IDFIELD} eq "yes"){
 	    if(! $opt{ANNOTATE_IDNAME}){ print "ERROR: No ANNOTATE_IDNAME option found in config files.\n"; $checkFailed = 1; }
 	    if(! $opt{ANNOTATE_IDDB}){ print "ERROR: No ANNOTATE_IDDB option found in config files.\n"; $checkFailed = 1; }
+	}
+    }
+    ## VCF_UTILS
+    if($opt{VCF_UTILS} eq "yes"){
+	if(! $opt{VCFUTILS_QUEUE}){ print "ERROR: No VCFUTILS_QUEUE found in .ini file\n"; $checkFailed = 1; }
+	if(! $opt{VCFUTILS_THREADS}){ print "ERROR: No VCFUTILS_THREADS found in .ini file\n"; $checkFailed = 1; }
+	#if(! $opt{VCFUTILS_SCATTER}){ print "ERROR: No VCFUTILS_SCATTER found in .ini file\n"; $checkFailed = 1; }
+	if(! $opt{VCFUTILS_MEM}){ print "ERROR: No VCFUTILS_MEM found in .ini file\n"; $checkFailed = 1; }
+	
+	if(! $opt{VCFUTILS_KINSHIP}){ print "ERROR: No VCFUTILS_KINSHIP found in .ini file\n"; $checkFailed = 1; }
+	if ( $opt{VCFUTILS_KINSHIP} eq "yes" ) {
+	    if(! $opt{PLINK_PATH}){ print "ERROR: No PLINK_PATH found in .ini file\n"; $checkFailed = 1; }
+	    if(! $opt{VCFTOOLS_PATH}){ print "ERROR: No VCFTOOLS_PATH found in .ini file\n"; $checkFailed = 1; }
+	}
+	if(! $opt{VCFUTILS_PHASE}){ print "ERROR: No VCFUTILS_PHASE found in .ini file\n"; $checkFailed = 1; }
+	if ( $opt{VCFUTILS_PHASE} eq "yes" ) {
+	    if(! $opt{PED}){ print "ERROR: No PED found in .conf file\n"; $checkFailed = 1; }
 	}
     }
     if ($checkFailed) { 

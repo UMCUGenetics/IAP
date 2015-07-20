@@ -1,13 +1,15 @@
 ####MAIN CLUSTER CONFIGURATION####
 CLUSTER_PATH	/srv/sge/fedor8/common
 CLUSTER_TMP	/tmp
-CLUSTER_RESERVATION	no
+CLUSTER_RESERVATION	yes
+CLUSTER_PROJECT	cog_bioinf
 
 ####DEFAULT TOOL PATHS####
 BWA_PATH	/data_fedor13/common_scripts/bwa/0.7.5a
-SAMBAMBA_PATH	/data_fedor13/common_scripts/sambamba/sambamba_v0.4.5-pre
+SAMBAMBA_PATH	/data_fedor13/common_scripts/sambamba_v0.5.6
 QUEUE_PATH	/data_fedor13/common_scripts/gatk/GenomeAnalysisTK-2.8-1-g932cd3a/Queue-2.8-1-g932cd3a
-PICARD_PATH	/data_fedor13/common_scripts/picard/picard-tools-1.98
+PICARD_PATH	/data_fedor13/common_scripts/picard/picard-tools-1.135
+BAMMETRICS_PATH	/hpc/cog_bioinf/data/robert/scripts/bamMetrics
 FASTQC_PATH	/data_fedor13/common_scripts/fastqc/FastQC_v0.10.1
 GATK_PATH	/data_fedor13/common_scripts/gatk/GenomeAnalysisTK-2.8-1-g932cd3a
 SNPEFF_PATH	/hpc/cog_bioinf/data/robert/src/snpEff_v4.1/
@@ -25,7 +27,9 @@ SOMATIC_VARIANTS	yes
 COPY_NUMBER	yes
 FILTER_VARIANTS	yes
 ANNOTATE_VARIANTS	yes
+VCF_UTILS	no
 CHECKING	yes
+
 QUEUE_RETRY	yes
 
 ####GENOME SETTINGS####
@@ -33,17 +37,16 @@ GENOME	/hpc/cog_bioinf/GENOMES/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GR
 
 ####PRESTATS CLUSTER CONFIGURATION####
 PRESTATS_QUEUE	all.q
-PRESTATS_PROJECT	mapping
 PRESTATS_THREADS	2
 PRESTATS_MEM	8
 
 ####MAPPING CLUSTER CONFIGURATION####
 MAPPING_QUEUE	all.q
-MAPPING_PROJECT	mapping
 MAPPING_THREADS	8
 MAPPING_MEM	32
 MAPPING_MODE	single
-MAPPING_MARKDUP	yes
+#MAPPING_MARKDUP lane sample or no
+MAPPING_MARKDUP	lane
 
 ####FLAGSTAT CONFIGURATION####
 # Used for mapping, realignment and recalibration.
@@ -63,7 +66,6 @@ POSTSTATS_BAITS	/hpc/cog_bioinf/ENRICH/PICARD/sorted_SS_exome_v5_S04380110_Cover
 REALIGNMENT_MASTERQUEUE	long
 REALIGNMENT_MASTERTHREADS	1
 REALIGNMENT_QUEUE	all.q
-REALIGNMENT_PROJECT	mapping
 REALIGNMENT_THREADS	1
 REALIGNMENT_MERGETHREADS	1
 REALIGNMENT_MEM	4
@@ -156,14 +158,30 @@ SOMVARMERGE_THREADS	2
 ####COPY NUMBER VARIANTION CONFIGURATION####
 CNVCHECK_QUEUE	veryshort
 CNVCHECK_THREADS	1
+CNV_MODE	sample_control
+CNV_TARGETS	/hpc/cog_bioinf/data/ies/DESIGNS/sureselect/catalog_designs/SS_all_exon_v5/annotated_S04380110_Covered_genenames.bed
 
 ## Contra
 CNV_CONTRA	yes
 CONTRA_THREADS	7
 CONTRA_QUEUE	short
 CONTRA_PATH	/hpc/local/CentOS6/cog_bioinf/CONTRA.v2.0.6/
-CONTRA_TARGETS	/hpc/cog_bioinf/data/ies/DESIGNS/sureselect/catalog_designs/SS_all_exon_v5/annotated_S04380110_Covered_genenames.bed
 CONTRA_FLAGS	--nomultimapped --largeDeletion --plot
+
+CONTRA_VISUALIZATION	yes
+CONTRA_PLOTSCRIPT	/hpc/cog_bioinf/data/annelies/CNVanalysis/CNA.pl
+CONTRA_PLOTDESIGN	wes
+
+## FREEC
+CNV_FREEC	yes
+FREEC_THREADS	8
+FREEC_QUEUE	short
+FREEC_PATH	/hpc/cog_bioinf/common_scripts/freec_v7.2
+FREEC_CHRLENFILE	/hpc/cog_bioinf/GENOMES/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.len
+FREEC_CHRFILES	/hpc/cog_bioinf/GENOMES/Homo_sapiens.GRCh37.GATK.illumina/chr_files
+FREEC_PLOIDY	2
+FREEC_WINDOW	1000
+FREEC_TELOCENTROMERIC	50000
 
 ####VARIANT ANNOTATION CONFIGURATION####
 ANNOTATE_QUEUE	veryshort
@@ -182,6 +200,15 @@ ANNOTATE_FREQUENCIES	yes
 ANNOTATE_FREQNAME	GoNLv5
 ANNOTATE_FREQDB	/hpc/cog_bioinf/common_dbs/GoNL/gonl_release5/site_freqs/gonl.snps_indels.r5.sorted.vcf.gz
 ANNOTATE_FREQINFO	AF,AN,AC
+
+####VCF UTILS CONFIUGARTION#####
+VCFUTILS_QUEUE	veryshort
+VCFUTILS_THREADS	1
+VCFUTILS_MEM	8
+VCFUTILS_KINSHIP	yes
+PLINK_PATH	/hpc/local/CentOS6/cog_bioinf/plink-1.07-x86_64
+VCFUTILS_PHASE	yes
+PED	/path/to/file.ped
 
 ####CHECKING CLUSTER CONFIGURATION####
 CHECKING_QUEUE	all.q
