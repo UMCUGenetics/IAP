@@ -210,7 +210,7 @@ sub runStrelka {
     # Check strelka completed
     print STRELKA_SH "\tif [ -f $strelka_out_dir/task.complete ]\n";
     print STRELKA_SH "\tthen\n";
-    print STRELKA_SH "\t\tjava -Xmx6G -jar $opt{GATK_PATH}/GenomeAnalysisTK.jar -T CombineVariants -R $opt{GENOME} -o passed.somatic.merged.vcf -V results/passed.somatic.snvs.vcf -V results/passed.somatic.indels.vcf \n";
+    print STRELKA_SH "\t\tjava -Xmx6G -jar $opt{GATK_PATH}/GenomeAnalysisTK.jar -T CombineVariants -R $opt{GENOME} --genotypemergeoption unsorted -o passed.somatic.merged.vcf -V results/passed.somatic.snvs.vcf -V results/passed.somatic.indels.vcf \n";
     print STRELKA_SH "\t\tperl -p -e 's/\\t([A-Z][A-Z]:)/\\tGT:\$1/g' passed.somatic.merged.vcf | perl -p -e 's/(:T[UO]R?)\\t/\$1\\t0\\/0:/g' | perl -p -e 's/(:\\d+,\\d+)\\t/\$1\\t0\\/1:/g' | perl -p -e 's/(#CHROM.*)/##StrelkaGATKCompatibility=Added GT fields to strelka calls for gatk compatibility.\\n\$1/g' > temp.vcf\n";
     print STRELKA_SH "\t\tmv temp.vcf passed.somatic.merged.vcf\n";
     print STRELKA_SH "\t\ttouch $log_dir/strelka.done\n";
@@ -263,20 +263,20 @@ sub runVarscan {
     
     # run pileups
     print VARSCAN_SH "\techo \"Start Pileup\t\" `date` \"$sample_ref_bam \t $sample_tumor_bam\t\" `uname -n` >> $log_dir/varscan.log\n";
+    print VARSCAN_SH "\tPATH=$opt{SAMTOOLS_PATH}:\$PATH\n";
+    print VARSCAN_SH "\texport PATH\n";
     if ((!-e "$sample_tumor_bam.pileup")||(-z "$sample_tumor_bam.pileup")) {
-	print VARSCAN_SH "\t$opt{SAMTOOLS_PATH}/samtools mpileup -q 1 -f $opt{GENOME} -l $opt{SOMVAR_TARGETS} $sample_tumor_bam > $sample_tumor_bam.pileup\n";
+	#print VARSCAN_SH "\t$opt{SAMTOOLS_PATH}/samtools mpileup -q 1 -f $opt{GENOME} -l $opt{SOMVAR_TARGETS} $sample_tumor_bam > $sample_tumor_bam.pileup_samtools\n";
+	print VARSCAN_SH "\t$opt{SAMBAMBA_PATH}/sambamba mpileup -t $opt{VARSCAN_THREADS} --tmpdir=$opt{OUTPUT_DIR}/tmp/ -L $opt{SOMVAR_TARGETS} -o $sample_tumor_bam.pileup $sample_tumor_bam --samtools \"-q 1 -f $opt{GENOME}\"\n";
     }
     if ((!-e "$sample_ref_bam.pileup")||(-z "$sample_ref_bam.pileup")) {
-	print VARSCAN_SH "\t$opt{SAMTOOLS_PATH}/samtools mpileup -q 1 -f $opt{GENOME} -l $opt{SOMVAR_TARGETS} $sample_ref_bam > $sample_ref_bam.pileup\n";
+	#print VARSCAN_SH "\t$opt{SAMTOOLS_PATH}/samtools mpileup -q 1 -f $opt{GENOME} -l $opt{SOMVAR_TARGETS} $sample_ref_bam > $sample_ref_bam.pileup_samtools\n";
+	print VARSCAN_SH "\t$opt{SAMBAMBA_PATH}/sambamba mpileup -t $opt{VARSCAN_THREADS} --tmpdir=$opt{OUTPUT_DIR}/tmp/ -L $opt{SOMVAR_TARGETS} -o $sample_ref_bam.pileup $sample_ref_bam --samtools \"-q 1 -f $opt{GENOME}\"\n";
     }
     print VARSCAN_SH "\techo \"End Pileup\t\" `date` \"\t $sample_ref_bam \t $sample_tumor_bam\t\" `uname -n` >> $log_dir/varscan.log\n\n";
 
     # run varscan
     print VARSCAN_SH "\techo \"Start Varscan\t\" `date` \"\t $sample_ref_bam \t $sample_tumor_bam\t\" `uname -n` >> $log_dir/varscan.log\n";
-    #print VARSCAN_SH "\ttumor_pileup=\"$opt{SAMTOOLS_PATH}/samtools mpileup -q 1 -f $opt{GENOME} -l $opt{SOMVAR_TARGETS} $sample_tumor_bam\"\n";
-    #print VARSCAN_SH "\tref_pileup=\"$opt{SAMTOOLS_PATH}/samtools mpileup -q 1 -f $opt{GENOME} -l $opt{SOMVAR_TARGETS} $sample_ref_bam\"\n";
-    #print VARSCAN_SH "\tjava -Xmx12g -jar $opt{VARSCAN_PATH} somatic <(\$ref_pileup) <(\$tumor_pileup) $sample_tumor_name $opt{VARSCAN_SETTINGS} --output-vcf 1\n\n";
-
     print VARSCAN_SH "\tjava -Xmx12g -jar $opt{VARSCAN_PATH} somatic $sample_ref_bam.pileup $sample_tumor_bam.pileup $sample_tumor_name $opt{VARSCAN_SETTINGS} --output-vcf 1\n\n";
 
     # postprocessing
@@ -284,7 +284,7 @@ sub runVarscan {
     print VARSCAN_SH "\tjava -Xmx12g -jar $opt{VARSCAN_PATH} processSomatic $sample_tumor_name.snp.vcf $opt{VARSCAN_POSTSETTINGS}\n\n";
     
     # merge varscan hc snps and indels
-    print VARSCAN_SH "\tjava -Xmx6G -jar $opt{GATK_PATH}/GenomeAnalysisTK.jar -T CombineVariants -R $opt{GENOME} -o $sample_tumor_name.merged.Somatic.hc.vcf -V $sample_tumor_name.snp.Somatic.hc.vcf -V $sample_tumor_name.indel.Somatic.hc.vcf\n";
+    print VARSCAN_SH "\tjava -Xmx6G -jar $opt{GATK_PATH}/GenomeAnalysisTK.jar -T CombineVariants -R $opt{GENOME} --genotypemergeoption unsorted -o $sample_tumor_name.merged.Somatic.hc.vcf -V $sample_tumor_name.snp.Somatic.hc.vcf -V $sample_tumor_name.indel.Somatic.hc.vcf\n";
     print VARSCAN_SH "\tsed -i 's/SSC/VS_SSC/' $sample_tumor_name.merged.Somatic.hc.vcf\n\n"; # to resolve merge conflict with FB vcfs
     
     # Check varscan completed
