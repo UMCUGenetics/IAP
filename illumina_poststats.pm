@@ -36,7 +36,7 @@ sub runPostStats {
 	$command .= "-queue_mem $opt{POSTSTATS_MEM} ";
 	$command .= "-queue_project $opt{CLUSTER_PROJECT} ";
 	$command .= "-picard_path $opt{PICARD_PATH} ";
-	#$command .= "-debug ";
+	$command .= "-debug ";
 	
 	if ( ($opt{POSTSTATS_TARGETS}) && ($opt{POSTSTATS_BAITS}) ) {
 	    $command .= "-capture ";
