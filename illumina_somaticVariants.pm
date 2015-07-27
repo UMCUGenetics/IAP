@@ -24,8 +24,9 @@ sub parseSamples {
 
     foreach my $sample (@{$opt{SAMPLES}}){
 	# Parse cpct samples based on expected naming
-	#my ($cpct_name,$origin) = ($sample =~ /(CPCT\d{8})([TR][IVX]*$)/);
-	my ($cpct_name,$origin) = ($sample =~ /([R]*CPCT\d{4,8})([TR][IVX]*)/);
+	my ($cpct_name,$origin) = ($sample =~ /(CPCT\d{8})([TR][IVX]*$)/);
+	#my ($cpct_name,$origin) = ($sample =~ /([R]*CPCT\d{4,8})([TR][IVX]*)/);
+	#my ($cpct_name,$origin) = ($sample =~ /(24385-12878-\d{2}-200)([TR])/);
 	
 	if ( (! $cpct_name) || (! $origin) ){
 	    print "WARNING: $sample is not passing somatic samplename parsing, skipping \n\n";
@@ -151,15 +152,23 @@ sub runSomaticVariantCallers {
 		$invcf = $outvcf;
 		$outvcf =~ s/.vcf/_snpEff.vcf/;
 		print MERGE_SH "\n\njava -Xmx6G -jar $opt{SNPEFF_PATH}/snpEff.jar -c $opt{SNPEFF_PATH}/snpEff.config $opt{ANNOTATE_DB} -v $invcf $opt{ANNOTATE_FLAGS} > $outvcf\n";
-
+		
+		## dbsnp
 		$invcf = $outvcf;
-		my $suffix = "_$opt{ANNOTATE_IDNAME}.vcf";
+		my $suffix = "_dbSNP.vcf";
+		$outvcf =~ s/.vcf/$suffix/;
+		print MERGE_SH "java -Xmx6G -jar $opt{GATK_PATH}/GenomeAnalysisTK.jar -T VariantAnnotator -nt $opt{SOMVARMERGE_THREADS} -R $opt{GENOME} -o $outvcf --variant $invcf --dbsnp $opt{CALLING_DBSNP} --alwaysAppendDbsnpId\n";
+		print MERGE_SH "if [ -f $outvcf ]\nthen\n\trm $invcf $invcf.idx \nfi\n";
+		
+		## cosmic
+		$invcf = $outvcf;
+		$suffix = "_$opt{ANNOTATE_IDNAME}.vcf";
 		$outvcf =~ s/.vcf/$suffix/;
 		print MERGE_SH "java -Xmx6G -jar $opt{GATK_PATH}/GenomeAnalysisTK.jar -T VariantAnnotator -nt $opt{SOMVARMERGE_THREADS} -R $opt{GENOME} -o $outvcf --variant $invcf --dbsnp $opt{ANNOTATE_IDDB} --alwaysAppendDbsnpId\n";
-		print MERGE_SH "if [ -f $outvcf ]\nthen\n\trm $invcf $invcf.idx \nfi";
+		print MERGE_SH "if [ -f $outvcf ]\nthen\n\trm $invcf $invcf.idx \nfi\n";
 	    }
 
-	    print MERGE_SH "\n\nif [ -f $outvcf ]\n";
+	    print MERGE_SH "\nif [ -f $outvcf ]\n";
 	    print MERGE_SH "then\n";
 	    print MERGE_SH "\ttouch $sample_tumor_log_dir/$sample_tumor_name.done\n";
 	    print MERGE_SH "fi\n";
