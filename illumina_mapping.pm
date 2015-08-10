@@ -169,16 +169,9 @@ sub runMapping {
 	    print MERGE_SH "\t$opt{SAMBAMBA_PATH}/sambamba flagstat -t $opt{MAPPING_THREADS} mapping/$sample\_dedup.bam > mapping/$sample\_dedup.flagstat\n";
 	
 	} elsif($opt{MAPPING_MARKDUP} eq "sample") {
-	    if(scalar(@bamList) > 1){
-		print MERGE_SH "\t$opt{SAMBAMBA_PATH}/sambamba merge -t $opt{MAPPING_THREADS} mapping/$sample.bam ".join(" ",@bamList)."\n";
-	    } else {
-		print MERGE_SH "\tmv $bamList[0] mapping/$sample.bam\n";
-	    }
-	    print MERGE_SH "\t$opt{SAMBAMBA_PATH}/sambamba index -t $opt{MAPPING_THREADS} mapping/$sample.bam mapping/$sample.bai\n";
-	    print MERGE_SH "\t$opt{SAMBAMBA_PATH}/sambamba flagstat -t $opt{MAPPING_THREADS} mapping/$sample.bam > mapping/$sample.flagstat\n";
-	    ### Sample Markdup -> add to own job?
+	    ### Use markdup to merge and markdup in one step, since sambamba v0.5.8
 	    print MERGE_SH "\techo \"Start markdup\t\" `date` \"\t$sample.bam\t\" `uname -n` >> $opt{OUTPUT_DIR}/$sample/logs/$sample.log\n";
-	    print MERGE_SH "\t$opt{SAMBAMBA_PATH}/sambamba markdup --tmpdir=$opt{OUTPUT_DIR}/$sample/tmp/ --overflow-list-size=500000 -t $opt{MAPPING_THREADS} mapping/$sample.bam mapping/$sample\_dedup.bam \n";
+	    print MERGE_SH "\t$opt{SAMBAMBA_PATH}/sambamba markdup --tmpdir=$opt{OUTPUT_DIR}/$sample/tmp/ --overflow-list-size=500000 -t $opt{MAPPING_THREADS} ".join(" ",@bamList)." mapping/$sample\_dedup.bam \n";
 	    print MERGE_SH "\t$opt{SAMBAMBA_PATH}/sambamba index -t $opt{MAPPING_THREADS} mapping/$sample\_dedup.bam mapping/$sample\_dedup.bai\n";
 	    print MERGE_SH "\t$opt{SAMBAMBA_PATH}/sambamba flagstat -t $opt{MAPPING_THREADS} mapping/$sample\_dedup.bam > mapping/$sample\_dedup.flagstat\n";
 	    print MERGE_SH "\techo \"End markdup\t\" `date` \"\tsample.bam\t\" `uname -n` >> $opt{OUTPUT_DIR}/$sample/logs/$sample.log\n";
