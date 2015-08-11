@@ -1,22 +1,21 @@
 #!/usr/bin/perl -w
-##################################################################################################################################################
-###This script is designed to run the various parts of the illumina 'pipeline' using a single .conf configuration file.
+##########################################
+### illumina_pipeline.pl
+### - Main pipeline script
+### - Read and check config and ini file
+### - Start selected modules
 ###
-###
-###Author: S.W.Boymans
-###Latest change: ini parsing
-###
-###TODO:
-##################################################################################################################################################
+### Author: S.W.Boymans & R.F.Ernst
+##########################################
 
-#### Load common perl modules ####
+### Load common perl modules ####
 use strict;
 use POSIX qw(tmpnam);
 use Getopt::Long;
 use FindBin;
 use File::Path qw(make_path);
 
-#### Load pipeline modules ####
+### Load pipeline modules ####
 use lib "$FindBin::Bin"; #locates pipeline directory
 use illumina_prestats;
 use illumina_mapping;

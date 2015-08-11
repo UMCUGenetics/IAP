@@ -1,13 +1,10 @@
 #!/usr/bin/perl -w
-##################################################################################################################################################
-###This script is designed to generate a .config based on user input
-###
-###
-###Author: R.F.Ernst
-###Latest change: Skeleton
-###
-###TODO: 
-##################################################################################################################################################
+###################################################
+### illumina_createConfig.pl
+### - Creates a config file based on user input
+### Author: R.F.Ernst
+###################################################
+
 use strict;
 use Cwd            qw( abs_path );
 use File::Basename qw( dirname );

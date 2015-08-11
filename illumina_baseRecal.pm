@@ -1,14 +1,11 @@
 #!/usr/bin/perl -w
 
-##################################################################################################################################################
-###This script is designed to run GATK baseRecalibration using GATK Queue
+####################################
+### illumina_baseRecal.pm
+### - Runs gatk base recalibration
 ###
-###
-###Author: R.F.Ernst
-###Latest change: Created skeleton
-###
-###
-##################################################################################################################################################
+### Author: R.F.Ernst
+####################################
 
 package illumina_baseRecal;
 
@@ -16,13 +13,16 @@ use strict;
 use POSIX qw(tmpnam);
 
 sub runBaseRecalibration {
+    ###
+    # Run base recalibration
+    ###
     my $configuration = shift;
     my %opt = %{$configuration};
 
     print "Running base recalibration for the following BAM-files:\n";
     
     foreach my $sample (@{$opt{SAMPLES}}){
-	### Check input .bam files
+	### Set in and output bam file
 	my $inBam = $opt{BAM_FILES}->{$sample};
 	(my $inFlagstat = $inBam) =~ s/bam/flagstat/;
 	(my $outBam = $inBam) =~ s/bam/recalibrated.bam/;
@@ -32,7 +32,7 @@ sub runBaseRecalibration {
 	print "\t$opt{OUTPUT_DIR}/$sample/mapping/$inBam\n";
 	$opt{BAM_FILES}->{$sample} = $outBam;
 	
-	### Check output .bam files
+	### Skip base recalibration if done file present
 	if (-e "$opt{OUTPUT_DIR}/$sample/logs/BaseRecalibration_$sample.done"){
 	    print "\t WARNING: $opt{OUTPUT_DIR}/$sample/logs/BaseRecalibration_$sample.done exists, skipping \n";
 	    next;

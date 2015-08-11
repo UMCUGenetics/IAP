@@ -1,13 +1,11 @@
 #!/usr/bin/perl -w
 
-##################################################################################################################################################
-###This script is designed check the final output of the illumina pipeline
-###
-###
-###Author: R.F.Ernst
-###Latest change: email notification
-###TODO:
-##################################################################################################################################################
+########################################################################
+### illumina_check.pm
+### - Check the result of the pipeline based on the selected modules.
+### - Remove tmp files if pipeline completed successfully.
+### Author: R.F.Ernst
+########################################################################
 
 package illumina_check;
 
@@ -16,6 +14,9 @@ use POSIX qw(tmpnam);
 use FindBin;
 
 sub runCheck {
+    ### 
+    # Run checks and email result
+    ###
     my $configuration = shift;
     my %opt = %{$configuration};
     my $runName = (split("/", $opt{OUTPUT_DIR}))[-1];
@@ -208,7 +209,8 @@ sub runCheck {
     print BASH "else\n";
     print BASH "\techo \"The pipeline completed successfully. \">>$logFile\n";
     print BASH "\tmail -s \"IAP DONE $runName\" \"$opt{MAIL}\" < $logFile\n";
-    #remove all tmp folders and empty logs except .done files
+    
+    #remove all tmp folders and empty logs except .done files if pipeline completed successfully
     print BASH "\trm -r $opt{OUTPUT_DIR}/tmp\n";
     print BASH "\trm -r $opt{OUTPUT_DIR}/*/tmp\n";
     print BASH "\tfind $opt{OUTPUT_DIR}/logs -size 0 -not -name \"*.done\" -delete\n";

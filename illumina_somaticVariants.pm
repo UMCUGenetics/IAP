@@ -1,13 +1,13 @@
 #!/usr/bin/perl -w
 
-##################################################################################################################################################
-###This script is designed to run Somatic Variant callers and combine the result.
+#########################################################
+### illumina_somaticVariants.pm
+### - Run somatic variant callers
+###   - Varscan, Strelka, FreeBayes
+### - Merge and annotate somatic high confidence calls.
 ###
-###
-###Author: R.F.Ernst
-###Latest change:
-###TODO: CPCT sample name parsing, add callers, combine the result
-##################################################################################################################################################
+### Author: R.F.Ernst
+#########################################################
 
 package illumina_somaticVariants;
 
@@ -15,9 +15,12 @@ use strict;
 use POSIX qw(tmpnam);
 use File::Path qw(make_path);
 
-### Parse sample names
-# Expects CPCT samples (CPCT........T/R)
+
 sub parseSamples {
+    ###
+    # Parse sample names
+    # Expects CPCT samples (CPCT........T/R)
+    ###
     my $configuration = shift;
     my %opt = %{$configuration};
     my %somatic_samples;
@@ -54,6 +57,10 @@ sub parseSamples {
 
 ### Run and merge
 sub runSomaticVariantCallers {
+    ###
+    # Run somatic variant callers
+    # Merge and annotate high confidence calls
+    ###
     my $configuration = shift;
     my %opt = %{$configuration};
     my @merge_somvar_jobs;
@@ -73,7 +80,6 @@ sub runSomaticVariantCallers {
 	    my $sample_tumor_out_dir = "$opt{OUTPUT_DIR}/somaticVariants/$sample_tumor_name";
 	    my $sample_tumor_log_dir = "$sample_tumor_out_dir/logs/";
 	    my $sample_tumor_job_dir = "$sample_tumor_out_dir/jobs/";
-
 	    if(! -e $sample_tumor_out_dir){
 		make_path($sample_tumor_out_dir) or die "Couldn't create directory:  $sample_tumor_out_dir\n";
 	    }
@@ -131,7 +137,7 @@ sub runSomaticVariantCallers {
 	    print MERGE_SH "#!/bin/bash\n\n";
 	    print MERGE_SH "echo \"Start Merge\t\" `date` `uname -n` >> $sample_tumor_log_dir/merge.log\n\n";
 
-	    #Merge vcfs
+	    # Merge vcfs
 	    my $invcf;
 	    my $outvcf = "$sample_tumor_out_dir/$sample_tumor_name\_merged_somatics.vcf";
 	    print MERGE_SH "java -Xmx6G -jar $opt{GATK_PATH}/GenomeAnalysisTK.jar -T CombineVariants -R $opt{GENOME} -o $outvcf --genotypemergeoption uniquify ";
@@ -139,7 +145,7 @@ sub runSomaticVariantCallers {
 	    if($opt{SOMVAR_VARSCAN} eq "yes"){ print MERGE_SH "-V:varscan $sample_tumor_out_dir/varscan/$sample_tumor_name.merged.Somatic.hc.vcf "; }
 	    if($opt{SOMVAR_FREEBAYES} eq "yes"){ print MERGE_SH "-V:freebayes $sample_tumor_out_dir/freebayes/$sample_tumor_name\_somatic_filtered.vcf "; }
 
-	    #Filter vcf on target
+	    # Filter vcf on target
 	    if($opt{SOMVAR_TARGETS}){
 		$invcf = $outvcf;
 		$outvcf = "$sample_tumor_out_dir/$sample_tumor_name\_filtered_merged_somatics.vcf";
@@ -147,7 +153,7 @@ sub runSomaticVariantCallers {
 		print MERGE_SH "rm $invcf*";
 	    }
 
-	    #Annotate somatic vcf
+	    # Annotate somatic vcf
 	    if($opt{SOMVAR_ANNOTATE} eq "yes"){
 		$invcf = $outvcf;
 		$outvcf =~ s/.vcf/_snpEff.vcf/;

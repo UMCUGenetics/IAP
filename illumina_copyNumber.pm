@@ -1,12 +1,12 @@
 #!/usr/bin/perl -w
 
 ##################################################################################################################################################
-###This script is designed to run copy number tools.
+### illumina_copyNumber.pm
+### - Run copy number tools
+###   - Contra and freec
+###   - Tow modes: sample_control (CPCT) & sample (WGS only)
 ###
-###
-###Author: R.F.Ernst
-###Latest change:
-###TODO:
+### Author: R.F.Ernst
 ##################################################################################################################################################
 
 package illumina_copyNumber;
@@ -15,9 +15,11 @@ use strict;
 use POSIX qw(tmpnam);
 use File::Path qw(make_path);
 
-### Parse sample names
-# Expects CPCT samples (CPCT........T/R)
 sub parseSamples {
+    ###
+    # Parse samples names used in sample_control mode
+    # Expects CPCT samples (CPCT........T/R)
+    ###
     my $configuration = shift;
     my %opt = %{$configuration};
     my %somatic_samples;
@@ -51,14 +53,15 @@ sub parseSamples {
     return \%opt;
 }
 
-### Run and merge
 sub runCopyNumberTools {
+    ### 
+    # Run copy number tools and check completion
+    ###
     my $configuration = shift;
     my %opt = %{$configuration};
     my @check_cnv_jobs;
     
     #### Sample Control mode with control or ref sample
-    ## CPCT ONLY
     if($opt{CNV_MODE} eq "sample_control"){
 	### Loop over somatic samples
 	foreach my $sample (keys(%{$opt{SOMATIC_SAMPLES}})){
@@ -68,7 +71,7 @@ sub runCopyNumberTools {
 		print "WARNING: No ref sample for $sample, skipping \n";
 		next;
 	    }
-	    ### Loop over tumor samples for each somatic sample (multiple samples possible)
+	    ### Loop over tumor samples for each somatic sample (multiple tumor samples possible)
 	    foreach my $sample_tumor (@{$opt{SOMATIC_SAMPLES}{$sample}{'tumor'}}){
 		my @cnv_jobs;
 		## Create output, log and job directories
@@ -213,8 +216,10 @@ sub runCopyNumberTools {
 }
 
 ### Copy number analysis tools
-## FREEC
 sub runFreec {
+    ###
+    # Run freec and plot result
+    ###
     my ($sample_name, $out_dir, $job_dir, $log_dir, $sample_bam, $control_bam, $running_jobs, $opt) = (@_);
     my @running_jobs = @{$running_jobs};
     my %opt = %{$opt};
@@ -299,14 +304,13 @@ sub runFreec {
     } else {
 	system "qsub -q $opt{FREEC_QUEUE} -m a -M $opt{MAIL} -pe threaded $opt{FREEC_THREADS} -R $opt{CLUSTER_RESERVATION} -P $opt{CLUSTER_PROJECT} -o $log_dir -e $log_dir -N $job_id $bash_file";
     }
-
     return $job_id;
 }
 
-
-
-## Contra
 sub runContra {
+    ###
+    # Run contra
+    ###
     my ($sample_tumor, $out_dir, $job_dir, $log_dir, $sample_tumor_bam, $sample_ref_bam, $running_jobs, $opt) = (@_);
     my @running_jobs = @{$running_jobs};
     my %opt = %{$opt};
@@ -351,11 +355,13 @@ sub runContra {
     } else {
 	system "qsub -q $opt{CONTRA_QUEUE} -m a -M $opt{MAIL} -pe threaded $opt{CONTRA_THREADS} -R $opt{CLUSTER_RESERVATION} -P $opt{CLUSTER_PROJECT} -o $log_dir -e $log_dir -N $job_id $bash_file";
     }
-
     return $job_id;
 }
-## Contra Visualization
+
 sub runContraVisualization {
+    ###
+    # Run contra visualization using the contra plotscript create by Annelies Smouter
+    ###
     my ($sample_tumor, $out_dir, $job_dir, $log_dir, $contra_job, $opt) = (@_);
     my %opt = %{$opt};
     my $contra_out_dir = "$out_dir/contra";
@@ -384,7 +390,6 @@ sub runContraVisualization {
     } else {
 	system "qsub -q $opt{CONTRA_QUEUE} -m a -M $opt{MAIL} -pe threaded $opt{CONTRA_THREADS} -R $opt{CLUSTER_RESERVATION} -P $opt{CLUSTER_PROJECT} -o $log_dir -e $log_dir -N $job_id $bash_file";
     }
-
     return $job_id;
 }
 

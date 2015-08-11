@@ -1,13 +1,12 @@
 #!/usr/bin/perl -w
 
-##################################################################################################################################################
-###This script is designed to run GATK HardFilters on .vcf files
+#############################################################
+### illumina_filterVariants.pm
 ###
-###
-###Author: R.F.Ernst
-###Latest change: 
-###TODO:
-##################################################################################################################################################
+### - Filter variants according to the gatk best practices
+### 
+### Author: R.F.Ernst
+#############################################################
 
 package illumina_filterVariants;
 
@@ -16,6 +15,9 @@ use POSIX qw(tmpnam);
 
 
 sub runFilterVariants {
+    ###
+    # Run vcf filters
+    ###
     my $configuration = shift;
     my %opt = %{$configuration};
     my $runName = (split("/", $opt{OUTPUT_DIR}))[-1];
@@ -31,8 +33,8 @@ sub runFilterVariants {
 
     ### Build Queue command
     my $javaMem = $opt{FILTER_MASTERTHREADS} * $opt{FILTER_MEM};
-    my $command = "java -Xmx".$javaMem."G -Xms".$opt{FILTER_MEM}."G -jar $opt{QUEUE_PATH}/Queue.jar "; ### Change memory allocation here!!!!!
-    $command .= "-jobQueue $opt{FILTER_QUEUE} -jobNative \"-pe threaded $opt{FILTER_THREADS} -P $opt{CLUSTER_PROJECT}\" -jobRunner GridEngine -jobReport $opt{OUTPUT_DIR}/logs/VariantFilter.jobReport.txt "; #Queue options
+    my $command = "java -Xmx".$javaMem."G -Xms".$opt{FILTER_MEM}."G -jar $opt{QUEUE_PATH}/Queue.jar ";
+    $command .= "-jobQueue $opt{FILTER_QUEUE} -jobNative \"-pe threaded $opt{FILTER_THREADS} -P $opt{CLUSTER_PROJECT}\" -jobRunner GridEngine -jobReport $opt{OUTPUT_DIR}/logs/VariantFilter.jobReport.txt ";
 
     ### Common settings
     $command .= "-S $opt{FILTER_SCALA} -R $opt{GENOME} -V $opt{OUTPUT_DIR}/$runName\.raw_variants.vcf -O $runName -mem $opt{FILTER_MEM} -nsc $opt{FILTER_SCATTER} -mode $opt{FILTER_MODE} ";

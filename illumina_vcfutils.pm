@@ -1,10 +1,14 @@
 #!/usr/bin/perl -w
 
-##################################################################################################################################################
-###This script is designed to run Diagnostics (Dx) specific exome sequencing pipeline steps.
+############################################################
+### illumina_vcfutils.pm
+### - Utility functions that can run after variant calling
+###   - kinship analyses
+###   - Phase by transmission
 ###
 ###Author: R.F.Ernst
-##################################################################################################################################################
+###
+############################################################
 
 package illumina_vcfutils;
 
