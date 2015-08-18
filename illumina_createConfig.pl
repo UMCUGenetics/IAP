@@ -89,7 +89,7 @@ sub createConfig {
 	foreach my $fastqDir (@fastqDirs){
 	    if(! -e $fastqDir) { die "$fastqDir does not exist." }
 	    print CONFIG "# $fastqDir\n";
-	    my @fastqFiles = glob($fastqDir."/*{/,}*.fastq.gz");
+	    my @fastqFiles = glob($fastqDir."/*{/,}*{/,}*.fastq.gz");
 	    foreach my $fastqFile (@fastqFiles){ print CONFIG "FASTQ\t$fastqFile\n" }
 	}
     }
