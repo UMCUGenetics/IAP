@@ -1,12 +1,12 @@
 #!/usr/bin/perl -w
 
 ##################################################################################################################################################
-###This script is designed to run BWA mapping, followed my sambamba markdup. Where possible a per-sample merged BAM file will be generated
-###using sambamba merge. Aside from mapping the script also runs sambamba flagstat on each *dedup.bam file.
+### illumina_mapping.pm
+### - Map illumina sequencing data using bwa-mem
+### - Use sambamba to merge lanes to a sample bam and mark duplicates.
+### - Generate flagstats after each step to check bam integrity.
 ###
-###Author: S.W.Boymans
-###Latest change: removed temporary replacement of sambamba view with samtools view because of picard errors.
-###
+### Authors: S.W.Boymans & R.F.Ernst
 ###
 ##################################################################################################################################################
 
@@ -16,7 +16,9 @@ use strict;
 use POSIX qw(tmpnam);
 
 sub runMapping {
-    
+    ###
+    # Main mapping function, submits all separate mapping jobs.
+    ###
     my $configuration = shift;
     my %opt = %{$configuration};
     
@@ -34,7 +36,7 @@ sub runMapping {
     my @jobs_to_wait;
     my $toMap = {};
     
-    #Try to search for matching pairs in the input FASTQ files
+    ### Try to search for matching pairs in the input FASTQ files
     foreach my $input (keys %{$opt{FASTQ}}){
 	if($input =~ m/\_R1/){
 	    my $pairName = $input;
@@ -55,7 +57,6 @@ sub runMapping {
 	}
     }
 
-
     foreach my $input (keys %{$toMap}){
 	my @files = split("#",$input);
 	my $R1 = undef;
@@ -69,8 +70,6 @@ sub runMapping {
 	    if($R1 !~ m/fastq.gz$/ or $R2 !~ m/fastq.gz$/){
 		die "ERROR: Invalid input files:\n\t$R1\n\t$R2\n";
 	    }
-	
-	
 	}elsif(scalar(@files) == 1){
 	    print "Switching to fragment mode!\n";
 	    $R1 = $files[0];
@@ -78,8 +77,6 @@ sub runMapping {
 	    if($R1 !~ m/fastq.gz$/){
 	        die "ERROR: Invalid input file:\n\t$R1\n";
 	    }
-	
-
 	}else{
 	    die "ERROR: Invalid input pair: $input\n";
 	}
@@ -98,29 +95,24 @@ sub runMapping {
 	    print "Creating $opt{OUTPUT_DIR}/$sampleName/mapping/$coreName\_sorted.bam with:\n";
 	}
 	if($opt{MAPPING_MODE} eq 'batch'){
-	
 	    submitBatchJobs(\%opt,$QSUB,$samples, $sampleName, $coreName, $R1, $R2, $flowcellID);
-	
 	}elsif($opt{MAPPING_MODE} eq 'single'){
-	    
 	    submitSingleJobs(\%opt,$QSUB, $samples, $sampleName, $coreName, $R1, $R2, $flowcellID);
-	
 	}
-	
-
     }
 
     print "\n";
-    #Create a merging joblist for every sample
+    ### Create a merging joblist for every sample
     foreach my $sample (keys %{$samples}){
-    
 	my @bamList = ();
 	my @jobIds = ();
 	my $pass = 1;
+
 	foreach my $chunk (@{$samples->{$sample}}){
 	    push(@bamList, $chunk->{'file'});
 	    push(@jobIds, $chunk->{'jobId'});
 	}
+
 	if(($opt{MAPPING_MARKDUP} eq "lane") || ($opt{MAPPING_MARKDUP} eq "sample")){
 	    $opt{BAM_FILES}->{$sample} = "$sample\_dedup.bam";
 	    print "Creating $opt{BAM_FILES}->{$sample}\n";
@@ -128,15 +120,16 @@ sub runMapping {
 	    $opt{BAM_FILES}->{$sample} = "$sample.bam";
 	    print "Creating $opt{BAM_FILES}->{$sample}\n";
 	}
-	###Skip mapping if dedup.done file already exists
+
+	### Skip mapping if dedup.done file already exists
 	if (-e "$opt{OUTPUT_DIR}/$sample/logs/Mapping_$sample.done"){
 	    print "\tWARNING: $opt{OUTPUT_DIR}/$sample/logs/Mapping_$sample.done exists, skipping\n";
 	    next;
         }
-	
+
 	my $jobId = "Merge_$sample\_".get_job_id();
 	push(@{$opt{RUNNING_JOBS}->{$sample}}, $jobId);
-
+	### Create final merge script
 	open MERGE_SH,">$opt{OUTPUT_DIR}/$sample/jobs/$jobId.sh" or die "Couldn't create $opt{OUTPUT_DIR}/$sample/jobs/$jobId.sh\n";
 	print MERGE_SH "\#!/bin/sh\n\n";
 	print MERGE_SH "cd $opt{OUTPUT_DIR}/$sample\n";
@@ -169,16 +162,9 @@ sub runMapping {
 	    print MERGE_SH "\t$opt{SAMBAMBA_PATH}/sambamba flagstat -t $opt{MAPPING_THREADS} mapping/$sample\_dedup.bam > mapping/$sample\_dedup.flagstat\n";
 	
 	} elsif($opt{MAPPING_MARKDUP} eq "sample") {
-	    if(scalar(@bamList) > 1){
-		print MERGE_SH "\t$opt{SAMBAMBA_PATH}/sambamba merge -t $opt{MAPPING_THREADS} mapping/$sample.bam ".join(" ",@bamList)."\n";
-	    } else {
-		print MERGE_SH "\tmv $bamList[0] mapping/$sample.bam\n";
-	    }
-	    print MERGE_SH "\t$opt{SAMBAMBA_PATH}/sambamba index -t $opt{MAPPING_THREADS} mapping/$sample.bam mapping/$sample.bai\n";
-	    print MERGE_SH "\t$opt{SAMBAMBA_PATH}/sambamba flagstat -t $opt{MAPPING_THREADS} mapping/$sample.bam > mapping/$sample.flagstat\n";
-	    ### Sample Markdup -> add to own job?
+	    ### Use markdup to merge and markdup in one step, since sambamba v0.5.8
 	    print MERGE_SH "\techo \"Start markdup\t\" `date` \"\t$sample.bam\t\" `uname -n` >> $opt{OUTPUT_DIR}/$sample/logs/$sample.log\n";
-	    print MERGE_SH "\t$opt{SAMBAMBA_PATH}/sambamba markdup --tmpdir=$opt{OUTPUT_DIR}/$sample/tmp/ --overflow-list-size=500000 -t $opt{MAPPING_THREADS} mapping/$sample.bam mapping/$sample\_dedup.bam \n";
+	    print MERGE_SH "\t$opt{SAMBAMBA_PATH}/sambamba markdup --tmpdir=$opt{OUTPUT_DIR}/$sample/tmp/ --overflow-list-size=500000 -t $opt{MAPPING_THREADS} ".join(" ",@bamList)." mapping/$sample\_dedup.bam \n";
 	    print MERGE_SH "\t$opt{SAMBAMBA_PATH}/sambamba index -t $opt{MAPPING_THREADS} mapping/$sample\_dedup.bam mapping/$sample\_dedup.bai\n";
 	    print MERGE_SH "\t$opt{SAMBAMBA_PATH}/sambamba flagstat -t $opt{MAPPING_THREADS} mapping/$sample\_dedup.bam > mapping/$sample\_dedup.flagstat\n";
 	    print MERGE_SH "\techo \"End markdup\t\" `date` \"\tsample.bam\t\" `uname -n` >> $opt{OUTPUT_DIR}/$sample/logs/$sample.log\n";
@@ -276,7 +262,10 @@ sub runMapping {
 }
 
 sub submitBatchJobs{
-    
+    ###
+    # Submit batch jobs
+    # One job per lane
+    ###
     my ($opt,$QSUB ,$samples, $sampleName, $coreName, $R1, $R2, $flowcellID) = @_;
     my %opt = %$opt;
     my $jobId = "Map_$coreName\_".get_job_id();
@@ -287,7 +276,7 @@ sub submitBatchJobs{
     }elsif(($opt{MAPPING_MARKDUP} eq "no") || ($opt{MAPPING_MARKDUP} eq "sample")){
 	push(@{$samples->{$sampleName}}, {'jobId'=>$jobId, 'file'=>"$opt{OUTPUT_DIR}/$sampleName/mapping/$coreName\_sorted.bam"});
     }
-    ###Skip mapping if coreName_sorted_dedup.done file already exists
+    ### Skip mapping if coreName_sorted_dedup.done file already exists
     if (-e "$opt{OUTPUT_DIR}/$sampleName/mapping/$coreName.done"){
         print "\tWARNING: $opt{OUTPUT_DIR}/$sampleName/mapping/$coreName.done exists, skipping\n";
         return;
@@ -391,7 +380,10 @@ sub submitBatchJobs{
 }
 
 sub submitSingleJobs{
-
+    ###
+    # Submit single jobs
+    # One job per lane per step
+    ###
     my ($opt,$QSUB ,$samples, $sampleName, $coreName, $R1, $R2, $flowcellID) = @_;
     my %opt = %$opt;
     my ($RG_PL, $RG_ID, $RG_LB, $RG_SM, $RG_PU) = ('ILLUMINA', $coreName, $sampleName, $sampleName, $flowcellID);
@@ -417,7 +409,7 @@ sub submitSingleJobs{
         return;
     }
     
-    ###############BWA JOB###############
+    ### BWA JOB 
     if (! -e "$opt{OUTPUT_DIR}/$sampleName/logs/$coreName\_bwa.done"){
 	open BWA_SH,">$opt{OUTPUT_DIR}/$sampleName/jobs/$mappingJobId.sh" or die "Couldn't create $opt{OUTPUT_DIR}/$sampleName/jobs/$mappingJobId.sh\n";
 	print BWA_SH "\#!/bin/sh\n\n";
@@ -431,7 +423,6 @@ sub submitSingleJobs{
 	    print "\t$R1\n";
 	    print BWA_SH "$opt{BWA_PATH}/bwa mem -t $opt{MAPPING_THREADS} -c 100 -M -R \"\@RG\tID:$RG_ID\tSM:$RG_SM\tPL:$RG_PL\tLB:$RG_LB\tPU:$RG_PU\" $opt{GENOME} $R1 2>>$opt{OUTPUT_DIR}/$sampleName/logs/$coreName\_bwa_log | $opt{SAMBAMBA_PATH}/sambamba view -t $opt{MAPPING_THREADS} --format=bam -S -o $coreName.bam.tmp /dev/stdin\n\n";
 	}
-
 	### Check bwa completion
 	print BWA_SH "if grep -Fq '[main] Real time:' $opt{OUTPUT_DIR}/$sampleName/logs/$coreName\_bwa_log\n";
 	print BWA_SH "then\n";
@@ -445,9 +436,7 @@ sub submitSingleJobs{
     } else {
 	print "\t$opt{OUTPUT_DIR}/$sampleName/logs/$coreName\_bwa.done exists, skipping bwa\n";
     }
-    ###################################
-
-    ###############FLAGSTAT AFTER MAPPING JOB###############
+    ### BWA Flagstat
     if ((! -e "$opt{OUTPUT_DIR}/$sampleName/mapping/$coreName.flagstat") || (-z "$opt{OUTPUT_DIR}/$sampleName/mapping/$coreName.flagstat")){
 	open FS1_SH,">$opt{OUTPUT_DIR}/$sampleName/jobs/$mappingFSJobId.sh" or die "Couldn't create $opt{OUTPUT_DIR}/$sampleName/jobs/$mappingFSJobId.sh\n";
 	print FS1_SH "\#!/bin/sh\n\n";
@@ -461,9 +450,8 @@ sub submitSingleJobs{
     } else {
 	print "\t$opt{OUTPUT_DIR}/$sampleName/mapping/$coreName.flagstat exist and is not empty, skipping bwa flagstat\n";
     }
-    ##################################
 
-    ###############SORT JOB###############
+    ### Sort bam
     if ((! -e "$opt{OUTPUT_DIR}/$sampleName/mapping/$coreName\_sorted.bam") || (-z "$opt{OUTPUT_DIR}/$sampleName/mapping/$coreName\_sorted.bam")) {
 	open SORT_SH,">$opt{OUTPUT_DIR}/$sampleName/jobs/$sortJobId.sh" or die "Couldn't create $opt{OUTPUT_DIR}/$sampleName/jobs/$sortJobId.sh\n";
 	print SORT_SH "\#!/bin/sh\n\n";
@@ -477,9 +465,7 @@ sub submitSingleJobs{
     } else {
         print "\t$opt{OUTPUT_DIR}/$sampleName/mapping/$coreName\_sorted.bam exist and is not empty, skipping sort\n";
     }
-    ##################################
-    
-    ###############FLAGSTAT AFTER SORT JOB###############
+    ### Sorted bam flagstat
     if ((! -e "$opt{OUTPUT_DIR}/$sampleName/mapping/$coreName\_sorted.flagstat") || (-z "$opt{OUTPUT_DIR}/$sampleName/mapping/$coreName\_sorted.flagstat")){
 	open FS2_SH,">$opt{OUTPUT_DIR}/$sampleName/jobs/$sortFSJobId.sh" or die "Couldn't create $opt{OUTPUT_DIR}/$sampleName/jobs/$sortFSJobId.sh\n";
 	print FS2_SH "\#!/bin/sh\n\n";
@@ -493,9 +479,7 @@ sub submitSingleJobs{
     } else {
 	print "\t$opt{OUTPUT_DIR}/$sampleName/mapping/$coreName\_sorted.flagstat exist and is not empty, skipping sorted bam flagstat\n";
     }
-    #################################
-    
-    ###############INDEX JOB###############
+    ### Sorted bam index
     if ((! -e "$opt{OUTPUT_DIR}/$sampleName/mapping/$coreName\_sorted.bai") || (-z "$opt{OUTPUT_DIR}/$sampleName/mapping/$coreName\_sorted.bai")) {
 	open INDEX_SH,">$opt{OUTPUT_DIR}/$sampleName/jobs/$indexJobId.sh" or die "Couldn't create $opt{OUTPUT_DIR}/$sampleName/jobs/$indexJobId.sh\n";
 	print INDEX_SH "\#!/bin/sh\n\n";
@@ -509,9 +493,8 @@ sub submitSingleJobs{
     } else {
 	print "\t$opt{OUTPUT_DIR}/$sampleName/mapping/$coreName\_sorted.bai exist and is not empty, skipping sorted bam index\n";
     }
-    ################################
 
-    ###############MARKDUP JOB###############
+    ### Mark duplicates
     if($opt{MAPPING_MARKDUP} eq "lane"){
 	if ((! -e "$opt{OUTPUT_DIR}/$sampleName/mapping/$coreName\_sorted_dedup.bam") || (-z "$opt{OUTPUT_DIR}/$sampleName/mapping/$coreName\_sorted_dedup.bam")) {
 	    open MARKDUP_SH,">$opt{OUTPUT_DIR}/$sampleName/jobs/$markdupJobId.sh" or die "Couldn't create $opt{OUTPUT_DIR}/$sampleName/jobs/$markdupJobId.sh\n";
@@ -526,7 +509,7 @@ sub submitSingleJobs{
 	} else {
 	    print "\t$opt{OUTPUT_DIR}/$sampleName/mapping/$coreName\_sorted_dedup.bam exist and is not empty, skipping sort\n";
 	}
-    ###############FLAGSTAT AFTER MARKDUP JOB###############
+    ### Mark duplicates flagstat
 	if ((! -e "$opt{OUTPUT_DIR}/$sampleName/mapping/$coreName\_sorted_dedup.flagstat") || (-z "$opt{OUTPUT_DIR}/$sampleName/mapping/$coreName\_sorted_dedup.flagstat")){
 	    open FS3_SH,">$opt{OUTPUT_DIR}/$sampleName/jobs/$markdupFSJobId.sh" or die "Couldn't create $opt{OUTPUT_DIR}/$sampleName/jobs/$markdupFSJobId.sh\n";
 	    print FS3_SH "\#!/bin/sh\n\n";
@@ -540,9 +523,8 @@ sub submitSingleJobs{
 	    print "\t$opt{OUTPUT_DIR}/$sampleName/mapping/$coreName\_sorted_dedup.flagstat exist and is not empty, skipping dedup flagstat\n";
 	}
     }
-    ###############################
-    
-    ###############CLEANUP JOB###############
+
+    ### Cleanup job, rm intermediate bams after checking flagstat
     open CLEAN_SH,">$opt{OUTPUT_DIR}/$sampleName/jobs/$cleanupJobId.sh" or die "Couldn't create $opt{OUTPUT_DIR}/$sampleName/jobs/$cleanupJobId.sh\n";
     print CLEAN_SH "\#!/bin/sh\n\n";
     print CLEAN_SH "cd $opt{OUTPUT_DIR}/$sampleName/mapping \n";
@@ -592,6 +574,10 @@ sub submitSingleJobs{
 }
 
 sub runBamPrep {
+    ###
+    # Bam prep function, runs when starting the pipeline with bam files
+    # Symlink or create index and flagstat files.
+    ###
     my $configuration = shift;
     my %opt = %{$configuration};
     my $jobIds = {};

@@ -1,13 +1,14 @@
 #!/usr/bin/perl -w
 
-##################################################################################################################################################
-###This script is designed to run GATK HC and UG variant callers using GATK Queue
+##################################################################
+### illumina_calling.pm
+### - Run gatk variant callers, depending on qscript
+###  - Haplotype caller: normal and gvcf mode
+###  - Unified genotyper 
+### - VCF Prep function if pipeline is started with a vcf file
 ###
-###
-###Author: R.F.Ernst
-###Latest change: Added UG
-###TODO:
-##################################################################################################################################################
+### Author: R.F.Ernst
+##################################################################
 
 package illumina_calling;
 
@@ -15,6 +16,9 @@ use strict;
 use POSIX qw(tmpnam);
 
 sub runVariantCalling {
+    ###
+    # Run variant callers
+    ###
     my $configuration = shift;
     my %opt = %{$configuration};
     my $runName = (split("/", $opt{OUTPUT_DIR}))[-1];
@@ -125,11 +129,13 @@ sub runVariantCalling {
     foreach my $sample (@{$opt{SAMPLES}}){
 	push (@{$opt{RUNNING_JOBS}->{$sample}} , $jobID);
     }
-    
     return \%opt;
 }
 
 sub runVcfPrep {
+    ###
+    # Run vcf prep when starting pipeline with a vcf file.
+    ##
     my $configuration = shift;
     my %opt = %{$configuration};
     my $runName = (split("/", $opt{OUTPUT_DIR}))[-1];

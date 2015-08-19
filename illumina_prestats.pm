@@ -1,14 +1,11 @@
 #!/usr/bin/perl -w
 
-##################################################################################################################################################
-###This script is designed to run FastQC on a set of fastq.gz files. Currently this script can only be run using the illumina_pipeline.pl script.
-###In a later version I also plan to add per-sample summary PDFs, this is currrently not supported yet.
+###################################
+### illumina_prestats.pm
+### - Run fastqc for each fastq
 ###
-###Author: S.W.Boymans
-###Latest change: Created first version
-###
-###TODO: Add system call actually firing jobs off
-##################################################################################################################################################
+### Author: S.W.Boymans
+###################################
 
 package illumina_prestats;
 
@@ -16,7 +13,9 @@ use strict;
 use POSIX qw(tmpnam);
 
 sub runPreStats {
-    
+    ###
+    # Run fastqc
+    ###
     my $configuration = shift;
     my %opt = %{$configuration};
     my $jobIds = {};

@@ -123,6 +123,8 @@ FILTER_CLUSTERWINDOWSIZE	35
 
 ####SOMATIC VARIANT CONFIGURATION####
 SOMVAR_TARGETS	/hpc/cog_bioinf/GENOMES/Homo_sapiens.GRCh37.GATK.illumina/sorted_Homo_sapiens.GRCh37.74_nopseudo_noRNA_CDS_20bpflanks.bed
+SOMVAR_REGEX	(CPCT\d{8})([TR][IVX]*$)
+### SOMVAR_REGEX should follow this patern: (<sample_match>)(<origin_match>)
 
 ## Strelka
 SOMVAR_STRELKA	yes
@@ -160,6 +162,8 @@ CNVCHECK_QUEUE	veryshort
 CNVCHECK_THREADS	1
 CNV_MODE	sample_control
 CNV_TARGETS	/hpc/cog_bioinf/data/ies/DESIGNS/sureselect/catalog_designs/SS_all_exon_v5/annotated_S04380110_Covered_genenames.bed
+CNV_REGEX	(CPCT\d{8})([TR][IVX]*$)
+### CNV_REGEX should follow this patern: (<sample_match>)(<origin_match>)
 
 ## Contra
 CNV_CONTRA	yes

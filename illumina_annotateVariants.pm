@@ -1,12 +1,13 @@
 #!/usr/bin/perl -w
 
 ##################################################################################################################################################
-###This script is designed to run SnpEff annotation on .vcf files
-###
-###
-###Author: R.F.Ernst
-###Latest change: 
-###TODO:
+### illumina_annotateVariants.pm
+### - Annotate vcf file using multiple tools:
+###   - SnpEff
+###   - SnpSift -> DBNSFP
+###   - ID from vcf file, for example Cosmic
+###   - AC and AF from a vcf file, for example GoNL
+### Author: R.F.Ernst
 ##################################################################################################################################################
 
 package illumina_annotateVariants;
@@ -15,6 +16,9 @@ use strict;
 use POSIX qw(tmpnam);
 
 sub runAnnotateVariants {
+    ###
+    # Run annotation tools
+    ###
     my $configuration = shift;
     my %opt = %{$configuration};
     my $runName = (split("/", $opt{OUTPUT_DIR}))[-1];
@@ -47,7 +51,7 @@ sub runAnnotateVariants {
     print ANNOTATE_SH "cd $opt{OUTPUT_DIR}/\n\n";
     print ANNOTATE_SH "echo \"Start variant annotation\t\" `date` \"\t$invcf\t\" `uname -n` >> $opt{OUTPUT_DIR}/logs/$runName.log\n\n";
 
-    ### basic eff prediction and annotation
+    ### SnpEff prediction and annotation
     if($opt{ANNOTATE_SNPEFF} eq "yes"){
 	$outvcf = $invcf;
 	$outvcf =~ s/.vcf/_snpEff.vcf/;
@@ -64,7 +68,7 @@ sub runAnnotateVariants {
 	$invcf = $outvcf;
     }
 
-    #run detailed annotation (sift, polyphen gerp, phyloP)
+    ### SnpSift DBNSFP, add annotation from multiple sources
     if($opt{ANNOTATE_SNPSIFT} eq "yes"){
 	$outvcf = $invcf;
 	$outvcf =~ s/.vcf/_snpSift.vcf/;
@@ -83,7 +87,7 @@ sub runAnnotateVariants {
 	$invcf = $outvcf;
     }
     
-    # Add ID from database vcf, for example Cosmic
+    ### Add ID from a vcf, for example Cosmic
     if($opt{ANNOTATE_IDFIELD} eq "yes"){
 	$outvcf = $invcf;
 	my $suffix = "_$opt{ANNOTATE_IDNAME}.vcf";
@@ -101,7 +105,7 @@ sub runAnnotateVariants {
 	$invcf = $outvcf;
     }
     
-    #Add GoNL annotation
+    ### Add frequencies from a vcf, for example GoNL
     if($opt{ANNOTATE_FREQUENCIES} eq "yes"){
 	$outvcf = $invcf;
 	my $suffix = "_$opt{ANNOTATE_FREQNAME}.vcf";

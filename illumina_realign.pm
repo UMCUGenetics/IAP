@@ -1,14 +1,12 @@
 #!/usr/bin/perl -w
 
-##################################################################################################################################################
-###This script is designed to run GATK indelrealignment using GATK Queue
+###################################################
+### illumina_realign.pm
+### - Realign bam files using gatk indel realigner
 ###
-###
-###Author: S.W.Boymans
-###Latest change: Created skeleton
-###
-###TODO: Add known snp files!!!
-##################################################################################################################################################
+### Author: S.W.Boymans & R.F.Ernst
+####
+###################################################
 
 package illumina_realign;
 
@@ -16,6 +14,10 @@ use strict;
 use POSIX qw(tmpnam);
 
 sub runRealignment {
+    ###
+    # Submit indel realign jobs.
+    # Two modes: single and multi sample.
+    ###
     my $configuration = shift;
     my %opt = %{$configuration};
     my $realignJobs = {};
@@ -31,7 +33,7 @@ sub runRealignment {
     }
     
     
-    #MULTI SAMPLE - MULTI OUTPUT
+    ### Multi sample realignment
     if($opt{REALIGNMENT_MODE} eq 'multi'){
 	my $mainJobID = "$opt{OUTPUT_DIR}/jobs/RealignMainJob_".get_job_id().".sh";
 	open (QSUB,">$mainJobID") or die "ERROR: Couldn't create $mainJobID\n";
@@ -140,7 +142,7 @@ sub runRealignment {
 	system("sh $mainJobID");
     }
     
-    #SINGLE SAMPLE - MULTI OUPUT
+    ### Single sample indel realignment
     elsif($opt{REALIGNMENT_MODE} eq 'single'){
 	foreach my $sample (@{$opt{SAMPLES}}){
 	    my $bam = $opt{BAM_FILES}->{$sample};
@@ -242,7 +244,7 @@ sub runRealignment {
     }else{
 	die "ERROR: Invalid REALIGNMENT_MODE $opt{REALIGNMENT_MODE} , use 'single' or 'multi'\n";
     }
-    
+
     return \%opt;
 }
 

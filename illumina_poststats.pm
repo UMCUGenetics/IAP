@@ -1,8 +1,12 @@
 #!/usr/bin/perl -w
 
-##################################################################################################################################################
-###Author: R.F.Ernst & S.W.Boymans
-##################################################################################################################################################
+#######################################################
+### illumina_poststats.pm
+### - Create post mapping statistics using bammetrics
+###
+### Authors: R.F.Ernst & S.W.Boymans
+###
+#######################################################
 
 package illumina_poststats;
 
@@ -11,6 +15,9 @@ use POSIX qw(tmpnam);
 use FindBin;
 
 sub runPostStats {
+    ###
+    # Run bammetrics with settings from config/ini file.
+    ###
     my $configuration = shift;
     my %opt = %{$configuration};
     my @runningJobs; #internal job array
