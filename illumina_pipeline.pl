@@ -28,6 +28,7 @@ use illumina_somaticVariants;
 use illumina_copyNumber;
 use illumina_annotateVariants;
 use illumina_vcfutils;
+use illumina_nipt;
 use illumina_check;
 
 ### Check correct usage
@@ -124,6 +125,12 @@ if(! $opt{VCF} ){
 	print "\n###SCHEDULING BASERECALIBRATION###\n";
 	$opt_ref = illumina_baseRecal::runBaseRecalibration(\%opt);
 	%opt = %$opt_ref;
+    }
+    
+    if($opt{NIPT} eq "yes"){
+	print "\n###SCHEDULING NIPT###\n";
+	my $niptJob = illumina_nipt::runNipt(\%opt);
+	$opt{RUNNING_JOBS}->{'nipt'} = $niptJob;
     }
 
 ### Variant Caller
@@ -297,6 +304,7 @@ sub checkConfig{
     if(! $opt{COPY_NUMBER}){ print "ERROR: No COPY_NUMBER option found in config files. \n"; $checkFailed = 1; }
     if(! $opt{ANNOTATE_VARIANTS}){ print "ERROR: No ANNOTATE_VARIANTS option found in config files. \n"; $checkFailed = 1; }
     if(! $opt{VCF_UTILS}){ print "ERROR: No VCF_UTILS option found in config files. \n"; $checkFailed = 1; }
+    if(! $opt{NIPT}){ print "ERROR: No NIPT option found in config files. \n"; $checkFailed = 1; }
     if(! $opt{CHECKING}){ print "ERROR: No CHECKING option found in config files. \n"; $checkFailed = 1; }
 
     ### Module Settings / tools
@@ -532,6 +540,14 @@ sub checkConfig{
 	    if(! $opt{PED}){ print "ERROR: No PED found in .conf file\n"; $checkFailed = 1; }
 	}
     }
+    ## NIPT
+    if($opt{NIPT} eq "yes"){
+	if(! $opt{NIPT_QUEUE}){ print "ERROR: No NIPT_QUEUE found in .ini file\n"; $checkFailed = 1; }
+	if(! $opt{NIPT_THREADS}){ print "ERROR: No NIPT_THREADS found in .ini file\n"; $checkFailed = 1; }
+	if(! $opt{CHROMATE_PATH}){ print "ERROR: No CHROMATE_PATH found in .ini file\n"; $checkFailed = 1; }
+	if(! $opt{NIPT_REFERENCESET}){ print "ERROR: No NIPT_REFERENCESET found in .ini file\n"; $checkFailed = 1; }
+    }
+
     if ($checkFailed) { 
 	print "One or more options not found in config files.";
 	die;
