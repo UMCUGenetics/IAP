@@ -273,9 +273,10 @@ sub get_job_id {
 
 sub checkConfig{
     my $checkFailed = 0;
+    my $runName = "";
     ### Input and Output
     if(! $opt{INIFILE}){ print "ERROR: No INIFILE option found in config files.\n"; $checkFailed = 1; }
-    if(! $opt{OUTPUT_DIR}){ print "ERROR: No OUTPUT_DIR found in config files.\n"; $checkFailed = 1; }
+    if(! $opt{OUTPUT_DIR}){ print "ERROR: No OUTPUT_DIR found in config files.\n"; $checkFailed = 1; } else { $runName = (split("/", $opt{OUTPUT_DIR}))[-1];}
     if(! ($opt{FASTQ} || $opt{BAM} || $opt{VCF}) ){ print "ERROR: No FASTQ/BAM/VCF files found in config files.\n"; $checkFailed = 1; }
     if(! $opt{MAIL}){ print "ERROR: No MAIL address specified in config files.\n"; $checkFailed = 1; }
 
@@ -529,7 +530,8 @@ sub checkConfig{
 	}
 	if(! $opt{VCFUTILS_PHASE}){ print "ERROR: No VCFUTILS_PHASE found in .ini file\n"; $checkFailed = 1; }
 	if ( $opt{VCFUTILS_PHASE} eq "yes" ) {
-	    if(! $opt{PED}){ print "ERROR: No PED found in .conf file\n"; $checkFailed = 1; }
+	    if(! $opt{PED_PATH}){ print "ERROR: No PED_PATH found in .conf file\n"; $checkFailed = 1; }
+	    else{ if(! -f "$opt{PED_PATH}/$runName.ped"){ print "ERROR: The ped file for this run does not exist: $opt{PED_PATH}/$runName.ped.\n"; $checkFailed = 1;}}
 	}
     }
     if ($checkFailed) { 
