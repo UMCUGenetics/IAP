@@ -44,7 +44,8 @@ sub runVcfUtils {
     open VCFUTILS_SH, ">$bashFile" or die "cannot open file $bashFile \n";
     print VCFUTILS_SH "#!/bin/bash\n\n";
     print VCFUTILS_SH "bash $opt{CLUSTER_PATH}/settings.sh\n\n";
-    print VCFUTILS_SH "cd $opt{OUTPUT_DIR}/\n\n";
+    print VCFUTILS_SH "cd $opt{OUTPUT_DIR}/\n";
+    print VCFUTILS_SH "failed=false\n\n";
     print VCFUTILS_SH "echo \"Start VCF UTILS\t\" `date` \"\t$vcf\t\" `uname -n` >> $opt{OUTPUT_DIR}/logs/$runName.log\n\n";
 
     ### Run kinship analyses
@@ -55,28 +56,38 @@ sub runVcfUtils {
 	    print VCFUTILS_SH "cd $opt{OUTPUT_DIR}/tmp/\n";
 	    print VCFUTILS_SH "$opt{VCFTOOLS_PATH}/vcftools --vcf $opt{OUTPUT_DIR}/$vcf --plink\n";
 	    print VCFUTILS_SH "$opt{PLINK_PATH}/plink --file out --make-bed --noweb\n";
-	    print VCFUTILS_SH "$opt{PLINK_PATH}/king -b plink.bed --kinship\n\n";
+	    print VCFUTILS_SH "$opt{PLINK_PATH}/king -b plink.bed --kinship\n";
 	    print VCFUTILS_SH "cp king.kin0 $opt{OUTPUT_DIR}/$runName.kinship\n";
 	    print VCFUTILS_SH "mv $opt{OUTPUT_DIR}/tmp/plink.log $opt{OUTPUT_DIR}/logs/\n";
 	    print VCFUTILS_SH "mv $opt{OUTPUT_DIR}/tmp/out.log $opt{OUTPUT_DIR}/logs/\n";
-	    print VCFUTILS_SH "touch $opt{OUTPUT_DIR}/logs/Kinship.done\n\n";
+	    print VCFUTILS_SH "if [ -f $opt{OUTPUT_DIR}/$runName.kinship ]; then\n";
+	    print VCFUTILS_SH "\ttouch $opt{OUTPUT_DIR}/logs/Kinship.done\n";
+	    print VCFUTILS_SH "else\n";
+	    print VCFUTILS_SH "\tfailed=true\n";
+	    print VCFUTILS_SH "fi\n\n";
 	}
     }
 
     ### Phase by transmission
     if ( $opt{VCFUTILS_PHASE} eq "yes" ) {
-	if (-e "$opt{OUTPUT_DIR}/logs/Phase.done"){
+	if (-e "$opt{OUTPUT_DIR}/logs/PhaseByTransmission.done"){
 	    warn "WARNING: $opt{OUTPUT_DIR}/logs/Phase.done exists, skipping \n";
 	} else {
 	    print VCFUTILS_SH "cd $opt{OUTPUT_DIR}/tmp/\n";
-	    print VCFUTILS_SH "java -Xmx8G -jar $opt{GATK_PATH}/GenomeAnalysisTK.jar -T PhaseByTransmission -R $opt{GENOME} -V $opt{OUTPUT_DIR}/$vcf -ped $opt{PED} -o $runName.phased.vcf.gz --MendelianViolationsFile $runName.MendelViol\n";
+	    print VCFUTILS_SH "java -Xmx8G -jar $opt{GATK_PATH}/GenomeAnalysisTK.jar -T PhaseByTransmission -R $opt{GENOME} -V $opt{OUTPUT_DIR}/$vcf -ped $opt{PED_PATH}/$runName.ped -o $runName.phased.vcf.gz --MendelianViolationsFile $runName.MendelViol\n";
 	    print VCFUTILS_SH "mv $runName.phased.vcf.gz $opt{OUTPUT_DIR}/\n";
 	    print VCFUTILS_SH "mv $runName.MendelViol $opt{OUTPUT_DIR}/\n";
-	    print VCFUTILS_SH "touch $opt{OUTPUT_DIR}/logs/Phase.done\n\n";
+	    print VCFUTILS_SH "if [ -f $opt{OUTPUT_DIR}/$runName.phased.vcf.gz -a -f $opt{OUTPUT_DIR}/$runName.MendelViol ]; then\n";
+	    print VCFUTILS_SH "\ttouch $opt{OUTPUT_DIR}/logs/PhaseByTransmission.done\n";
+	    print VCFUTILS_SH "else\n";
+	    print VCFUTILS_SH "\tfailed=true\n";
+	    print VCFUTILS_SH "fi\n\n";
 	}
     }
+    print VCFUTILS_SH "if [ \"\$failed\" = false ]; then\n";
+    print VCFUTILS_SH "\ttouch $opt{OUTPUT_DIR}/logs/VCF_UTILS.done\n";
+    print VCFUTILS_SH "fi\n\n";
 
-    print VCFUTILS_SH "touch $opt{OUTPUT_DIR}/logs/VCF_UTILS.done\n";
     print VCFUTILS_SH "echo \"End VCF UTILS\t\" `date` \"\t$vcf\t\" `uname -n` >> $opt{OUTPUT_DIR}/logs/$runName.log\n";
 
     ### Process runningjobs
