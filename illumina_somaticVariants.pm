@@ -451,7 +451,7 @@ sub runMutect {
     
     ### Mutect .jar command
     my $javaJobMem = $opt{MUTECT_THREADS} * $opt{MUTECT_MEM};
-    my $command = "java -Xmx".$javaJobMem."G -jar /hpc/cog_bioinf/common_scripts/mutect-1.1.7/mutect.jar -T MuTect ";
+    my $command = "java -Xmx".$javaJobMem."G -jar $opt{MUTECT_PATH}/mutect.jar -T MuTect ";
     $command .= "-R $opt{GENOME} --cosmic $opt{MUTECT_COSMIC} --dbsnp $opt{CALLING_DBSNP} --intervals $opt{CALLING_TARGETS} ";
     $command .= "--input_file:normal $sample_ref_bam --input_file:tumor $sample_tumor_bam ";
     $command .= "--out call_stats.out --vcf $sample_tumor_name\_mutect.vcf";
