@@ -533,6 +533,11 @@ sub checkConfig{
 	    if(! $opt{PED_PATH}){ print "ERROR: No PED_PATH found in .conf file\n"; $checkFailed = 1; }
 	    else{ if(! -f "$opt{PED_PATH}/$runName.ped"){ print "ERROR: The ped file for this run does not exist: $opt{PED_PATH}/$runName.ped.\n"; $checkFailed = 1;}}
 	}
+	if(! $opt{VCFUTILS_GENDERCHECK}){ print "ERROR: No VCFUTILS_GENDERCHECK found in .ini file\n"; $checkFailed = 1; }
+	if ( $opt{VCFUTILS_GENDERCHECK} eq "yes" ) {
+	    if(! $opt{PED_PATH}){ print "ERROR: No PED_PATH found in .conf file\n"; $checkFailed = 1; }
+	    else{ if(! -f "$opt{PED_PATH}/$runName.ped"){ print "ERROR: The ped file for this run does not exist: $opt{PED_PATH}/$runName.ped.\n"; $checkFailed = 1;}}
+	}
     }
     if ($checkFailed) { 
 	print "One or more options not found in config files.";

@@ -84,6 +84,25 @@ sub runVcfUtils {
 	    print VCFUTILS_SH "fi\n\n";
 	}
     }
+
+    ### Gender check using plink
+    if ( $opt{VCFUTILS_GENDERCHECK} eq "yes" ){
+	if (-e "$opt{OUTPUT_DIR}/logs/Gender_check.done"){
+	    warn "WARNING: $opt{OUTPUT_DIR}/logs/Gender_check.done exists, skipping \n";
+	} else {
+	    print VCFUTILS_SH "cd $opt{OUTPUT_DIR}/tmp/\n";
+	    print VCFUTILS_SH "ln -sd $opt{PED_PATH}/$runName.ped $opt{PED_PATH}/$runName.fam\n";
+	    print VCFUTILS_SH "java -Xmx8G -jar $opt{GATK_PATH}/GenomeAnalysisTK.jar -T VariantsToBinaryPed -R $opt{GENOME} -V $opt{OUTPUT_DIR}/$vcf -m $opt{PED_PATH}/$runName.fam -bed gender_check.bed -bim gender_check.bim -fam gender_check.fam -mgq 20\n";
+	    print VCFUTILS_SH "/hpc/local/CentOS6/cog_bioinf/plink_1.9b3/plink -bfile gender_check --check-sex\n";
+	    print VCFUTILS_SH "mv plink.sexcheck $opt{OUTPUT_DIR}/gender_check.out\n";
+	    print VCFUTILS_SH "if [ -f $opt{OUTPUT_DIR}/gender_check.out ]; then\n";
+	    print VCFUTILS_SH "\ttouch $opt{OUTPUT_DIR}/logs/Gender_check.done\n";
+	    print VCFUTILS_SH "else\n";
+	    print VCFUTILS_SH "\tfailed=true\n";
+	    print VCFUTILS_SH "fi\n\n";
+	}
+    }
+
     print VCFUTILS_SH "if [ \"\$failed\" = false ]; then\n";
     print VCFUTILS_SH "\ttouch $opt{OUTPUT_DIR}/logs/VCF_UTILS.done\n";
     print VCFUTILS_SH "fi\n\n";
