@@ -41,7 +41,8 @@ sub runAnnotateVariants {
 	if ( $opt{FILTER_MODE} eq "SNP" ) { $invcf = $runName.".filtered_snps.vcf"; }
 	if ( $opt{FILTER_MODE} eq "INDEL" ) { $invcf = $runName.".filtered_indels.vcf"; }
     } elsif ($opt{FILTER_VARIANTS} eq "no") { $invcf = $runName.".raw_variants.vcf"; }
-
+    my $preAnnotateVCF = $invcf;
+    
     ### Create main bash script
     my $bashFile = $opt{OUTPUT_DIR}."/jobs/AnnotateVariants_".$jobID.".sh";
     my $logDir = $opt{OUTPUT_DIR}."/logs";
@@ -126,7 +127,8 @@ sub runAnnotateVariants {
 	$invcf = $outvcf;
     }
     
-    print ANNOTATE_SH "if [ -s $outvcf ]\nthen\n\ttouch $opt{OUTPUT_DIR}/logs/VariantAnnotation.done\nfi\n\n"; ### check whether annotated vcf is not empty
+    ### Check final vcf, last chr and start position must be identical.
+    print ANNOTATE_SH "if [ \"\$(tail -n 1 $preAnnotateVCF | cut -f 1,2)\" = \"\$(tail -n 1 $outvcf | cut -f 1,2)\" ]\nthen\n\ttouch $opt{OUTPUT_DIR}/logs/VariantAnnotation.done\nfi\n\n";
     print ANNOTATE_SH "echo \"End variant annotation\t\" `date` \"\t$invcf\t\" `uname -n` >> $opt{OUTPUT_DIR}/logs/$runName.log\n";
     
     ### Process runningjobs
