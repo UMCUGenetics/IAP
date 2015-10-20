@@ -124,7 +124,11 @@ sub runSomaticVariantCallers {
 		my $freebayes_job = runFreeBayes($sample_tumor, $sample_tumor_name, $sample_tumor_out_dir, $sample_tumor_job_dir, $sample_tumor_log_dir, $sample_tumor_bam, $sample_ref_bam, \@running_jobs, \%opt);
 		if($freebayes_job){push(@somvar_jobs, $freebayes_job)};
 	    }
-
+	    if($opt{SOMVAR_MUTECT} eq "yes"){
+		print "\n###SCHEDULING MUTECT####\n";
+		my $mutect_job = runMutect($sample_tumor, $sample_tumor_name, $sample_tumor_out_dir, $sample_tumor_job_dir, $sample_tumor_log_dir, $sample_tumor_bam, $sample_ref_bam, \@running_jobs, \%opt);
+		if($mutect_job){push(@somvar_jobs, $mutect_job)};
+	    }
 	    ## Merge somatic vcfs
 	    print "\n###SCHEDULING MERGE SOMATIC VCFS####\n";
 
@@ -142,6 +146,7 @@ sub runSomaticVariantCallers {
 	    if($opt{SOMVAR_STRELKA} eq "yes"){ print MERGE_SH "-V:strelka $sample_tumor_out_dir/strelka/passed.somatic.merged.vcf "; }
 	    if($opt{SOMVAR_VARSCAN} eq "yes"){ print MERGE_SH "-V:varscan $sample_tumor_out_dir/varscan/$sample_tumor_name.merged.Somatic.hc.vcf "; }
 	    if($opt{SOMVAR_FREEBAYES} eq "yes"){ print MERGE_SH "-V:freebayes $sample_tumor_out_dir/freebayes/$sample_tumor_name\_somatic_filtered.vcf "; }
+	    if($opt{SOMVAR_MUTECT} eq "yes"){ print MERGE_SH "-V:mutect $sample_tumor_out_dir/mutect/$sample_tumor_name\_mutect.vcf ";}
 
 	    # Filter vcf on target
 	    if($opt{SOMVAR_TARGETS}){
@@ -395,6 +400,98 @@ sub runFreeBayes {
     } else {
 	system "qsub -q $opt{FREEBAYES_QUEUE} -pe threaded $opt{FREEBAYES_THREADS} -R $opt{CLUSTER_RESERVATION} -P $opt{CLUSTER_PROJECT} -m a -M $opt{MAIL} -o $log_dir -e $log_dir -N $job_id $bash_file";
     }
+    return $job_id;
+}
+
+sub runMutect {
+    my ($sample_tumor, $sample_tumor_name, $out_dir, $job_dir, $log_dir, $sample_tumor_bam, $sample_ref_bam, $running_jobs, $opt) = (@_);
+    my @running_jobs = @{$running_jobs};
+    my %opt = %{$opt};
+    my $mutect_out_dir = "$out_dir/mutect";
+    my $mutect_tmp_dir = "$mutect_out_dir/tmp";
+
+    ## Create output and tmp dir
+    if(! -e $mutect_out_dir){
+	make_path($mutect_out_dir) or die "Couldn't create directory: $mutect_out_dir\n";
+    }
+    if(! -e $mutect_tmp_dir){
+	make_path($mutect_tmp_dir) or die "Couldn't create directory: $mutect_tmp_dir\n";
+    }
+    
+    ## Skip Mutect if .done file exist
+    if (-e "$log_dir/mutect.done"){
+	print "WARNING: $log_dir/mutect.done, skipping \n";
+	return;
+    }
+
+    ## Build Queue command 
+    ## wait for GATK-MuTect integration, see http://gatkforums.broadinstitute.org/discussion/comment/24614#Comment_24614
+    #my $javaMem = $opt{MUTECT_MASTERTHREADS} * $opt{MUTECT_MEM};
+    #my $javaJobMem = $opt{MUTECT_THREADS} * $opt{MUTECT_MEM};
+    #my $command = "java -Xmx".$javaMem."G -Xms".$opt{MUTECT_MEM}."G -jar $opt{QUEUE_PATH}/Queue.jar ";
+    #$command .= "-jobQueue $opt{MUTECT_QUEUE} -jobNative \"-pe threaded $opt{MUTECT_THREADS} -P $opt{CLUSTER_PROJECT}\" -jobRunner GridEngine -jobReport $log_dir/mutect.jobReport.txt -memLimit $javaJobMem "; #Queue options
+    #$command .= "-S $opt{MUTECT_SCALA} ";
+    #$command .= "-R $opt{GENOME} -O $sample_tumor_name -mem $opt{MUTECT_MEM} -nsc $opt{MUTECT_SCATTER} ";
+    #$command .= "-tb $sample_tumor_bam -nb $sample_ref_bam ";
+    #$command .= "-D $opt{CALLING_DBSNP} -C $opt{MUTECT_COSMIC} ";
+    
+    ### Optional settings
+    #if ( $opt{CALLING_TARGETS} ) {
+	#$command .= "-L $opt{CALLING_TARGETS} ";
+	#if ( $opt{CALLING_INTERVALPADDING} ) {
+	    #$command .= "-ip $opt{CALLING_INTERVALPADDING} ";
+	#}
+    #}
+    #if($opt{QUEUE_RETRY} eq 'yes'){
+	#$command  .= "-retry 1 ";
+    #}
+    
+    ## Set run option
+    #$command .= "-run";
+    
+    ### Mutect .jar command
+    my $javaJobMem = $opt{MUTECT_THREADS} * $opt{MUTECT_MEM};
+    my $command = "java -Xmx".$javaJobMem."G -jar $opt{MUTECT_PATH}/mutect.jar -T MuTect ";
+    $command .= "-R $opt{GENOME} --cosmic $opt{MUTECT_COSMIC} --dbsnp $opt{CALLING_DBSNP} --intervals $opt{CALLING_TARGETS} ";
+    $command .= "--input_file:normal $sample_ref_bam --input_file:tumor $sample_tumor_bam ";
+    $command .= "--out call_stats.out --vcf $sample_tumor_name\_mutect.vcf";
+    ## Create mutect bash script
+    my $job_id = "MUT_".$sample_tumor."_".get_job_id();
+    my $bash_file = $job_dir."/".$job_id.".sh";
+    open MUTECT_SH, ">$bash_file" or die "cannot open file $bash_file \n";
+    print MUTECT_SH "#!/bin/bash\n\n";
+    print MUTECT_SH "if [ -f $sample_tumor_bam -a -f $sample_ref_bam ]\n";
+    print MUTECT_SH "then\n";
+    print MUTECT_SH "\techo \"Start Mutect\t\" `date` \"\t $sample_ref_bam \t $sample_tumor_bam\t\" `uname -n` >> $log_dir/mutect.log\n\n";
+
+    # Run Mutect
+    print MUTECT_SH "\tcd $mutect_tmp_dir\n";
+    print MUTECT_SH "\t$command\n\n";
+
+    # Check Mutect completed
+    print MUTECT_SH "\tif [ -f $sample_tumor_name\_mutect.vcf ]\n";
+    print MUTECT_SH "\tthen\n";
+    print MUTECT_SH "\t\tmv $sample_tumor_name\_mutect.vcf $mutect_out_dir/\n";
+    print MUTECT_SH "\t\tmv $sample_tumor_name\_mutect.vcf.idx $mutect_out_dir/\n";
+    print MUTECT_SH "\t\ttouch $log_dir/mutect.done\n";
+    print MUTECT_SH "\tfi\n\n";
+    print MUTECT_SH "\techo \"End Mutect\t\" `date` \"\t $sample_ref_bam \t $sample_tumor_bam\t\" `uname -n` >> $log_dir/mutect.log\n\n";
+
+    print MUTECT_SH "else\n";
+    print MUTECT_SH "\techo \"ERROR: $sample_tumor_bam or $sample_ref_bam does not exist.\" >&2\n";
+    print MUTECT_SH "fi\n";
+
+    close MUTECT_SH;
+
+    ## Run job
+    if ( @running_jobs ){
+	#system "qsub -q $opt{MUTECT_MASTERQUEUE} -m a -M $opt{MAIL} -pe threaded $opt{MUTECT_MASTERTHREADS} -R $opt{CLUSTER_RESERVATION} -P $opt{CLUSTER_PROJECT} -o $log_dir -e $log_dir -N $job_id -hold_jid ".join(",",@running_jobs)." $bash_file";
+	system "qsub -q $opt{MUTECT_QUEUE} -m a -M $opt{MAIL} -pe threaded $opt{MUTECT_THREADS} -R $opt{CLUSTER_RESERVATION} -P $opt{CLUSTER_PROJECT} -o $log_dir -e $log_dir -N $job_id -hold_jid ".join(",",@running_jobs)." $bash_file";
+    } else {
+	#system "qsub -q $opt{MUTECT_MASTERQUEUE} -m a -M $opt{MAIL} -pe threaded $opt{MUTECT_MASTERTHREADS} -R $opt{CLUSTER_RESERVATION} -P $opt{CLUSTER_PROJECT} -o $log_dir -e $log_dir -N $job_id $bash_file";
+	system "qsub -q $opt{MUTECT_QUEUE} -m a -M $opt{MAIL} -pe threaded $opt{MUTECT_THREADS} -R $opt{CLUSTER_RESERVATION} -P $opt{CLUSTER_PROJECT} -o $log_dir -e $log_dir -N $job_id $bash_file";
+    }
+
     return $job_id;
 }
 
