@@ -159,6 +159,7 @@ sub runSomaticVariantCallers {
 	    # Annotate somatic vcf
 	    if($opt{SOMVAR_ANNOTATE} eq "yes"){
 		$invcf = $outvcf;
+		my $preAnnotateVCF = $invcf;
 		$outvcf =~ s/.vcf/_snpEff.vcf/;
 		print MERGE_SH "\n\njava -Xmx6G -jar $opt{SNPEFF_PATH}/snpEff.jar -c $opt{SNPEFF_PATH}/snpEff.config $opt{ANNOTATE_DB} -v $invcf $opt{ANNOTATE_FLAGS} > $outvcf\n";
 		
@@ -175,14 +176,23 @@ sub runSomaticVariantCallers {
 		$outvcf =~ s/.vcf/$suffix/;
 		print MERGE_SH "java -Xmx6G -jar $opt{GATK_PATH}/GenomeAnalysisTK.jar -T VariantAnnotator -nt $opt{SOMVARMERGE_THREADS} -R $opt{GENOME} -o $outvcf --variant $invcf --dbsnp $opt{ANNOTATE_IDDB} --alwaysAppendDbsnpId\n";
 		print MERGE_SH "if [ -f $outvcf ]\nthen\n\trm $invcf $invcf.idx \nfi\n";
+		
+		## Check annotated vcf using the last position
+		print MERGE_SH "\nif [ \"\$(tail -n 1 $preAnnotateVCF | cut -f 1,2)\" = \"\$(tail -n 1 $outvcf | cut -f 1,2)\" ]\n";
+		print MERGE_SH "then\n";
+		print MERGE_SH "\ttouch $sample_tumor_log_dir/$sample_tumor_name.done\n";
+		print MERGE_SH "fi\n";
+		print MERGE_SH "echo \"END Merge\t\" `date` `uname -n` >> $sample_tumor_log_dir/merge.log\n\n";
+		close MERGE_SH;
+		
+	    } else {
+		print MERGE_SH "\nif [ -f $outvcf ]\n";
+		print MERGE_SH "then\n";
+		print MERGE_SH "\ttouch $sample_tumor_log_dir/$sample_tumor_name.done\n";
+		print MERGE_SH "fi\n";
+		print MERGE_SH "echo \"END Merge\t\" `date` `uname -n` >> $sample_tumor_log_dir/merge.log\n\n";
+		close MERGE_SH;
 	    }
-
-	    print MERGE_SH "\nif [ -f $outvcf ]\n";
-	    print MERGE_SH "then\n";
-	    print MERGE_SH "\ttouch $sample_tumor_log_dir/$sample_tumor_name.done\n";
-	    print MERGE_SH "fi\n";
-	    print MERGE_SH "echo \"END Merge\t\" `date` `uname -n` >> $sample_tumor_log_dir/merge.log\n\n";
-	    close MERGE_SH;
 
 	    # Run job
 	    if ( @somvar_jobs ){
