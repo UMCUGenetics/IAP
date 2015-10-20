@@ -14,6 +14,7 @@ use POSIX qw(tmpnam);
 use Getopt::Long;
 use FindBin;
 use File::Path qw(make_path);
+use File::Copy qw(copy);
 
 ### Load pipeline modules ####
 use lib "$FindBin::Bin"; #locates pipeline directory
@@ -529,14 +530,20 @@ sub checkConfig{
 	    if(! $opt{VCFTOOLS_PATH}){ print "ERROR: No VCFTOOLS_PATH found in .ini file\n"; $checkFailed = 1; }
 	}
 	if(! $opt{VCFUTILS_PHASE}){ print "ERROR: No VCFUTILS_PHASE found in .ini file\n"; $checkFailed = 1; }
-	if ( $opt{VCFUTILS_PHASE} eq "yes" ) {
-	    if(! $opt{PED_PATH}){ print "ERROR: No PED_PATH found in .conf file\n"; $checkFailed = 1; }
-	    else{ if(! -f "$opt{PED_PATH}/$runName.ped"){ print "ERROR: The ped file for this run does not exist: $opt{PED_PATH}/$runName.ped.\n"; $checkFailed = 1;}}
-	}
 	if(! $opt{VCFUTILS_GENDERCHECK}){ print "ERROR: No VCFUTILS_GENDERCHECK found in .ini file\n"; $checkFailed = 1; }
-	if ( $opt{VCFUTILS_GENDERCHECK} eq "yes" ) {
-	    if(! $opt{PED_PATH}){ print "ERROR: No PED_PATH found in .conf file\n"; $checkFailed = 1; }
-	    else{ if(! -f "$opt{PED_PATH}/$runName.ped"){ print "ERROR: The ped file for this run does not exist: $opt{PED_PATH}/$runName.ped.\n"; $checkFailed = 1;}}
+	
+	## Check and copy ped file needed for phasing and gendercheck
+	## Ped file is copied to output_dir to make sure it is accessible on compute nodes
+	if ( $opt{VCFUTILS_GENDERCHECK} eq "yes" || $opt{VCFUTILS_PHASE} eq "yes" ) {
+	    if(! $opt{PED_PATH}){ 
+		print "ERROR: No PED_PATH found in .conf file\n"; $checkFailed = 1; 
+	    } else {
+		if(! -f "$opt{PED_PATH}/$runName.ped") { 
+		    print "ERROR: The ped file for this run does not exist: $opt{PED_PATH}/$runName.ped.\n"; $checkFailed = 1;
+		} else {
+		    copy("$opt{PED_PATH}/$runName.ped","$opt{OUTPUT_DIR}/$runName.ped");
+		}
+	    }
 	}
     }
     if ($checkFailed) { 
