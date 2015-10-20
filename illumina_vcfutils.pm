@@ -74,7 +74,7 @@ sub runVcfUtils {
 	    warn "WARNING: $opt{OUTPUT_DIR}/logs/Phase.done exists, skipping \n";
 	} else {
 	    print VCFUTILS_SH "cd $opt{OUTPUT_DIR}/tmp/\n";
-	    print VCFUTILS_SH "java -Xmx8G -jar $opt{GATK_PATH}/GenomeAnalysisTK.jar -T PhaseByTransmission -R $opt{GENOME} -V $opt{OUTPUT_DIR}/$vcf -ped $opt{PED_PATH}/$runName.ped -o $runName.phased.vcf.gz --MendelianViolationsFile $runName.MendelViol\n";
+	    print VCFUTILS_SH "java -Xmx8G -jar $opt{GATK_PATH}/GenomeAnalysisTK.jar -T PhaseByTransmission -R $opt{GENOME} -V $opt{OUTPUT_DIR}/$vcf -ped $opt{OUTPUT_DIR}/$runName.ped -o $runName.phased.vcf.gz --MendelianViolationsFile $runName.MendelViol\n";
 	    print VCFUTILS_SH "mv $runName.phased.vcf.gz $opt{OUTPUT_DIR}/\n";
 	    print VCFUTILS_SH "mv $runName.MendelViol $opt{OUTPUT_DIR}/\n";
 	    print VCFUTILS_SH "if [ -f $opt{OUTPUT_DIR}/$runName.phased.vcf.gz -a -f $opt{OUTPUT_DIR}/$runName.MendelViol ]; then\n";
@@ -91,8 +91,8 @@ sub runVcfUtils {
 	    warn "WARNING: $opt{OUTPUT_DIR}/logs/Gender_check.done exists, skipping \n";
 	} else {
 	    print VCFUTILS_SH "cd $opt{OUTPUT_DIR}/tmp/\n";
-	    print VCFUTILS_SH "ln -sd $opt{PED_PATH}/$runName.ped $opt{PED_PATH}/$runName.fam\n";
-	    print VCFUTILS_SH "java -Xmx8G -jar $opt{GATK_PATH}/GenomeAnalysisTK.jar -T VariantsToBinaryPed -R $opt{GENOME} -V $opt{OUTPUT_DIR}/$vcf -m $opt{PED_PATH}/$runName.fam -bed gender_check.bed -bim gender_check.bim -fam gender_check.fam -mgq 20\n";
+	    print VCFUTILS_SH "ln -sd $opt{OUTPUT_DIR}/$runName.ped $opt{OUTPUT_DIR}/$runName.fam\n";
+	    print VCFUTILS_SH "java -Xmx8G -jar $opt{GATK_PATH}/GenomeAnalysisTK.jar -T VariantsToBinaryPed -R $opt{GENOME} -V $opt{OUTPUT_DIR}/$vcf -m $opt{OUTPUT_DIR}/$runName.fam -bed gender_check.bed -bim gender_check.bim -fam gender_check.fam -mgq 20\n";
 	    print VCFUTILS_SH "/hpc/local/CentOS6/cog_bioinf/plink_1.9b3/plink -bfile gender_check --check-sex\n";
 	    print VCFUTILS_SH "mv plink.sexcheck $opt{OUTPUT_DIR}/gender_check.out\n";
 	    print VCFUTILS_SH "if [ -f $opt{OUTPUT_DIR}/gender_check.out ]; then\n";
