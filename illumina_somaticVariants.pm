@@ -476,13 +476,20 @@ sub runMutect {
 
     # Run Mutect
     print MUTECT_SH "\tcd $mutect_tmp_dir\n";
+    print MUTECT_SH "\t$command\n";
+    
+    # Filter Mutect result
+    $command = "cat $sample_tumor_name\_mutect.vcf | java -Xmx".$javaJobMem."G -jar $opt{SNPEFF_PATH}/SnpSift.jar filter \"( na FILTER ) | (FILTER = 'PASS')\" > $sample_tumor_name\_mutect_passed.vcf \n";
     print MUTECT_SH "\t$command\n\n";
-
     # Check Mutect completed
-    print MUTECT_SH "\tif [ -f $sample_tumor_name\_mutect.vcf ]\n";
+    print MUTECT_SH "\tif [ -f $sample_tumor_name\_mutect.vcf -a -f $sample_tumor_name\_mutect_passed.vcf ]\n";
     print MUTECT_SH "\tthen\n";
     print MUTECT_SH "\t\tmv $sample_tumor_name\_mutect.vcf $mutect_out_dir/\n";
     print MUTECT_SH "\t\tmv $sample_tumor_name\_mutect.vcf.idx $mutect_out_dir/\n";
+    print MUTECT_SH "\t\tmv $sample_tumor_name\_mutect_passed.vcf $mutect_out_dir/\n";
+    print MUTECT_SH "\t\tmv $sample_tumor_name\_mutect_passed.vcf.idx $mutect_out_dir/\n";
+    print MUTECT_SH "\t\tcd $mutect_out_dir/\n";
+    print MUTECT_SH "\t\trm -r tmp/\n";
     print MUTECT_SH "\t\ttouch $log_dir/mutect.done\n";
     print MUTECT_SH "\tfi\n\n";
     print MUTECT_SH "\techo \"End Mutect\t\" `date` \"\t $sample_ref_bam \t $sample_tumor_bam\t\" `uname -n` >> $log_dir/mutect.log\n\n";
