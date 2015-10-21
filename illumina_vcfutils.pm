@@ -74,10 +74,13 @@ sub runVcfUtils {
 	    warn "WARNING: $opt{OUTPUT_DIR}/logs/Phase.done exists, skipping \n";
 	} else {
 	    print VCFUTILS_SH "cd $opt{OUTPUT_DIR}/tmp/\n";
-	    print VCFUTILS_SH "java -Xmx8G -jar $opt{GATK_PATH}/GenomeAnalysisTK.jar -T PhaseByTransmission -R $opt{GENOME} -V $opt{OUTPUT_DIR}/$vcf -ped $opt{OUTPUT_DIR}/$runName.ped -o $runName.phased.vcf.gz --MendelianViolationsFile $runName.MendelViol\n";
-	    print VCFUTILS_SH "mv $runName.phased.vcf.gz $opt{OUTPUT_DIR}/\n";
-	    print VCFUTILS_SH "mv $runName.MendelViol $opt{OUTPUT_DIR}/\n";
-	    print VCFUTILS_SH "if [ -f $opt{OUTPUT_DIR}/$runName.phased.vcf.gz -a -f $opt{OUTPUT_DIR}/$runName.MendelViol ]; then\n";
+	    print VCFUTILS_SH "java -Xmx8G -jar $opt{GATK_PATH}/GenomeAnalysisTK.jar -T PhaseByTransmission -R $opt{GENOME} -V $opt{OUTPUT_DIR}/$vcf -ped $opt{OUTPUT_DIR}/$runName.ped -o $runName.phased.vcf --MendelianViolationsFile $runName.MendelViol\n\n";
+	    
+	    ## Check output
+	    print VCFUTILS_SH "if [ \"\$(tail -n 1 $opt{OUTPUT_DIR}/$vcf | cut -f 1,2)\" = \"\$(tail -n 1 $runName.phased.vcf | cut -f 1,2)\" -a -f $runName.MendelViol ]\n";
+	    print VCFUTILS_SH "then\n";
+	    print VCFUTILS_SH "\tmv $runName.phased.vcf $opt{OUTPUT_DIR}/\n";
+	    print VCFUTILS_SH "\tmv $runName.MendelViol $opt{OUTPUT_DIR}/\n";
 	    print VCFUTILS_SH "\ttouch $opt{OUTPUT_DIR}/logs/PhaseByTransmission.done\n";
 	    print VCFUTILS_SH "else\n";
 	    print VCFUTILS_SH "\tfailed=true\n";
