@@ -26,6 +26,7 @@ use illumina_calling;
 use illumina_filterVariants;
 use illumina_somaticVariants;
 use illumina_copyNumber;
+use illumina_structuralVariants;
 use illumina_annotateVariants;
 use illumina_vcfutils;
 use illumina_check;
@@ -148,6 +149,12 @@ if(! $opt{VCF} ){
     if($opt{VARIANT_CALLING} eq "yes"){
 	print "\n###SCHEDULING VARIANT CALLING####\n";
 	$opt_ref = illumina_calling::runVariantCalling(\%opt);
+	%opt = %$opt_ref;
+    }
+    ### SV - Delly
+    if($opt{SV_CALLING} eq "yes"){
+	print "\n###SCHEDULING SV CALLING####\n";
+	$opt_ref = illumina_structuralVariants::runDelly(\%opt);
 	%opt = %$opt_ref;
     }
 
@@ -295,6 +302,7 @@ sub checkConfig{
     if(! $opt{FILTER_VARIANTS}){ print "ERROR: No FILTER_VARIANTS option found in config files. \n"; $checkFailed = 1; }
     if(! $opt{SOMATIC_VARIANTS}){ print "ERROR: No SOMATIC_VARIANTS option found in config files. \n"; $checkFailed = 1; }
     if(! $opt{COPY_NUMBER}){ print "ERROR: No COPY_NUMBER option found in config files. \n"; $checkFailed = 1; }
+    if(! $opt{SV_CALLING}){ print "ERROR: No SV_CALLING option found in config files. \n"; $checkFailed = 1; }
     if(! $opt{ANNOTATE_VARIANTS}){ print "ERROR: No ANNOTATE_VARIANTS option found in config files. \n"; $checkFailed = 1; }
     if(! $opt{VCF_UTILS}){ print "ERROR: No VCF_UTILS option found in config files. \n"; $checkFailed = 1; }
     if(! $opt{CHECKING}){ print "ERROR: No CHECKING option found in config files. \n"; $checkFailed = 1; }
