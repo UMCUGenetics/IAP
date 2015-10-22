@@ -51,7 +51,7 @@ sub runPostStats {
 	    $command .= "-baits $opt{POSTSTATS_BAITS} ";
 	} else {
 	    $command .= "-wgs ";
-	    $command .= "-coverage_cap 250 "; # add option to ini file
+	    $command .= "-coverage_cap 250 ";
 	}
 	
 	if ( $opt{SINGLE_END} ) {

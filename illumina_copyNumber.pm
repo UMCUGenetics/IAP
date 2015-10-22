@@ -248,7 +248,9 @@ sub runFreec {
     print FREEC_CONFIG "telocentromeric=$opt{FREEC_TELOCENTROMERIC}\n";
     print FREEC_CONFIG "BedGraphOutput=TRUE\n";
     print FREEC_CONFIG "outputDir=$freec_out_dir\n";
-
+    print FREEC_CONFIG "gemMappabilityFile=/hpc/local/CentOS6/cog_bioinf/freec/hg19_mappability_tracks/out100m1_hg19.gem\n";
+    print FREEC_CONFIG "gemMappabilityFile=/hpc/local/CentOS6/cog_bioinf/freec/hg19_mappability_tracks/out100m2_hg19.gem\n";
+    
     print FREEC_CONFIG "[sample]\n";
     print FREEC_CONFIG "mateFile=$sample_bam\n";
     print FREEC_CONFIG "inputFormat=BAM\n";

@@ -196,6 +196,7 @@ sub runCheck {
 	    push( @runningJobs, $opt{RUNNING_JOBS}->{'VCF_UTILS'} );
 	}
     }
+
     ### Check failed variable and mail report
     print BASH "echo \"\">>$logFile\n\n"; ## empty line after stats
 
@@ -207,10 +208,10 @@ sub runCheck {
 
     ### Pipeline done
     print BASH "else\n";
-    print BASH "\techo \"The pipeline completed successfully. \">>$logFile\n";
+    print BASH "\techo \"The pipeline completed successfully. The md5sum file will be created.\">>$logFile\n";
     print BASH "\tmail -s \"IAP DONE $runName\" \"$opt{MAIL}\" < $logFile\n";
     
-    #remove all tmp folders and empty logs except .done files if pipeline completed successfully
+    # Remove all tmp folders and empty logs except .done files if pipeline completed successfully
     print BASH "\trm -r $opt{OUTPUT_DIR}/tmp\n";
     print BASH "\trm -r $opt{OUTPUT_DIR}/*/tmp\n";
     print BASH "\tfind $opt{OUTPUT_DIR}/logs -size 0 -not -name \"*.done\" -delete\n";
@@ -225,17 +226,20 @@ sub runCheck {
 	    }
 	}
     }
+    # Create md5sum.txt
+    print BASH "\n\tcd $opt{OUTPUT_DIR}\n";
+    print BASH "\tfind . -type f \\( ! -iname \"md5sum.txt\" \\) -exec md5sum \"{}\" \\; > md5sum.txt\n";
+
     print BASH "fi\n";
     
     #Sleep to ensure that email is send from cluster.
     print BASH "sleep 5s \n";
 
     #Start main bash script
-    my $logDir = $opt{OUTPUT_DIR}."/logs";
     if (@runningJobs){
-	system "qsub -q $opt{CHECKING_QUEUE} -m a -M $opt{MAIL} -pe threaded $opt{CHECKING_THREADS} -P $opt{CLUSTER_PROJECT} -o /dev/null -e /dev/null -N check_$jobID -hold_jid ".join(",",@runningJobs)." $bashFile";
+	system "qsub -q $opt{CHECKING_QUEUE} -m as -M $opt{MAIL} -pe threaded $opt{CHECKING_THREADS} -P $opt{CLUSTER_PROJECT} -o /dev/null -e /dev/null -N check_$jobID -hold_jid ".join(",",@runningJobs)." $bashFile";
     } else {
-	system "qsub -q $opt{CHECKING_QUEUE} -m a -M $opt{MAIL} -pe threaded $opt{CHECKING_THREADS} -P $opt{CLUSTER_PROJECT} -o /dev/null -e /dev/null -N check_$jobID $bashFile";
+	system "qsub -q $opt{CHECKING_QUEUE} -m as -M $opt{MAIL} -pe threaded $opt{CHECKING_THREADS} -P $opt{CLUSTER_PROJECT} -o /dev/null -e /dev/null -N check_$jobID $bashFile";
     }
 }
 
