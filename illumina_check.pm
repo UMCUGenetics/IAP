@@ -168,7 +168,7 @@ sub runCheck {
     }
     if($opt{SV_CALLING} eq "yes"){
 	print BASH "echo \"SV calling:\" >>$logFile\n";
-	# per done file checken.
+	# per sv type done file check
 	my @svTypes = split/\t/, $opt{DELLY_SVTYPE};
 	foreach my $type (@svTypes){
 	    my $done_file = "$opt{OUTPUT_DIR}/DELLY/logs/DELLY_$type.done"; 
