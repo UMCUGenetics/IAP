@@ -14,6 +14,8 @@ use POSIX qw(tmpnam);
 use Getopt::Long;
 use FindBin;
 use File::Path qw(make_path);
+use Cwd qw( abs_path );
+use File::Basename qw( dirname );
 
 ### Load pipeline modules ####
 use lib "$FindBin::Bin"; #locates pipeline directory
@@ -41,7 +43,8 @@ my $configurationFile;
 %opt = (
     'RUNNING_JOBS'		=> {}, #do not use in .conf or .ini
     'BAM_FILES'			=> {}, #do not use in .conf or .ini
-    'SAMPLES'			=> undef #do not use in .conf or .ini
+    'SAMPLES'			=> undef, #do not use in .conf or .ini
+    'IAP_PATH'			=> dirname(abs_path($0)) # current IAP root directory
 );
 
 ############ READ RUN SETTINGS FORM .conf FILE ############
@@ -154,8 +157,8 @@ if(! $opt{VCF} ){
     ### SV - Delly
     if($opt{SV_CALLING} eq "yes"){
 	print "\n###SCHEDULING SV CALLING####\n";
-	$opt_ref = illumina_structuralVariants::runDelly(\%opt);
-	%opt = %$opt_ref;
+	my $sv_jobs = illumina_structuralVariants::runDelly(\%opt);
+	$opt{RUNNING_JOBS}->{'sv'} = $sv_jobs;
     }
 
 } elsif ( $opt{VCF} ) {
@@ -499,6 +502,20 @@ sub checkConfig{
 	    if(! $opt{FREEC_WINDOW}){ print "ERROR: No FREEC_WINDOW option found in config files.\n"; $checkFailed = 1; }
 	    if(! $opt{FREEC_TELOCENTROMERIC}){ print "ERROR: No FREEC_TELOCENTROMERIC option found in config files.\n"; $checkFailed = 1; }
 	}
+    }
+    ## SV_CALLING
+    if($opt{SV_CALLING} eq "yes"){
+	if(! $opt{DELLY_PATH}){ print "ERROR: No DELLY_PATH option found in config files.\n"; $checkFailed = 1; }
+	if(! $opt{DELLY_QUEUE}){ print "ERROR: No DELLY_QUEUE option found in config files.\n"; $checkFailed = 1; }
+	if(! $opt{DELLY_MERGE_QUEUE}){ print "ERROR: No DELLY_MERGE_QUEUE option found in config files.\n"; $checkFailed = 1; }
+	if(! $opt{DELLY_THREADS}){ print "ERROR: No DELLY_THREADS option found in config files.\n"; $checkFailed = 1; }
+	if(! $opt{DELLY_SVTYPE}){ print "ERROR: No DELLY_SVTYPE option found in config files.\n"; $checkFailed = 1; }
+	if(! $opt{DELLY_SPLIT}){ print "ERROR: No DELLY_SPLIT option found in config files.\n"; $checkFailed = 1; }
+	if(! $opt{DELLY_MAPQUAL}){ print "ERROR: No DELLY_MAPQUAL option found in config files.\n"; $checkFailed = 1; }
+	if(! $opt{DELLY_MAD}){ print "ERROR: No DELLY_MAD option found in config files.\n"; $checkFailed = 1; }
+	if(! $opt{DELLY_FLANK}){ print "ERROR: No DELLY_FLANK option found in config files.\n"; $checkFailed = 1; }
+	#if(! $opt{DELLY_VCF_GENO}){ print "ERROR: No DELLY_VCF_GENO option found in config files.\n"; $checkFailed = 1; }
+	if(! $opt{DELLY_GENO_QUAL}){ print "ERROR: No DELLY_GENO_QUA option found in config files.\n"; $checkFailed = 1; }
     }
     ## ANNOTATE_VARIANTS
     if($opt{ANNOTATE_VARIANTS} eq "yes"){
