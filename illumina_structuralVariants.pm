@@ -12,6 +12,7 @@ package illumina_structuralVariants;
 use strict;
 use POSIX qw(tmpnam);
 use File::Path qw(make_path);
+
 my @runningJobs;
 my @sampleBams;
 my ($delly_out_dir, $delly_log_dir, $delly_job_dir, $delly_tmp_dir);
@@ -26,12 +27,13 @@ sub runDelly {
     my $runName = (split("/", $opt{OUTPUT_DIR}))[-1];
     my $jobID = "SV_".get_job_id();
 
-    ### Skip sv calling if .done file exists
+    # Skip sv calling if .done file exists
     if (-e "$opt{OUTPUT_DIR}/logs/StructuralVariants.done"){
 	print "WARNING: $opt{OUTPUT_DIR}/logs/StructuralVariants.done exists, skipping \n";
 	return \%opt;
     }
-    
+
+    # Create output, log, job and tmp directories.
     $delly_out_dir = "$opt{OUTPUT_DIR}/DELLY/";
     $delly_log_dir = "$delly_out_dir/logs/";
     $delly_job_dir = "$delly_out_dir/jobs/";
@@ -45,7 +47,8 @@ sub runDelly {
     if (! -e $delly_tmp_dir) {
 	make_path($delly_tmp_dir) or die "Couldn't create directory: $delly_tmp_dir\n $! \n";
     }
-    
+
+    # Get sample bam files and store running jobs
     foreach my $sample (@{$opt{SAMPLES}}){
 	my $sampleBam = "$opt{OUTPUT_DIR}/$sample/mapping/$opt{BAM_FILES}->{$sample}";
 	push @sampleBams, $sampleBam;
@@ -53,29 +56,31 @@ sub runDelly {
     	    push( @runningJobs, @{$opt{RUNNING_JOBS}->{$sample}} );
         }
     }
-    
+
+    # Get SV types and split settings configured in ini/config
     my @svTypes = split/\t/, $opt{DELLY_SVTYPE};
     my @svSplit = split/\t/, $opt{DELLY_SPLIT};
-    
+
     my @jobIDs_concat;
-    
     my %chrs;
-    
+
     for(my $i = 0; $i <= $#svTypes; $i++) {
 	my $type = $svTypes[$i];
-	
-	### Skip sv calling for type if .done exist
+
+	# Skip SV calling for type if .done exist
 	if (-e "$delly_log_dir/DELLY_$type.done"){
 	    print "WARNING: $delly_log_dir/DELLY_$type.done exists, skipping \n";
 	    next;
 	}
-	
+
+	# Split per chromosome
 	if ($svSplit[$i] eq "yes") {
-	    get_chrs_from_bam(\%chrs) unless scalar(keys %chrs);
+	    get_chrs_from_dict(\%chrs) unless scalar(keys %chrs);
 	    my $jobIDs_chunks;
 	    $jobIDs_chunks = create_interchromosomal_chunks(\@sampleBams, \%chrs, $type) if $type eq "TRA";
 	    $jobIDs_chunks = create_intrachromosomal_chunks(\@sampleBams, \%chrs, $type) if $type =~ /DEL|DUP|INV/;
-	    
+
+	    # Translocation jobs
 	    if ($type eq "TRA") {
 		my $jobID = "CONVERT_".get_job_id();
 		my $convert_file = "$delly_job_dir/$type\_".$jobID.".sh";
@@ -119,7 +124,7 @@ sub runDelly {
 		system "qsub -q $opt{DELLY_MERGE_QUEUE} -m a -M $opt{MAIL} -P $opt{CLUSTER_PROJECT} -o $delly_log_dir/$type\_VCF_CONCAT.out -e $delly_log_dir/$type\_VCF_CONCAT.err -N $jobID2 -hold_jid ".join(",",@$jobIDs_chunks). " $vcf_concat_file";
 
 		push @jobIDs_concat, $jobID2;
-
+	    # Other sv types
 	    } else {
 		my $jobID = "VCF_CONCAT_".get_job_id();
 	        my $vcf_concat_file = "$delly_job_dir/$type\_".$jobID.".sh";
@@ -144,12 +149,10 @@ sub runDelly {
 	        print VCF_CONCAT "\ttouch $delly_log_dir/DELLY_$type.done\n";
 	        print VCF_CONCAT "fi\n\n";
 	        close VCF_CONCAT;
-
 	        system "qsub -q $opt{DELLY_MERGE_QUEUE} -m a -M $opt{MAIL} -P $opt{CLUSTER_PROJECT} -o $delly_log_dir/$type\_VCF_CONCAT.out -e $delly_log_dir/$type\_VCF_CONCAT.err -N $jobID -hold_jid ".join(",",@$jobIDs_chunks). " $vcf_concat_file";
-	        
 	        push @jobIDs_concat, $jobID;
-
 	    }
+	# Non split jobs
 	} else {
 	    my $jobID = "DELLY_".get_job_id();
 	    my $dellyFile = "$delly_job_dir/$type\_".$jobID.".sh";
@@ -158,7 +161,7 @@ sub runDelly {
 	    $logFile =~ s/.sh$/.out/;
 
 	    submit_delly($dellyFile, $jobID, $type, "", "$delly_tmp_dir/$runName\_$type.vcf");
-
+	    # Translocation jobs
 	    if ($type eq "TRA") {
 		    my $jobID2 = "CONVERT_".get_job_id();
 		    my $convert_file = "$delly_job_dir/$type\_".$jobID2.".sh";
@@ -169,7 +172,7 @@ sub runDelly {
     		    print CONVERT "\t$opt{IAP_PATH}/scripts/delly_TRA_convert.pl $delly_tmp_dir/$runName\_$type.vcf\n";
     		    print CONVERT "fi\n";
     		    close CONVERT;
-		    
+
 		    system "qsub -q $opt{DELLY_MERGE_QUEUE} -m a -M $opt{MAIL} -P $opt{CLUSTER_PROJECT} -o $delly_log_dir/$type\_CONVERT.out -e $delly_log_dir/$type\_CONVERT.err -N $jobID2 -hold_jid $jobID $convert_file";
 
 		    my $jobID3 = "VCF_CONCAT_".get_job_id();
@@ -188,7 +191,7 @@ sub runDelly {
 		    system "qsub -q $opt{DELLY_MERGE_QUEUE} -m a -M $opt{MAIL} -P $opt{CLUSTER_PROJECT} -o $delly_log_dir/$type\_VCF_CONCAT.out -e $delly_log_dir/$type\_VCF_CONCAT.err -N $jobID3 -hold_jid $jobID2 $vcf_concat_file";
 		
 		    push @jobIDs_concat, $jobID3;
-
+	    # Other sv types
 	    } else {
 		my $jobID2 = "VCF_CONCAT_".get_job_id();
 		my $vcf_concat_file = "$delly_job_dir/$type\_".$jobID2.".sh";
@@ -212,6 +215,7 @@ sub runDelly {
     return(\@jobIDs_concat);
 }
 
+### Submit delly jobs
 sub submit_delly {
     my ($bashFile, $jobID, $type, $excludeFile, $outFile) = @_;
     my ($logFile, $errorFile) = ($bashFile, $bashFile);
@@ -219,8 +223,8 @@ sub submit_delly {
     $logFile =~ s/.sh$/.out/;
     $errorFile =~ s/jobs/logs/;
     $errorFile =~ s/.sh$/.err/;
-#    $outFile =~ s/\_exclude.txt/.vcf/;
-    
+    #$outFile =~ s/\_exclude.txt/.vcf/;
+
     open DELLY_SH , ">$bashFile" or die "cannot open file $bashFile\n $! \n";
     print DELLY_SH "#!/bin/bash\n\n";
     print DELLY_SH "export OMP_NUM_THREADS=".$opt{DELLY_THREADS}."\n";
@@ -236,7 +240,7 @@ sub submit_delly {
     print DELLY_SH " -o " . $outFile;
     print DELLY_SH " ".join(" ", @sampleBams);
     close DELLY_SH;
-    
+
     if (@runningJobs) {
 	system "qsub -q $opt{DELLY_QUEUE} -m a -M $opt{MAIL} -pe threaded $opt{DELLY_THREADS} -P $opt{CLUSTER_PROJECT} -o $logFile -e $errorFile -N $jobID -hold_jid ".join(",",@runningJobs)." $bashFile";
     } else {
@@ -244,6 +248,7 @@ sub submit_delly {
     }
 }
 
+### Create inter chromosomal chunks
 sub create_interchromosomal_chunks {
     my ($bams, $chrs, $type) = @_;
     my @jobIDs;
@@ -263,10 +268,10 @@ sub create_interchromosomal_chunks {
 	    submit_delly($dellyFile, $jobID, $type, $excludeFile, $outFile);
 	}
     }
-    
     return(\@jobIDs);
 }
 
+### Create intra chromosomal chunks
 sub create_intrachromosomal_chunks {
     my ($bams, $chrs, $type) = @_;
     my @jobIDs;
@@ -284,12 +289,11 @@ sub create_intrachromosomal_chunks {
 	push @jobIDs, $jobID;
 	submit_delly($dellyFile, $jobID, $type, $excludeFile, $outFile);
     }
-    
     return(\@jobIDs);
-
 }
 
-sub get_chrs_from_bam {
+### Get chromosomes from genome.dict
+sub get_chrs_from_dict {
     my ($chrs) = @_;
     my $dictFile = $opt{GENOME};
     $dictFile =~ s/.fasta$/.dict/;
