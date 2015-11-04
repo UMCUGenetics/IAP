@@ -223,7 +223,6 @@ sub submit_delly {
     $logFile =~ s/.sh$/.out/;
     $errorFile =~ s/jobs/logs/;
     $errorFile =~ s/.sh$/.err/;
-    #$outFile =~ s/\_exclude.txt/.vcf/;
 
     open DELLY_SH , ">$bashFile" or die "cannot open file $bashFile\n $! \n";
     print DELLY_SH "#!/bin/bash\n\n";
