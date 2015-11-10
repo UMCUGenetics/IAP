@@ -91,7 +91,7 @@ sub runDelly {
 		print CONVERT "for FILE in $delly_log_dir/$type\_*DELLY*.out\n";
 		print CONVERT "do\n";
 		print CONVERT "\tTAIL=`tail -n 1 \$FILE`\n";
-		print CONVERT "\tif [[ \$TAIL =~ [*Done.\$] ]] ; then\n";
+		print CONVERT "\tif [[ \$TAIL =~ Done.\$ ]] ; then\n";
 		print CONVERT "\t\tFINISHED+=(\$FILE)\n";
 	        print CONVERT "\telse\n";
 	        print CONVERT "\t\tFAILED+=(\$FILE)\n";
@@ -114,7 +114,7 @@ sub runDelly {
 		print VCF_CONCAT "#!/bin/bash\n\n";
 		print VCF_CONCAT "FILE=$delly_log_dir/$type\_CONVERT.out\n";
 		print VCF_CONCAT "TAIL=`tail -n 1 \$FILE`\n";
-		print VCF_CONCAT "if [[ \$TAIL =~ [*Done.\$] ]] ; then\n";
+		print VCF_CONCAT "if [[ \$TAIL =~ Done.\$ ]] ; then\n";
 		print VCF_CONCAT "\t$opt{VCFTOOLS_PATH}/vcf-sort -c $delly_tmp_dir/$runName\_$type\_CONVERT.vcf > $delly_tmp_dir/$runName\_$type\_CONVERT_SORT.vcf\n";
 		print VCF_CONCAT "\tmv $delly_tmp_dir/$runName\_$type\_CONVERT_SORT.vcf $delly_out_dir/$runName\_$type.vcf\n";
 	        print VCF_CONCAT "\ttouch $delly_log_dir/DELLY_$type.done\n";
@@ -135,7 +135,7 @@ sub runDelly {
 		print VCF_CONCAT "for FILE in $delly_log_dir/$type\_*DELLY*.out\n";
 		print VCF_CONCAT "do\n";
 		print VCF_CONCAT "\tTAIL=`tail -n 1 \$FILE`\n";
-		print VCF_CONCAT "\tif [[ \$TAIL =~ [*Done.\$] ]] ; then\n";
+		print VCF_CONCAT "\tif [[ \$TAIL =~ Done.\$ ]] ; then\n";
 		print VCF_CONCAT "\t\tFINISHED+=(\$FILE)\n";
 	        print VCF_CONCAT "\telse\n";
 	        print VCF_CONCAT "\t\tFAILED+=(\$FILE)\n";
@@ -168,7 +168,7 @@ sub runDelly {
 		    open CONVERT, ">$convert_file";
 		    print CONVERT "#!/bin/bash\n\n";
 		    print CONVERT "TAIL=`tail -n 1 $logFile`\n";
-    		    print CONVERT "if [[ \$TAIL =~ [*Done.\$] ]] ; then\n";
+    		    print CONVERT "if [[ \$TAIL =~ Done.\$ ]] ; then\n";
     		    print CONVERT "\t$opt{IAP_PATH}/scripts/delly_TRA_convert.pl $delly_tmp_dir/$runName\_$type.vcf\n";
     		    print CONVERT "fi\n";
     		    close CONVERT;
@@ -181,7 +181,7 @@ sub runDelly {
 		    print VCF_CONCAT "#!/bin/bash\n\n";
     		    print VCF_CONCAT "FILE=$delly_log_dir/$type\_CONVERT.out\n";
 		    print VCF_CONCAT "TAIL=`tail -n 1 \$FILE`\n";
-		    print VCF_CONCAT "if [[ \$TAIL =~ [*Done.\$] ]] ; then\n";
+		    print VCF_CONCAT "if [[ \$TAIL =~ Done.\$ ]] ; then\n";
 		    print VCF_CONCAT "\t$opt{VCFTOOLS_PATH}/vcf-sort -c $delly_tmp_dir/$runName\_$type\_CONVERT.vcf > $delly_tmp_dir/$runName\_$type\_CONVERT_SORT.vcf\n";
 		    print VCF_CONCAT "\tmv $delly_tmp_dir/$runName\_$type\_CONVERT_SORT.vcf $delly_out_dir/$runName\_$type.vcf\n";
 	    	    print VCF_CONCAT "\ttouch $delly_log_dir/DELLY_$type.done\n";
@@ -198,7 +198,7 @@ sub runDelly {
 		open VCF_CONCAT, ">$vcf_concat_file";
 		print VCF_CONCAT "#!/bin/bash\n\n";
 		print VCF_CONCAT "TAIL=`tail -n 1 $logFile`\n";
-		print VCF_CONCAT "if [[ \$TAIL =~ [*Done.\$] ]] ; then\n";
+		print VCF_CONCAT "if [[ \$TAIL =~ Done.\$ ]] ; then\n";
 		print VCF_CONCAT "\tmv $delly_tmp_dir/$runName\_$type.vcf $delly_out_dir/$runName\_$type.vcf\n";
 		print VCF_CONCAT "\ttouch $delly_log_dir/DELLY_$type.done\n";
 		print VCF_CONCAT "else\n";
