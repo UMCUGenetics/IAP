@@ -32,8 +32,7 @@ sub runFilterVariants {
     }
 
     ### Build Queue command
-    my $javaMem = $opt{FILTER_MASTERTHREADS} * $opt{FILTER_MEM};
-    my $command = "java -Xmx".$javaMem."G -Xms".$opt{FILTER_MEM}."G -jar $opt{QUEUE_PATH}/Queue.jar ";
+    my $command = "java -Xmx".$opt{FILTER_MASTERMEM}."G -jar $opt{QUEUE_PATH}/Queue.jar ";
     $command .= "-jobQueue $opt{FILTER_QUEUE} -jobNative \"-pe threaded $opt{FILTER_THREADS} -P $opt{CLUSTER_PROJECT}\" -jobRunner GridEngine -jobReport $opt{OUTPUT_DIR}/logs/VariantFilter.jobReport.txt ";
 
     ### Common settings

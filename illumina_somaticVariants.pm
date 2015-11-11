@@ -297,8 +297,13 @@ sub runPileup {
     print PILEUP_SH "\tPATH=$opt{SAMTOOLS_PATH}:\$PATH\n";
     print PILEUP_SH "\texport PATH\n";
     print PILEUP_SH "\t$opt{SAMBAMBA_PATH}/sambamba mpileup -t $opt{VARSCAN_THREADS} --tmpdir=$opt{OUTPUT_DIR}/tmp/ -L $opt{SOMVAR_TARGETS} -o $pileup $opt{OUTPUT_DIR}/$sample/mapping/$bam --samtools \"-q 1 -f $opt{GENOME}\"\n";
-    print PILEUP_SH "\tmv $pileup $opt{OUTPUT_DIR}/$sample/mapping/\n";
-    print PILEUP_SH "\ttouch $opt{OUTPUT_DIR}/$sample/logs/Pileup_$sample.done\n";
+    print PILEUP_SH "\tif [ \"\$(tail -n 1 $pileup | cut -f 1)\" = \"MT\" ]\n";
+    print PILEUP_SH "\tthen\n";
+    print PILEUP_SH "\t\tmv $pileup $opt{OUTPUT_DIR}/$sample/mapping/\n";
+    print PILEUP_SH "\t\ttouch $opt{OUTPUT_DIR}/$sample/logs/Pileup_$sample.done\n";
+    print PILEUP_SH "\telse\n";
+    print PILEUP_SH "\t\techo \"ERROR: $pileup seems incomplete, it does not end with MT\" >&2\n";
+    print PILEUP_SH "\tfi\n";
     print PILEUP_SH "else\n";
     print PILEUP_SH "\techo \"ERROR: $opt{OUTPUT_DIR}/$sample/mapping/$bam does not exist.\" >&2\n";
     print PILEUP_SH "fi\n\n";
@@ -320,6 +325,8 @@ sub runVarscan {
     my @running_jobs = @{$running_jobs};
     push(@running_jobs, @{$opt{RUNNING_JOBS}->{'pileup'}});
     my $varscan_out_dir = "$out_dir/varscan";
+    (my $sample_tumor_pileup = $sample_tumor_bam) =~ s/.bam/.pileup/;
+    (my $sample_ref_pileup = $sample_ref_bam) =~ s/.bam/.pileup/;
 
     ## Create output dir
     if( ! -e $varscan_out_dir ){
@@ -345,7 +352,7 @@ sub runVarscan {
 
     # run varscan
     print VARSCAN_SH "\techo \"Start Varscan\t\" `date` \"\t $sample_ref_bam \t $sample_tumor_bam\t\" `uname -n` >> $log_dir/varscan.log\n";
-    print VARSCAN_SH "\tjava -Xmx12g -jar $opt{VARSCAN_PATH} somatic $sample_ref_bam.pileup $sample_tumor_bam.pileup $sample_tumor_name $opt{VARSCAN_SETTINGS} --output-vcf 1\n\n";
+    print VARSCAN_SH "\tjava -Xmx12g -jar $opt{VARSCAN_PATH} somatic $sample_ref_pileup $sample_tumor_pileup $sample_tumor_name $opt{VARSCAN_SETTINGS} --output-vcf 1\n\n";
 
     # postprocessing
     print VARSCAN_SH "\tjava -Xmx12g -jar $opt{VARSCAN_PATH} processSomatic $sample_tumor_name.indel.vcf $opt{VARSCAN_POSTSETTINGS}\n";
@@ -475,10 +482,8 @@ sub runMutect {
 
     ## Build Queue command 
     ## wait for GATK-MuTect integration, see http://gatkforums.broadinstitute.org/discussion/comment/24614#Comment_24614
-    #my $javaMem = $opt{MUTECT_MASTERTHREADS} * $opt{MUTECT_MEM};
-    #my $javaJobMem = $opt{MUTECT_THREADS} * $opt{MUTECT_MEM};
-    #my $command = "java -Xmx".$javaMem."G -Xms".$opt{MUTECT_MEM}."G -jar $opt{QUEUE_PATH}/Queue.jar ";
-    #$command .= "-jobQueue $opt{MUTECT_QUEUE} -jobNative \"-pe threaded $opt{MUTECT_THREADS} -P $opt{CLUSTER_PROJECT}\" -jobRunner GridEngine -jobReport $log_dir/mutect.jobReport.txt -memLimit $javaJobMem "; #Queue options
+    #my $command = "java -Xmx".$javaMem."G -Xms".$opt{MUTECT_MASTERMEM}."G -jar $opt{QUEUE_PATH}/Queue.jar ";
+    #$command .= "-jobQueue $opt{MUTECT_QUEUE} -jobNative \"-pe threaded $opt{MUTECT_THREADS} -P $opt{CLUSTER_PROJECT}\" -jobRunner GridEngine -jobReport $log_dir/mutect.jobReport.txt "; #Queue options
     #$command .= "-S $opt{MUTECT_SCALA} ";
     #$command .= "-R $opt{GENOME} -O $sample_tumor_name -mem $opt{MUTECT_MEM} -nsc $opt{MUTECT_SCATTER} ";
     #$command .= "-tb $sample_tumor_bam -nb $sample_ref_bam ";
@@ -499,8 +504,7 @@ sub runMutect {
     #$command .= "-run";
     
     ### Mutect .jar command
-    my $javaJobMem = $opt{MUTECT_THREADS} * $opt{MUTECT_MEM};
-    my $command = "java -Xmx".$javaJobMem."G -jar $opt{MUTECT_PATH}/mutect.jar -T MuTect ";
+    my $command = "java -Xmx".$opt{MUTECT_MEM}."G -jar $opt{MUTECT_PATH}/mutect.jar -T MuTect ";
     $command .= "-R $opt{GENOME} --cosmic $opt{MUTECT_COSMIC} --dbsnp $opt{CALLING_DBSNP} --intervals $opt{CALLING_TARGETS} ";
     $command .= "--input_file:normal $sample_ref_bam --input_file:tumor $sample_tumor_bam ";
     $command .= "--out call_stats.out --vcf $sample_tumor_name\_mutect.vcf";
@@ -518,7 +522,7 @@ sub runMutect {
     print MUTECT_SH "\t$command\n";
     
     # Filter Mutect result
-    $command = "cat $sample_tumor_name\_mutect.vcf | java -Xmx".$javaJobMem."G -jar $opt{SNPEFF_PATH}/SnpSift.jar filter \"( na FILTER ) | (FILTER = 'PASS')\" > $sample_tumor_name\_mutect_passed.vcf \n";
+    $command = "cat $sample_tumor_name\_mutect.vcf | java -Xmx".$opt{MUTECT_MEM}."G -jar $opt{SNPEFF_PATH}/SnpSift.jar filter \"( na FILTER ) | (FILTER = 'PASS')\" > $sample_tumor_name\_mutect_passed.vcf \n";
     print MUTECT_SH "\t$command\n\n";
     # Check Mutect completed
     print MUTECT_SH "\tif [ -f $sample_tumor_name\_mutect.vcf -a -f $sample_tumor_name\_mutect_passed.vcf ]\n";
