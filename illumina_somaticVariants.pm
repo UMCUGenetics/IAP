@@ -347,7 +347,7 @@ sub runVarscan {
     open VARSCAN_SH, ">$bash_file" or die "cannot open file $bash_file \n";
     print VARSCAN_SH "#!/bin/bash\n\n";
     print VARSCAN_SH "cd $varscan_out_dir\n";
-    print VARSCAN_SH "if [ -f $sample_tumor_bam -a -f $sample_ref_bam ]\n";
+    print VARSCAN_SH "if [ -f $sample_ref_pileup -a -f $sample_tumor_pileup ]\n";
     print VARSCAN_SH "then\n";
 
     # run varscan
