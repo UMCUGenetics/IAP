@@ -174,17 +174,17 @@ sub runSomaticVariantCallers {
 		    my $suffix = "_dbSNP.vcf";
 		    $outvcf =~ s/.vcf/$suffix/;
 		    print MERGE_SH "java -Xmx6G -jar $opt{GATK_PATH}/GenomeAnalysisTK.jar -T VariantAnnotator -nt $opt{SOMVARMERGE_THREADS} -R $opt{GENOME} -o $outvcf --variant $invcf --dbsnp $opt{CALLING_DBSNP} --alwaysAppendDbsnpId\n";
-		    print MERGE_SH "if [ -f $outvcf ]\nthen\n\trm $invcf $invcf.idx \nfi\n";
+		    print MERGE_SH "if [ -s $outvcf ]\nthen\n\trm $invcf $invcf.idx \nfi\n";
 		
 		    ## cosmic
 		    $invcf = $outvcf;
 		    $suffix = "_$opt{ANNOTATE_IDNAME}.vcf";
 		    $outvcf =~ s/.vcf/$suffix/;
 		    print MERGE_SH "java -Xmx6G -jar $opt{GATK_PATH}/GenomeAnalysisTK.jar -T VariantAnnotator -nt $opt{SOMVARMERGE_THREADS} -R $opt{GENOME} -o $outvcf --variant $invcf --dbsnp $opt{ANNOTATE_IDDB} --alwaysAppendDbsnpId\n";
-		    print MERGE_SH "if [ -f $outvcf ]\nthen\n\trm $invcf $invcf.idx \nfi\n";
+		    print MERGE_SH "if [ -s $outvcf ]\nthen\n\trm $invcf $invcf.idx \nfi\n";
 		
 		    ## Check annotated vcf using the last position
-		    print MERGE_SH "\nif [ \"\$(tail -n 1 $preAnnotateVCF | cut -f 1,2)\" = \"\$(tail -n 1 $outvcf | cut -f 1,2)\" ]\n";
+		    print MERGE_SH "\nif [ \"\$(tail -n 1 $preAnnotateVCF | cut -f 1,2)\" = \"\$(tail -n 1 $outvcf | cut -f 1,2)\" -a -s $preAnnotateVCF -a -s $outvcf ]\n";
 		    print MERGE_SH "then\n";
 		    print MERGE_SH "\ttouch $sample_tumor_log_dir/$sample_tumor_name.done\n";
 		    print MERGE_SH "fi\n";
@@ -351,7 +351,7 @@ sub runVarscan {
     print VARSCAN_SH "then\n";
 
     # run varscan
-    print VARSCAN_SH "\techo \"Start Varscan\t\" `date` \"\t $sample_ref_bam \t $sample_tumor_bam\t\" `uname -n` >> $log_dir/varscan.log\n";
+    print VARSCAN_SH "\techo \"Start Varscan\t\" `date` \"\t $sample_ref_pileup \t $sample_tumor_pileup\t\" `uname -n` >> $log_dir/varscan.log\n";
     print VARSCAN_SH "\tjava -Xmx12g -jar $opt{VARSCAN_PATH} somatic $sample_ref_pileup $sample_tumor_pileup $sample_tumor_name $opt{VARSCAN_SETTINGS} --output-vcf 1\n\n";
 
     # postprocessing
@@ -367,10 +367,10 @@ sub runVarscan {
     print VARSCAN_SH "\tthen\n";
     print VARSCAN_SH "\t\ttouch $log_dir/varscan.done\n";
     print VARSCAN_SH "\tfi\n\n";
-    print VARSCAN_SH "\techo \"End Varscan\t\" `date` \"\t $sample_ref_bam \t $sample_tumor_bam\t\" `uname -n` >> $log_dir/varscan.log\n";
+    print VARSCAN_SH "\techo \"End Varscan\t\" `date` \"\t $sample_ref_pileup \t $sample_tumor_pileup\t\" `uname -n` >> $log_dir/varscan.log\n";
 
     print VARSCAN_SH "else\n";
-    print VARSCAN_SH "\techo \"ERROR: $sample_tumor_bam or $sample_ref_bam does not exist.\" >&2\n";
+    print VARSCAN_SH "\techo \"ERROR: $sample_tumor_pileup or $sample_ref_pileup does not exist.\" >&2\n";
     print VARSCAN_SH "fi\n";
     close VARSCAN_SH;
 
