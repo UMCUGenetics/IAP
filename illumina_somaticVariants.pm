@@ -505,7 +505,10 @@ sub runMutect {
     
     ### Mutect .jar command
     my $command = "java -Xmx".$opt{MUTECT_MEM}."G -jar $opt{MUTECT_PATH}/mutect.jar -T MuTect ";
-    $command .= "-R $opt{GENOME} --cosmic $opt{MUTECT_COSMIC} --dbsnp $opt{CALLING_DBSNP} --intervals $opt{CALLING_TARGETS} ";
+    $command .= "-R $opt{GENOME} --cosmic $opt{MUTECT_COSMIC} --dbsnp $opt{CALLING_DBSNP} ";
+    if ( $opt{CALLING_TARGETS} ) {
+	$command .= "--intervals $opt{CALLING_TARGETS} ";
+    }
     $command .= "--input_file:normal $sample_ref_bam --input_file:tumor $sample_tumor_bam ";
     $command .= "--out call_stats.out --vcf $sample_tumor_name\_mutect.vcf";
     ## Create mutect bash script
