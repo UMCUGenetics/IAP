@@ -21,7 +21,6 @@ sub runRealignment {
     my $configuration = shift;
     my %opt = %{$configuration};
     my $realignJobs = {};
-    my $javaMem = $opt{REALIGNMENT_MASTERTHREADS} * $opt{REALIGNMENT_MEM};
     my $runName = (split("/", $opt{OUTPUT_DIR}))[-1];
 
     print "Running $opt{REALIGNMENT_MODE} sample indel realignment for the following BAM-files:\n";
@@ -50,7 +49,7 @@ sub runRealignment {
 	print REALIGN_SH "cd $opt{OUTPUT_DIR}/tmp\n";
 	print REALIGN_SH "uname -n > ../logs/$jobId.host\n";
 	print REALIGN_SH "echo \"Start indel realignment\t\" `date` >> ../logs/$runName.log\n";
-	print REALIGN_SH "java -Djava.io.tmpdir=$opt{OUTPUT_DIR}/tmp/ -Xmx".$javaMem."G -jar $opt{QUEUE_PATH}/Queue.jar -R $opt{GENOME} -S $opt{REALIGNMENT_SCALA} -jobQueue $opt{REALIGNMENT_QUEUE} -nt $opt{REALIGNMENT_THREADS} -mem $opt{REALIGNMENT_MEM} -nsc $opt{REALIGNMENT_SCATTER} -mode $opt{REALIGNMENT_MODE} -jobNative \"-pe threaded $opt{REALIGNMENT_THREADS} -P $opt{CLUSTER_PROJECT}\" -run ";
+	print REALIGN_SH "java -Djava.io.tmpdir=$opt{OUTPUT_DIR}/tmp/ -Xmx".$opt{REALIGNMENT_MASTERMEM}."G -jar $opt{QUEUE_PATH}/Queue.jar -R $opt{GENOME} -S $opt{REALIGNMENT_SCALA} -jobQueue $opt{REALIGNMENT_QUEUE} -nt $opt{REALIGNMENT_THREADS} -mem $opt{REALIGNMENT_MEM} -nsc $opt{REALIGNMENT_SCATTER} -mode $opt{REALIGNMENT_MODE} -jobNative \"-pe threaded $opt{REALIGNMENT_THREADS} -P $opt{CLUSTER_PROJECT}\" -run ";
 	
 	if($opt{REALIGNMENT_KNOWN}) {
 	    foreach my $knownIndelFile (@knownIndelFiles) {
@@ -174,7 +173,7 @@ sub runRealignment {
 	    
 	    print REALIGN_SH "if [ -f $opt{OUTPUT_DIR}/$sample/mapping/$bam ]\n";
 	    print REALIGN_SH "then\n";
-	    print REALIGN_SH "\tjava -Djava.io.tmpdir=$opt{OUTPUT_DIR}/$sample/tmp -Xmx".$javaMem."G -jar $opt{QUEUE_PATH}/Queue.jar -R $opt{GENOME} -S $opt{REALIGNMENT_SCALA} -jobQueue $opt{REALIGNMENT_QUEUE} -nt $opt{REALIGNMENT_THREADS} -mem $opt{REALIGNMENT_MEM} -nsc $opt{REALIGNMENT_SCATTER} -mode $opt{REALIGNMENT_MODE} -jobNative \"-pe threaded $opt{REALIGNMENT_THREADS} -P $opt{CLUSTER_PROJECT}\" ";
+	    print REALIGN_SH "\tjava -Djava.io.tmpdir=$opt{OUTPUT_DIR}/$sample/tmp -Xmx".$opt{REALIGNMENT_MASTERMEM}."G -jar $opt{QUEUE_PATH}/Queue.jar -R $opt{GENOME} -S $opt{REALIGNMENT_SCALA} -jobQueue $opt{REALIGNMENT_QUEUE} -nt $opt{REALIGNMENT_THREADS} -mem $opt{REALIGNMENT_MEM} -nsc $opt{REALIGNMENT_SCATTER} -mode $opt{REALIGNMENT_MODE} -jobNative \"-pe threaded $opt{REALIGNMENT_THREADS} -P $opt{CLUSTER_PROJECT}\" ";
 	    
 	    if($opt{REALIGNMENT_KNOWN}) {
 		foreach my $knownIndelFile (@knownIndelFiles) {

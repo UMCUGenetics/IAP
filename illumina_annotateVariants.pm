@@ -25,7 +25,6 @@ sub runAnnotateVariants {
     my @runningJobs;
     my $command;
     my $jobID = "AV_".get_job_id();
-    my $javaMem = $opt{ANNOTATE_THREADS} * $opt{ANNOTATE_MEM};
 
     ### Skip variant annotation if .done file exists.
     if (-e "$opt{OUTPUT_DIR}/logs/VariantAnnotation.done"){
@@ -58,7 +57,7 @@ sub runAnnotateVariants {
 	$outvcf = $invcf;
 	$outvcf =~ s/.vcf/_snpEff.vcf/;
 	#$command = "java -Xmx".$javaMem."g -jar $opt{SNPEFF_PATH}/snpEff.jar -c $opt{SNPEFF_PATH}/snpEff.config $opt{ANNOTATE_DB} -v $invcf -o gatk $opt{ANNOTATE_FLAGS} > $outvcf\n";
-	$command = "java -Xmx".$javaMem."g -jar $opt{SNPEFF_PATH}/snpEff.jar -c $opt{SNPEFF_PATH}/snpEff.config $opt{ANNOTATE_DB} -v $invcf $opt{ANNOTATE_FLAGS} > $outvcf\n";
+	$command = "java -Xmx".$opt{ANNOTATE_MEM}."g -jar $opt{SNPEFF_PATH}/snpEff.jar -c $opt{SNPEFF_PATH}/snpEff.config $opt{ANNOTATE_DB} -v $invcf $opt{ANNOTATE_FLAGS} > $outvcf\n";
 	$command .= "\t$opt{IGVTOOLS_PATH}/igvtools index $outvcf\n";
 	$command .= "\trm igv.log";
 	print ANNOTATE_SH "if [ -f $invcf ]\n";
@@ -74,7 +73,7 @@ sub runAnnotateVariants {
     if($opt{ANNOTATE_SNPSIFT} eq "yes"){
 	$outvcf = $invcf;
 	$outvcf =~ s/.vcf/_snpSift.vcf/;
-	$command = "java -Xmx".$javaMem."g -jar $opt{SNPEFF_PATH}/SnpSift.jar dbnsfp -v -f $opt{ANNOTATE_FIELDS} -db $opt{ANNOTATE_DBNSFP} $invcf > $outvcf\n";
+	$command = "java -Xmx".$opt{ANNOTATE_MEM}."g -jar $opt{SNPEFF_PATH}/SnpSift.jar dbnsfp -v -f $opt{ANNOTATE_FIELDS} -db $opt{ANNOTATE_DBNSFP} $invcf > $outvcf\n";
 	$command .= "\t$opt{IGVTOOLS_PATH}/igvtools index $outvcf\n";
 	$command .= "\trm igv.log";
 	print ANNOTATE_SH "if [ -f $invcf ]\n";
@@ -94,7 +93,7 @@ sub runAnnotateVariants {
 	$outvcf = $invcf;
 	my $suffix = "_$opt{ANNOTATE_IDNAME}.vcf";
 	$outvcf =~ s/.vcf/$suffix/;
-	$command = "java -Xmx".$javaMem."g -jar $opt{GATK_PATH}/GenomeAnalysisTK.jar -T VariantAnnotator -nt $opt{ANNOTATE_THREADS} -R $opt{GENOME} -o $outvcf --variant $invcf --dbsnp $opt{ANNOTATE_IDDB} --alwaysAppendDbsnpId";
+	$command = "java -Xmx".$opt{ANNOTATE_MEM}."g -jar $opt{GATK_PATH}/GenomeAnalysisTK.jar -T VariantAnnotator -nt $opt{ANNOTATE_THREADS} -R $opt{GENOME} -o $outvcf --variant $invcf --dbsnp $opt{ANNOTATE_IDDB} --alwaysAppendDbsnpId";
 	print ANNOTATE_SH "if [ -f $invcf ]\n";
 	print ANNOTATE_SH "then\n";
 	print ANNOTATE_SH "\t$command\n";
@@ -112,7 +111,7 @@ sub runAnnotateVariants {
 	$outvcf = $invcf;
 	my $suffix = "_$opt{ANNOTATE_FREQNAME}.vcf";
 	$outvcf =~ s/.vcf/$suffix/;
-	$command = "java -Xmx".$javaMem."g -jar $opt{SNPEFF_PATH}/SnpSift.jar annotate -tabix -name $opt{ANNOTATE_FREQNAME}_ -info $opt{ANNOTATE_FREQINFO} $opt{ANNOTATE_FREQDB} $invcf > $outvcf \n";
+	$command = "java -Xmx".$opt{ANNOTATE_MEM}."g -jar $opt{SNPEFF_PATH}/SnpSift.jar annotate -tabix -name $opt{ANNOTATE_FREQNAME}_ -info $opt{ANNOTATE_FREQINFO} $opt{ANNOTATE_FREQDB} $invcf > $outvcf \n";
 	$command .= "\t$opt{IGVTOOLS_PATH}/igvtools index $outvcf\n";
 	$command .= "\trm igv.log";
 	print ANNOTATE_SH "if [ -f $invcf ]\n";

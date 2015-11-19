@@ -34,11 +34,7 @@ sub parseSamples {
 	
 	# Reference sample
 	if ($origin =~ m/R.*/){
-	    if ($somatic_samples{$cpct_name}{"ref"}){
-		print "\t WARNING: $cpct_name has multiple reference samples, using: $somatic_samples{$cpct_name}{'ref'} \n\n";
-	    } else {
-		$somatic_samples{$cpct_name}{"ref"} = $sample;
-	    }
+	    push(@{$somatic_samples{$cpct_name}{"ref"}},$sample);
 	}
 
 	# Tumor samples
@@ -71,80 +67,81 @@ sub runCopyNumberTools {
 	    }
 	    ### Loop over tumor samples for each somatic sample (multiple tumor samples possible)
 	    foreach my $sample_tumor (@{$opt{SOMATIC_SAMPLES}{$sample}{'tumor'}}){
-		my @cnv_jobs;
-		## Create output, log and job directories
-		my $sample_tumor_name = "$opt{SOMATIC_SAMPLES}{$sample}{'ref'}\_$sample_tumor";
-		my $sample_tumor_out_dir = "$opt{OUTPUT_DIR}/copyNumber/$sample_tumor_name";
-		my $sample_tumor_log_dir = "$sample_tumor_out_dir/logs/";
-		my $sample_tumor_job_dir = "$sample_tumor_out_dir/jobs/";
+		foreach my $sample_ref (@{$opt{SOMATIC_SAMPLES}{$sample}{'ref'}}){
+		    my @cnv_jobs;
+		    ## Create output, log and job directories
+		    my $sample_tumor_name = "$sample_ref\_$sample_tumor";
+		    my $sample_tumor_out_dir = "$opt{OUTPUT_DIR}/copyNumber/$sample_tumor_name";
+		    my $sample_tumor_log_dir = "$sample_tumor_out_dir/logs/";
+		    my $sample_tumor_job_dir = "$sample_tumor_out_dir/jobs/";
 
-		if(! -e $sample_tumor_out_dir){
-		    make_path($sample_tumor_out_dir) or die "Couldn't create directory:  $sample_tumor_out_dir\n";
-		}
-		if(! -e $sample_tumor_job_dir){
-		    make_path($sample_tumor_job_dir) or die "Couldn't create directory: $sample_tumor_job_dir\n";
-		}
-		if(! -e $sample_tumor_log_dir){
-		    make_path($sample_tumor_log_dir) or die "Couldn't create directory: $sample_tumor_log_dir\n";
-		}
+		    if(! -e $sample_tumor_out_dir){
+			make_path($sample_tumor_out_dir) or die "Couldn't create directory:  $sample_tumor_out_dir\n";
+		    }
+		    if(! -e $sample_tumor_job_dir){
+			make_path($sample_tumor_job_dir) or die "Couldn't create directory: $sample_tumor_job_dir\n";
+		    }
+		    if(! -e $sample_tumor_log_dir){
+			make_path($sample_tumor_log_dir) or die "Couldn't create directory: $sample_tumor_log_dir\n";
+		    }
 
-		## Lookup running jobs and bams
-		my $sample_tumor_bam = "$opt{OUTPUT_DIR}/$sample_tumor/mapping/$opt{BAM_FILES}->{$sample_tumor}";
-		my @running_jobs;
-		if ( @{$opt{RUNNING_JOBS}->{$sample_tumor}} ){
-		    push(@running_jobs, @{$opt{RUNNING_JOBS}->{$sample_tumor}});
-		}
-		my $sample_ref_bam = "$opt{OUTPUT_DIR}/$opt{SOMATIC_SAMPLES}{$sample}{'ref'}/mapping/$opt{BAM_FILES}->{$opt{SOMATIC_SAMPLES}{$sample}{'ref'}}";
-		if ( @{$opt{RUNNING_JOBS}->{$opt{SOMATIC_SAMPLES}{$sample}{'ref'}}} ){
-		    push(@running_jobs, @{$opt{RUNNING_JOBS}->{$opt{SOMATIC_SAMPLES}{$sample}{'ref'}}});
-		}
+		    ## Lookup running jobs and bams
+		    my $sample_tumor_bam = "$opt{OUTPUT_DIR}/$sample_tumor/mapping/$opt{BAM_FILES}->{$sample_tumor}";
+		    my @running_jobs;
+		    if ( @{$opt{RUNNING_JOBS}->{$sample_tumor}} ){
+			push(@running_jobs, @{$opt{RUNNING_JOBS}->{$sample_tumor}});
+		    }
+		    my $sample_ref_bam = "$opt{OUTPUT_DIR}/$sample_ref/mapping/$opt{BAM_FILES}->{$sample_ref}";
+		    if ( @{$opt{RUNNING_JOBS}->{$sample_ref}} ){
+			push(@running_jobs, @{$opt{RUNNING_JOBS}->{$sample_ref}});
+		    }
 
-		## Print sample and bam info
-		print "\n$sample \t $sample_ref_bam \t $sample_tumor_bam \n";
+		    ## Print sample and bam info
+		    print "\n$sample \t $sample_ref_bam \t $sample_tumor_bam \n";
 
-		## Skip Copy number tools if .done file exist
-		if (-e "$sample_tumor_log_dir/$sample_tumor_name.done"){
-		    print "WARNING: $sample_tumor_log_dir/$sample_tumor_name.done exists, skipping \n";
-		    next;
-		}
+		    ## Skip Copy number tools if .done file exist
+		    if (-e "$sample_tumor_log_dir/$sample_tumor_name.done"){
+			print "WARNING: $sample_tumor_log_dir/$sample_tumor_name.done exists, skipping \n";
+			next;
+		    }
 
-		## Run CNV callers
-		if($opt{CNV_CONTRA} eq "yes"){
-		    print "\n###SCHEDULING CONTRA####\n";
-		    my $contra_job = runContra($sample_tumor, $sample_tumor_out_dir, $sample_tumor_job_dir, $sample_tumor_log_dir, $sample_tumor_bam, $sample_ref_bam, \@running_jobs, \%opt);
-		    if($contra_job){push(@cnv_jobs, $contra_job)};
+		    ## Run CNV callers
+		    if($opt{CNV_CONTRA} eq "yes"){
+			print "\n###SCHEDULING CONTRA####\n";
+			my $contra_job = runContra($sample_tumor, $sample_tumor_out_dir, $sample_tumor_job_dir, $sample_tumor_log_dir, $sample_tumor_bam, $sample_ref_bam, \@running_jobs, \%opt);
+			if($contra_job){push(@cnv_jobs, $contra_job)};
 		
-		    my $contravis_job = runContraVisualization($sample_tumor, $sample_tumor_out_dir, $sample_tumor_job_dir, $sample_tumor_log_dir,$contra_job, \%opt);
-		    if($contravis_job){push(@cnv_jobs, $contravis_job)};
-		}
-		if($opt{CNV_FREEC} eq "yes"){
-		    print "\n###SCHEDULING FREEC####\n";
-		    my $freec_job = runFreec($sample_tumor, $sample_tumor_out_dir, $sample_tumor_job_dir, $sample_tumor_log_dir, $sample_tumor_bam, $sample_ref_bam, \@running_jobs, \%opt);
-		    if($freec_job){push(@cnv_jobs, $freec_job)};
-		}
-		## Check copy number analysis
-		my $job_id = "CHECK_".$sample_tumor."_".get_job_id();
-		my $bash_file = $sample_tumor_job_dir."/".$job_id.".sh";
+			my $contravis_job = runContraVisualization($sample_tumor, $sample_tumor_out_dir, $sample_tumor_job_dir, $sample_tumor_log_dir,$contra_job, \%opt);
+			if($contravis_job){push(@cnv_jobs, $contravis_job)};
+		    }
+		    if($opt{CNV_FREEC} eq "yes"){
+			print "\n###SCHEDULING FREEC####\n";
+			my $freec_job = runFreec($sample_tumor, $sample_tumor_out_dir, $sample_tumor_job_dir, $sample_tumor_log_dir, $sample_tumor_bam, $sample_ref_bam, \@running_jobs, \%opt);
+			if($freec_job){push(@cnv_jobs, $freec_job)};
+		    }
+		    ## Check copy number analysis
+		    my $job_id = "CHECK_".$sample_tumor."_".get_job_id();
+		    my $bash_file = $sample_tumor_job_dir."/".$job_id.".sh";
 
-		open CHECK_SH, ">$bash_file" or die "cannot open file $bash_file \n";
-		print CHECK_SH "#!/bin/bash\n\n";
-		print CHECK_SH "echo \"Start Check\t\" `date` `uname -n` >> $sample_tumor_log_dir/check.log\n\n";
-		print CHECK_SH "if [[ ";
-		if($opt{CNV_CONTRA} eq "yes"){print CHECK_SH "-f $sample_tumor_log_dir/contra.done && -f $sample_tumor_log_dir/contra_visualization.done && "}
-		if($opt{CNV_FREEC} eq "yes"){print CHECK_SH "-f $sample_tumor_log_dir/freec.done"}
-		print CHECK_SH " ]]\n";
-		print CHECK_SH "then\n";
-		print CHECK_SH "\ttouch $sample_tumor_log_dir/$sample_tumor_name.done\n";
-		print CHECK_SH "fi\n\n";
-		print CHECK_SH "echo \"End Check\t\" `date` `uname -n` >> $sample_tumor_log_dir/check.log\n";
-		close CHECK_SH;
-	    
-		if ( @cnv_jobs ){
-		    system "qsub -q $opt{CNVCHECK_QUEUE} -m a -M $opt{MAIL} -pe threaded $opt{CNVCHECK_THREADS} -P $opt{CLUSTER_PROJECT} -o $sample_tumor_log_dir -e $sample_tumor_log_dir -N $job_id -hold_jid ".join(",",@cnv_jobs)." $bash_file";
-		} else {
-		    system "qsub -q $opt{CNVCHECK_QUEUE} -m a -M $opt{MAIL} -pe threaded $opt{CNVCHECK_THREADS} -P $opt{CLUSTER_PROJECT} -o $sample_tumor_log_dir -e $sample_tumor_log_dir -N $job_id $bash_file";
+		    open CHECK_SH, ">$bash_file" or die "cannot open file $bash_file \n";
+		    print CHECK_SH "#!/bin/bash\n\n";
+		    print CHECK_SH "echo \"Start Check\t\" `date` `uname -n` >> $sample_tumor_log_dir/check.log\n\n";
+		    print CHECK_SH "if [[ ";
+		    if($opt{CNV_CONTRA} eq "yes"){print CHECK_SH "-f $sample_tumor_log_dir/contra.done && -f $sample_tumor_log_dir/contra_visualization.done && "}
+		    if($opt{CNV_FREEC} eq "yes"){print CHECK_SH "-f $sample_tumor_log_dir/freec.done"}
+		    print CHECK_SH " ]]\n";
+		    print CHECK_SH "then\n";
+		    print CHECK_SH "\ttouch $sample_tumor_log_dir/$sample_tumor_name.done\n";
+		    print CHECK_SH "fi\n\n";
+		    print CHECK_SH "echo \"End Check\t\" `date` `uname -n` >> $sample_tumor_log_dir/check.log\n";
+		    close CHECK_SH;
+		    if ( @cnv_jobs ){
+			system "qsub -q $opt{CNVCHECK_QUEUE} -m a -M $opt{MAIL} -pe threaded $opt{CNVCHECK_THREADS} -P $opt{CLUSTER_PROJECT} -o $sample_tumor_log_dir -e $sample_tumor_log_dir -N $job_id -hold_jid ".join(",",@cnv_jobs)." $bash_file";
+		    } else {
+			system "qsub -q $opt{CNVCHECK_QUEUE} -m a -M $opt{MAIL} -pe threaded $opt{CNVCHECK_THREADS} -P $opt{CLUSTER_PROJECT} -o $sample_tumor_log_dir -e $sample_tumor_log_dir -N $job_id $bash_file";
+		    }
+		    push(@check_cnv_jobs, $job_id);
 		}
-		push(@check_cnv_jobs, $job_id);
 	    }
 	}
     ### Sample mode without control or ref sample
