@@ -64,6 +64,14 @@ perl illumina_pipeline.pl /path/to/output_dir/settings.config>
 - tools
 - brew
 
+#### Using R > 3.0
+Add the folowing to your .Rprofile (~/.Rprofile) when using R > 3.0. This will solve a known gatk bug with queue job reports (http://gatkforums.broadinstitute.org/discussion/4405/problem-with-queue-job-reports-in-3-2-0).
+```bash
+.First<-function(){
+library(grid)
+}
+```
+
 ## Ini settings
 Overview and explanation of all ini settings. See [dummy.ini](https://github.com/CuppenResearch/IAP/blob/master/settings/illumina_pipeline.ini.dummy) for a complete example.
 
@@ -213,6 +221,18 @@ FREEBAYES_THREADS	number_of_threads
 FREEBAYES_SETTINGS	-C 3 --pooled-discrete --genotype-qualities --min-coverage 5 --no-mnps --no-complex | Freebayes settings
 FREEBAYES_SOMATICFILTER	--filter 'r.tumor.dp>=20 and r.normal.dp>=20 and r.info.ssc>=20 and qual>=10' --sfilter 's.gq>=15' | biovcf somatic filter settings
 FREEBAYES_GERMLINEFILTER	--filter 'r.tumor.dp>=20 and r.normal.dp>=20 and qual>=10' --sfilter 's.gq>=15' | biovcf germline filter settings
+
+## Mutect
+SOMVAR_MUTECT	yes/no
+MUTECT_PATH	/path/to/mutect/
+MUTECT_MEM	maximum_memory
+MUTECT_QUEUE	queue_name
+MUTECT_THREADS	number_of_threads
+MUTECT_COSMIC	/path/to/CosmicCodingMuts_v72.vcf.gz
+#MUTECT_SCALA	IAP/QScripts/Mutect.scala
+#MUTECT_SCATTER	number_of_scatters
+#MUTECT_MASTERQUEUE	queue_name
+#MUTECT_MASTERTHREADS	number_of_threads
 
 ## Merge vcfs
 SOMVARMERGE_QUEUE	queue_name

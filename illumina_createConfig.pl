@@ -89,7 +89,10 @@ sub createConfig {
 	foreach my $fastqDir (@fastqDirs){
 	    if(! -e $fastqDir) { die "$fastqDir does not exist." }
 	    print CONFIG "# $fastqDir\n";
-	    my @fastqFiles = glob($fastqDir."/*{/,}*{/,}*.fastq.gz");
+	    my $query_one = $fastqDir."/*.fastq.gz "; # look in fastq folder
+	    my $query_two = $fastqDir."/*/*.fastq.gz "; # look one folder deep
+	    my $query_three = $fastqDir."/*/*/*.fastq.gz "; # look two folders deep
+	    my @fastqFiles = glob($query_one.$query_two.$query_three);
 	    foreach my $fastqFile (@fastqFiles){ print CONFIG "FASTQ\t$fastqFile\n" }
 	}
     }
@@ -99,7 +102,9 @@ sub createConfig {
 	foreach my $bamDir (@bamDirs){
 	    if(! -e $bamDir) { die "$bamDir does not exist." }
 	    print CONFIG "# $bamDir\n";
-	    my @bamFiles = glob($bamDir."/*{/,}*.bam");
+	    my $query_one = $bamDir."/*.bam "; # look in bam folder
+	    my $query_two = $bamDir."/*/*.bam "; # look one folder deep
+	    my @bamFiles = glob($query_one.$query_two);
 	    foreach my $bamFile (@bamFiles){
 		my $baiFile = $bamFile;
 		$baiFile =~ s/\.bam/.bai/;
