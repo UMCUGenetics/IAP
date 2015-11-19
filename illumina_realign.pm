@@ -4,7 +4,7 @@
 ### illumina_realign.pm
 ### - Realign bam files using gatk indel realigner
 ###
-### Author: S.W.Boymans & R.F.Ernst
+### Author: S.W.Boymans, R.F.Ernst, H.H.D.Kerstens
 ####
 ###################################################
 
@@ -12,6 +12,9 @@ package illumina_realign;
 
 use strict;
 use POSIX qw(tmpnam);
+use lib "$FindBin::Bin"; #locates pipeline directory
+use illumina_sge;
+
 
 sub runRealignment {
     ###
@@ -119,8 +122,9 @@ sub runRealignment {
 	    print CLEAN_SH "else\n";
 	    print CLEAN_SH "\techo \"ERROR: $opt{OUTPUT_DIR}/$sample/mapping/$realignedBam didn't finish properly.\" >> $opt{OUTPUT_DIR}/logs/realn_cleanup.err\n";
 	    print CLEAN_SH "fi\n\n";
-	    
-	    $mergeJobs .= "qsub -q $opt{REALIGNMENT_QUEUE} -p 100 -m a -M $opt{MAIL} -pe threaded $opt{REALIGNMENT_MERGETHREADS} -P $opt{CLUSTER_PROJECT} -o $opt{OUTPUT_DIR}/$sample/logs -e $opt{OUTPUT_DIR}/$sample/logs -N $mergeJobId -hold_jid $jobId $opt{OUTPUT_DIR}/$sample/jobs/$mergeJobId.sh\n";
+	    my $qsub = &qsubTemplate(\%opt,"REALIGNMENT");
+	    $mergeJobs .= $qsub." -p 100 -o ".$opt{OUTPUT_DIR}."/".$sample."/logs -e ".$opt{OUTPUT_DIR}."/".$sample."/logs -N ".$mergeJobId." -hold_jid ".$jobId," ".
+		$opt{OUTPUT_DIR}."/".$sample."/jobs/".$mergeJobId.".sh\n";
 	    push(@{$opt{RUNNING_JOBS}->{$sample}}, $mergeJobId);
 	}
 	
@@ -134,9 +138,10 @@ sub runRealignment {
 	print CLEAN_SH "\tmv $opt{OUTPUT_DIR}/tmp/IndelRealigner.jobreport.pdf $opt{OUTPUT_DIR}/logs/IndelRealigner.jobreport.pdf\n";
 	print CLEAN_SH "fi\n";
 	close CLEAN_SH;
-	
-	print QSUB "qsub -q $opt{REALIGNMENT_MASTERQUEUE} -m a -M $opt{MAIL} -pe threaded $opt{REALIGNMENT_MASTERTHREADS} -P $opt{CLUSTER_PROJECT} -o $opt{OUTPUT_DIR}/logs -e $opt{OUTPUT_DIR}/logs -N $jobId -hold_jid ".join(",", @waitFor)." $opt{OUTPUT_DIR}/jobs/$jobId.sh\n";
-	print QSUB "qsub -q $opt{REALIGNMENT_MASTERQUEUE} -m a -M $opt{MAIL} -pe threaded $opt{REALIGNMENT_MASTERTHREADS} -P $opt{CLUSTER_PROJECT} -o $opt{OUTPUT_DIR}/logs -e $opt{OUTPUT_DIR}/logs -N $cleanupJobId -hold_jid $jobId $opt{OUTPUT_DIR}/jobs/$cleanupJobId.sh\n";
+
+	my $qsub = &qsubTemplate(\%opt,"REALIGNMENT");	
+	print QSUB $qsub," -o ",$opt{OUTPUT_DIR},"/logs -e ",$opt{OUTPUT_DIR},"/logs -N ",$jobId," -hold_jid ",join(",", @waitFor)," ", $opt{OUTPUT_DIR},"/jobs/",$jobId,".sh\n";
+	print QSUB $qsub," -o ",$opt{OUTPUT_DIR},"/logs -e ",$opt{OUTPUT_DIR},"/logs -N ",$cleanupJobId," -hold_jid ",$jobId," ",$opt{OUTPUT_DIR},"/jobs/",$cleanupJobId,".sh\n";
 	print QSUB $mergeJobs."\n";
 	
 	system("sh $mainJobID");
@@ -195,10 +200,11 @@ sub runRealignment {
 	    close REALIGN_SH;
 
 	    ### Submit realign bash script
+	    my $qsub = &qsubTemplate(\%opt,"REALIGNMENT");
 	    if ( @{$opt{RUNNING_JOBS}->{$sample}} ){
-		system "qsub -q $opt{REALIGNMENT_MASTERQUEUE} -m a -M $opt{MAIL} -pe threaded $opt{REALIGNMENT_MASTERTHREADS} -P $opt{CLUSTER_PROJECT} -o $logDir/Realignment_$sample.out -e $logDir/Realignment_$sample.err -N $jobID -hold_jid ".join(",",@{$opt{RUNNING_JOBS}->{$sample}})." $bashFile";
+		system $qsub." -o ".$logDir."/Realignment_".$sample.".out -e ".$logDir."/Realignment_".$sample.".err -N ".$jobID." -hold_jid ".join(",",@{$opt{RUNNING_JOBS}->{$sample}})." ".$bashFile;
 	    } else {
-		system "qsub -q $opt{REALIGNMENT_MASTERQUEUE} -m a -M $opt{MAIL} -pe threaded $opt{REALIGNMENT_MASTERTHREADS} -P $opt{CLUSTER_PROJECT} -o $logDir/Realignment_$sample.out -e $logDir/Realignment_$sample.err -N $jobID $bashFile";
+		system $qsub." -o ".$logDir."/Realignment_".$sample.".out -e ".$logDir."/Realignment_".$sample.".err -N ".$jobID." ".$bashFile;
 	    }
 	    
 	    ### Create flagstat bash script
@@ -235,7 +241,8 @@ sub runRealignment {
 	    close REALIGNFS_SH;
 	    
 	    ### Submit flagstat bash script
-	    system "qsub -q $opt{FLAGSTAT_QUEUE} -m a -M $opt{MAIL} -pe threaded $opt{FLAGSTAT_THREADS} -R $opt{CLUSTER_RESERVATION} -P $opt{CLUSTER_PROJECT} -o $logDir/RealignmentFS_$sample.out -e $logDir/RealignmentFS_$sample.err -N $jobIDFS -hold_jid $jobID $bashFileFS";
+	    $qsub = &qsubTemplate(\%opt,"FLAGSTAT");
+	    system $qsub." -o ".$logDir."/RealignmentFS_".$sample.".out -e ".$logDir."/RealignmentFS_".$sample.".err -N ".$jobIDFS." -hold_jid ".$jobID." ".$bashFileFS;
 	    
 	    push(@{$opt{RUNNING_JOBS}->{$sample}}, $jobID);
 	    push(@{$opt{RUNNING_JOBS}->{$sample}}, $jobIDFS);
