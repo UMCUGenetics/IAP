@@ -36,7 +36,7 @@ sub runCheck {
     print BASH "echo \"Check and cleanup for run: $runName \" >>$logFile\n";
 
     ### pipeline version
-    my $version = `git --git-dir $FindBin::Bin/.git log --tags -n 1 --simplify-by-decoration --pretty=\"format:\%d \%ai\"`;
+    my $version = `git --git-dir $FindBin::Bin/.git describe --tags`;
     print BASH "echo \"Pipeline version: $version \" >>$logFile\n\n";
     print BASH "echo \"\">>$logFile\n\n"; ## empty line between samples
 
