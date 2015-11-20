@@ -117,10 +117,13 @@ GENOME	/path/to/genome.fasta
 
 #### PRESTATS CLUSTER CONFIGURATION ####
 PRESTATS_QUEUE	queue_name 
+PRESTATS_TIME	estimated runtime
 PRESTATS_THREADS	number_of_threads
 PRESTATS_MEM	maximum_memory 
 
 #### MAPPING CLUSTER CONFIGURATION ####
+MAPPING_QUEUE	     queue_name
+MAPPING_TIME	     estimated runtime
 MAPPING_THREADS	number_of_threads
 MAPPING_MEM	maximum_memory
 MAPPING_MODE	single/batch | submit mapping jobs as one job (batch) or as separate jobs (single)
@@ -130,6 +133,8 @@ MAPPING_MARKDUP	lane/sample/no | Mark duplicates per lane, per sample (merged la
 # Used for mapping, realignment and recalibration.
 FLAGSTAT_QUEUE	queue_name
 FLAGSTAT_THREADS	number_of_threads
+FLAGSTAT_TIME		estimated runtime
+FLAGSTAT_MEM		maximum_memory
 
 #### POSTSTATS CLUSTER CONFIGURATION ####
 POSTSTATS_QUEUE	queue_name
@@ -144,6 +149,7 @@ REALIGNMENT_MASTERQUEUE	queue_name
 REALIGNMENT_MASTERTHREADS	number_of_threads
 REALIGNMENT_QUEUE	queue_name
 REALIGNMENT_THREADS	number_of_threads
+REALIGNMENT_TIME	estimated runtime
 REALIGNMENT_MERGETHREADS	number_of_threads
 REALIGNMENT_MEM	maximum_memory
 REALIGNMENT_SCALA	QScripts/IndelRealigner.scala
