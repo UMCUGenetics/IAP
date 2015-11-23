@@ -360,6 +360,11 @@ sub checkConfig{
 	}
 	if( $opt{POSTSTATS_TARGETS} && ! -e $opt{POSTSTATS_TARGETS}){ print "ERROR: $opt{POSTSTATS_TARGETS} does Not exist\n"; $checkFailed = 1; }
 	if( $opt{POSTSTATS_BAITS} && ! -e $opt{POSTSTATS_BAITS}){ print "ERROR: $opt{POSTSTATS_BAITS} does Not exist\n"; $checkFailed = 1; }
+	if(! $opt{EXONCALLCOV}){ print "ERROR: No EXONCALLCOV option found in config files.\n"; $checkFailed = 1; }
+	if( $opt{EXONCALLCOV} eq "yes"){
+	    if(! $opt{EXONCALLCOV_PATH}){ print "ERROR: No EXONCALLCOV_PATH option found in config files.\n"; $checkFailed = 1; }
+	}
+	
     }
     ## INDELREALIGNMENT
     if($opt{INDELREALIGNMENT} eq "yes"){

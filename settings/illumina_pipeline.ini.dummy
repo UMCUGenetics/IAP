@@ -63,6 +63,7 @@ POSTSTATS_MEM	8
 POSTSTATS_COVERAGECAP	250
 POSTSTATS_TARGETS	/hpc/cog_bioinf/GENOMES/Homo_sapiens.GRCh37.GATK.illumina/sorted_Homo_sapiens.GRCh37.74_nopseudo_noRNA_CDS_picard.bed
 POSTSTATS_BAITS	/hpc/cog_bioinf/ENRICH/PICARD/sorted_SS_exome_v5_S04380110_Covered_picard.bed
+EXONCALLCOV	no
 
 ####REALIGNMENT CLUSTER CONFIGURATION####
 REALIGNMENT_MASTERQUEUE	long
