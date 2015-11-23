@@ -75,7 +75,7 @@ sub runPostStats {
 	## Setup ExonCallCov
 	if ( $opt{EXONCALLCOV} eq "yes" ){
 	    $command = "python $opt{EXONCALLCOV_PATH}";
-	    print PS_SH "$command\n";
+	    print PS_SH "$command -b $opt{EXONCALLCOV_BED} -n $opt{EXONCALLCOV_ENS} -p $opt{EXONCALLCOV_PREF} -l $opt{EXONCALLCOV_PANEL}\n";
 	}
 	
 	close PS_SH;
