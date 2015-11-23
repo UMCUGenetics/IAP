@@ -103,10 +103,12 @@ INDELREALIGNMENT	yes/no
 BASEQUALITYRECAL	yes/no
 VARIANT_CALLING	yes/no
 SOMATIC_VARIANTS	yes/no
+SV_CALLING	yes/no
 COPY_NUMBER	yes/no
 FILTER_VARIANTS	yes/no
 ANNOTATE_VARIANTS	yes/no
 VCF_UTILS	yes/no
+NIPT	yes/no
 CHECKING	yes/no
 
 #### GENOME SETTINGS ####
@@ -238,6 +240,20 @@ MUTECT_COSMIC	/path/to/CosmicCodingMuts_v72.vcf.gz
 SOMVARMERGE_QUEUE	queue_name
 SOMVARMERGE_THREADS	number_of_threads
 
+#### SV Calling -  DELLY CONFIGURATION####
+DELLY_PATH	/path/to/delly_v0.6.7
+DELLY_QUEUE	queue_name
+DELLY_MERGE_QUEUE	queue_name
+DELLY_THREADS	number_of_threads
+
+DELLY_SVTYPE	DEL	DUP	INV	TRA
+DELLY_SPLIT	no/yes	no/yes	no/yes	yes/no
+DELLY_MAPQUAL	1
+DELLY_MAD	9
+DELLY_FLANK	13
+#DELLY_VCF_GENO	
+DELLY_GENO_QUAL	5
+
 ####COPY NUMBER VARIANTION CONFIGURATION####
 CNVCHECK_QUEUE	queue_name
 CNVCHECK_THREADS	number_of_threads
@@ -294,6 +310,12 @@ VCFUTILS_KINSHIP	yes/no
 PLINK_PATH	/path/to/plink
 VCFUTILS_PHASE	yes
 PED	/path/to/file.ped
+
+####NIPT CLUSTER CONFIGURATION####
+CHROMATE_PATH	/path/to/chromate.py
+NIPT_REFERENCESET	/path/to/reference_set/
+NIPT_QUEUE	queue_name
+NIPT_THREADS	number_of_threads
 
 ####CHECKING CLUSTER CONFIGURATION####
 CHECKING_QUEUE	queue_name
