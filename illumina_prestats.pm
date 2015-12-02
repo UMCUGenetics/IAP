@@ -11,7 +11,7 @@ package illumina_prestats;
 
 use strict;
 use POSIX qw(tmpnam);
-use lib "$FindBin::Bin"; #locates pipeline directory                                                                                                                                              
+use lib "$FindBin::Bin"; #locates pipeline directory
 use illumina_sge;
 
 sub runPreStats {
@@ -47,6 +47,7 @@ sub runPreStats {
 	    print PS "touch logs/PreStats_$sampleName.done\n";
 	    print PS "echo \"End PreStats\t\" `date` \"\t$coreName\t\" `uname -n` >> $opt{OUTPUT_DIR}/$sampleName/logs/$sampleName.log\n";
 	    close PS;
+
 	    my $qsub = &qsubTemplate(\%opt,"PRESTATS");
 	    print QSUB $qsub," -o ",$opt{OUTPUT_DIR},"/",$sampleName,"/logs/PreStat_",$coreName,".out -e ",$opt{OUTPUT_DIR},"/",$sampleName,"/logs/PreStats_",
 	    $coreName,".err -N ",$preStatsJobId," ",$opt{OUTPUT_DIR},"/",$sampleName,"/jobs/",$preStatsJobId,".sh\n";
