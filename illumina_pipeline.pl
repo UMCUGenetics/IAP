@@ -14,6 +14,8 @@ use POSIX qw(tmpnam);
 use Getopt::Long;
 use FindBin;
 use File::Path qw(make_path);
+use Cwd qw( abs_path );
+use File::Basename qw( dirname );
 
 ### Load pipeline modules ####
 use lib "$FindBin::Bin"; #locates pipeline directory
@@ -26,6 +28,7 @@ use illumina_calling;
 use illumina_filterVariants;
 use illumina_somaticVariants;
 use illumina_copyNumber;
+use illumina_structuralVariants;
 use illumina_annotateVariants;
 use illumina_vcfutils;
 use illumina_check;
@@ -40,7 +43,8 @@ my $configurationFile;
 %opt = (
     'RUNNING_JOBS'		=> {}, #do not use in .conf or .ini
     'BAM_FILES'			=> {}, #do not use in .conf or .ini
-    'SAMPLES'			=> undef #do not use in .conf or .ini
+    'SAMPLES'			=> undef, #do not use in .conf or .ini
+    'IAP_PATH'			=> dirname(abs_path($0)) # current IAP root directory
 );
 
 ############ READ RUN SETTINGS FORM .conf FILE ############
@@ -149,6 +153,12 @@ if(! $opt{VCF} ){
 	print "\n###SCHEDULING VARIANT CALLING####\n";
 	$opt_ref = illumina_calling::runVariantCalling(\%opt);
 	%opt = %$opt_ref;
+    }
+    ### SV - Delly
+    if($opt{SV_CALLING} eq "yes"){
+	print "\n###SCHEDULING SV CALLING####\n";
+	my $sv_jobs = illumina_structuralVariants::runDelly(\%opt);
+	$opt{RUNNING_JOBS}->{'sv'} = $sv_jobs;
     }
 
 } elsif ( $opt{VCF} ) {
@@ -295,6 +305,7 @@ sub checkConfig{
     if(! $opt{FILTER_VARIANTS}){ print "ERROR: No FILTER_VARIANTS option found in config files. \n"; $checkFailed = 1; }
     if(! $opt{SOMATIC_VARIANTS}){ print "ERROR: No SOMATIC_VARIANTS option found in config files. \n"; $checkFailed = 1; }
     if(! $opt{COPY_NUMBER}){ print "ERROR: No COPY_NUMBER option found in config files. \n"; $checkFailed = 1; }
+    if(! $opt{SV_CALLING}){ print "ERROR: No SV_CALLING option found in config files. \n"; $checkFailed = 1; }
     if(! $opt{ANNOTATE_VARIANTS}){ print "ERROR: No ANNOTATE_VARIANTS option found in config files. \n"; $checkFailed = 1; }
     if(! $opt{VCF_UTILS}){ print "ERROR: No VCF_UTILS option found in config files. \n"; $checkFailed = 1; }
     if(! $opt{CHECKING}){ print "ERROR: No CHECKING option found in config files. \n"; $checkFailed = 1; }
@@ -344,6 +355,7 @@ sub checkConfig{
     if($opt{INDELREALIGNMENT} eq "yes"){
 	if(! $opt{REALIGNMENT_MASTERQUEUE}){ print "ERROR: No REALIGNMENT_MASTERQUEUE option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{REALIGNMENT_MASTERTHREADS}){ print "ERROR: No REALIGNMENT_MASTERTHREADS option found in config files.\n"; $checkFailed = 1; }
+	if(! $opt{REALIGNMENT_MASTERMEM}){ print "ERROR: No REALIGNMENT_MASTERMEM option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{REALIGNMENT_QUEUE}){ print "ERROR: No REALIGNMENT_QUEUE option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{REALIGNMENT_THREADS}){ print "ERROR: No REALIGNMENT_THREADS option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{REALIGNMENT_MERGETHREADS}){ print "ERROR: No REALIGNMENT_MERGETHREADS option found in config files.\n"; $checkFailed = 1; }
@@ -358,7 +370,8 @@ sub checkConfig{
     ## BASEQUALITYRECAL
     if($opt{BASEQUALITYRECAL} eq "yes"){
 	if(! $opt{BASERECALIBRATION_MASTERQUEUE}){ print "ERROR: No BASERECALIBRATION_QUEUE option found in config files.\n"; $checkFailed = 1; }
-	if(! $opt{BASERECALIBRATION_MASTERTHREADS}){ print "ERROR: No BASERECALIBRATION_THREADS option found in config files.\n"; $checkFailed = 1; }
+	if(! $opt{BASERECALIBRATION_MASTERTHREADS}){ print "ERROR: No BASERECALIBRATION_MASTERTHREADS option found in config files.\n"; $checkFailed = 1; }
+	if(! $opt{BASERECALIBRATION_MASTERMEM}){ print "ERROR: No BASERECALIBRATION_MASTERMEM option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{BASERECALIBRATION_QUEUE}){ print "ERROR: No BASERECALIBRATION_QUEUE option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{BASERECALIBRATION_THREADS}){ print "ERROR: No BASERECALIBRATION_THREADS option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{BASERECALIBRATION_MEM}){ print "ERROR: No BASERECALIBRATION_MEM option found in config files.\n"; $checkFailed = 1; }
@@ -372,6 +385,7 @@ sub checkConfig{
     if($opt{VARIANT_CALLING} eq "yes"){
 	if(! $opt{CALLING_MASTERQUEUE}){ print "ERROR: No CALLING_MASTERQUEUE option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{CALLING_MASTERTHREADS}){ print "ERROR: No CALLING_MASTERTHREADS option found in config files.\n"; $checkFailed = 1; }
+	if(! $opt{CALLING_MASTERMEM}){ print "ERROR: No CALLING_MASTERMEM option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{CALLING_QUEUE}){ print "ERROR: No CALLING_QUEUE option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{CALLING_THREADS}){ print "ERROR: No CALLING_THREADS option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{CALLING_MEM}){ print "ERROR: No CALLING_QUEUE option found in config files.\n"; $checkFailed = 1; }
@@ -390,7 +404,8 @@ sub checkConfig{
     ## FILTER_VARIANTS
     if($opt{FILTER_VARIANTS} eq "yes"){
 	if(! $opt{FILTER_MASTERQUEUE}){ print "ERROR: No FILTER_MASTERQUEUE option found in config files.\n"; $checkFailed = 1; }
-	if(! $opt{FILTER_MASTERTHREADS}){ print "ERROR: No FILTER_MASTERTHREADS option found in config files.\n"; $checkFailed = 1; }	
+	if(! $opt{FILTER_MASTERTHREADS}){ print "ERROR: No FILTER_MASTERTHREADS option found in config files.\n"; $checkFailed = 1; }
+	if(! $opt{FILTER_MASTERMEM}){ print "ERROR: No FILTER_MASTERMEM option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{FILTER_QUEUE}){ print "ERROR: No FILTER_QUEUE option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{FILTER_THREADS}){ print "ERROR: No FILTER_THREADS option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{FILTER_MEM}){ print "ERROR: No FILTER_QUEUE option found in config files.\n"; $checkFailed = 1; }
@@ -427,6 +442,8 @@ sub checkConfig{
 	    if(! $opt{VARSCAN_THREADS}){ print "ERROR: No VARSCAN_THREADS option found in config files.\n"; $checkFailed = 1; }
 	    if(! $opt{VARSCAN_SETTINGS}){ print "ERROR: No VARSCAN_SETTINGS option found in config files.\n"; $checkFailed = 1; }
 	    if(! $opt{VARSCAN_POSTSETTINGS}){ print "ERROR: No VARSCAN_POSTSETTINGS option found in config files.\n"; $checkFailed = 1; }
+	    if(! $opt{PILEUP_QUEUE}){ print "ERROR: No PILEUP_QUEUE option found in config files.\n"; $checkFailed = 1; }
+	    if(! $opt{PILEUP_THREADS}){ print "ERROR: No PILEUP_THREADS option found in config files.\n"; $checkFailed = 1; }
 	}
 	if(! $opt{SOMVAR_FREEBAYES}){ print "ERROR: No SOMVAR_FREEBAYES option found in config files.\n"; $checkFailed = 1; }
 	if($opt{SOMVAR_FREEBAYES} eq "yes"){
@@ -491,6 +508,20 @@ sub checkConfig{
 	    if(! $opt{FREEC_WINDOW}){ print "ERROR: No FREEC_WINDOW option found in config files.\n"; $checkFailed = 1; }
 	    if(! $opt{FREEC_TELOCENTROMERIC}){ print "ERROR: No FREEC_TELOCENTROMERIC option found in config files.\n"; $checkFailed = 1; }
 	}
+    }
+    ## SV_CALLING
+    if($opt{SV_CALLING} eq "yes"){
+	if(! $opt{DELLY_PATH}){ print "ERROR: No DELLY_PATH option found in config files.\n"; $checkFailed = 1; }
+	if(! $opt{DELLY_QUEUE}){ print "ERROR: No DELLY_QUEUE option found in config files.\n"; $checkFailed = 1; }
+	if(! $opt{DELLY_MERGE_QUEUE}){ print "ERROR: No DELLY_MERGE_QUEUE option found in config files.\n"; $checkFailed = 1; }
+	if(! $opt{DELLY_THREADS}){ print "ERROR: No DELLY_THREADS option found in config files.\n"; $checkFailed = 1; }
+	if(! $opt{DELLY_SVTYPE}){ print "ERROR: No DELLY_SVTYPE option found in config files.\n"; $checkFailed = 1; }
+	if(! $opt{DELLY_SPLIT}){ print "ERROR: No DELLY_SPLIT option found in config files.\n"; $checkFailed = 1; }
+	if(! $opt{DELLY_MAPQUAL}){ print "ERROR: No DELLY_MAPQUAL option found in config files.\n"; $checkFailed = 1; }
+	if(! $opt{DELLY_MAD}){ print "ERROR: No DELLY_MAD option found in config files.\n"; $checkFailed = 1; }
+	if(! $opt{DELLY_FLANK}){ print "ERROR: No DELLY_FLANK option found in config files.\n"; $checkFailed = 1; }
+	#if(! $opt{DELLY_VCF_GENO}){ print "ERROR: No DELLY_VCF_GENO option found in config files.\n"; $checkFailed = 1; }
+	if(! $opt{DELLY_GENO_QUAL}){ print "ERROR: No DELLY_GENO_QUA option found in config files.\n"; $checkFailed = 1; }
     }
     ## ANNOTATE_VARIANTS
     if($opt{ANNOTATE_VARIANTS} eq "yes"){

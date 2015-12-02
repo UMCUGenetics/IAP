@@ -48,9 +48,13 @@ sub runPreStats {
 	    print PS "echo \"End PreStats\t\" `date` \"\t$coreName\t\" `uname -n` >> $opt{OUTPUT_DIR}/$sampleName/logs/$sampleName.log\n";
 	    close PS;
 
+<<<<<<< HEAD
 	    my $qsub = &qsubTemplate(\%opt,"PRESTATS");
 	    print QSUB $qsub," -o ",$opt{OUTPUT_DIR},"/",$sampleName,"/logs/PreStat_",$coreName,".out -e ",$opt{OUTPUT_DIR},"/",$sampleName,"/logs/PreStats_",
 	    $coreName,".err -N ",$preStatsJobId," ",$opt{OUTPUT_DIR},"/",$sampleName,"/jobs/",$preStatsJobId,".sh\n";
+=======
+	    print QSUB "qsub -l h_rt=$opt{PRESTATS_TIME} -l h_vmem=$opt{PRESTATS_MEM}G -pe threaded $opt{PRESTATS_THREADS} -m a -M $opt{MAIL} -q $opt{PRESTATS_QUEUE} -R $opt{CLUSTER_RESERVATION} -P $opt{CLUSTER_PROJECT} -o $opt{OUTPUT_DIR}/$sampleName/logs/PreStat_$coreName.out -e $opt{OUTPUT_DIR}/$sampleName/logs/PreStats_$coreName.err -N $preStatsJobId $opt{OUTPUT_DIR}/$sampleName/jobs/$preStatsJobId.sh\n";
+>>>>>>> upstream/feature-sge_centos7
 	} else {
 	    print "\t WARNING: FASTQC report for $input already exists, skipping.\n";
 	}
