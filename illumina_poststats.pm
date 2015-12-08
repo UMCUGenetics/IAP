@@ -4,7 +4,7 @@
 ### illumina_poststats.pm
 ### - Create post mapping statistics using bammetrics
 ###
-### Authors: R.F.Ernst & S.W.Boymans
+### Authors: R.F.Ernst, S.W.Boymans, H.H.D.Kerstens
 ###
 #######################################################
 
@@ -13,6 +13,8 @@ package illumina_poststats;
 use strict;
 use POSIX qw(tmpnam);
 use FindBin;
+use illumina_sge;
+
 
 sub runPostStats {
     ###
@@ -73,10 +75,12 @@ sub runPostStats {
 	print BM_SH "qalter -hold_jid bamMetrics_report_".$runName." $jobIDCheck\n"; #hack to make sure check does not start before bamMetrics ends.
 	close BM_SH;
 	
+	my $qsub = &qsubTemplate(\%opt,"POSTSTATS");
 	if (@runningJobs){
-	    system "qsub -q $opt{POSTSTATS_QUEUE} -m a -M $opt{MAIL} -pe threaded $opt{POSTSTATS_THREADS} -R $opt{CLUSTER_RESERVATION} -P $opt{CLUSTER_PROJECT} -o $logDir/PostStats_$runName.out -e $logDir/PostStats_$runName.err -N $jobID -hold_jid ".join(",",@runningJobs)." $bashFile";
+	    system $qsub." -o ".$logDir."/PostStats_".$runName.".out -e ".$logDir."/PostStats_".$runName.".err -N ".$jobID." -hold_jid ".
+		join(",",@runningJobs)." ".$bashFile;
 	} else {
-	    system "qsub -q $opt{POSTSTATS_QUEUE} -m a -M $opt{MAIL} -pe threaded $opt{POSTSTATS_THREADS} -R $opt{CLUSTER_RESERVATION} -P $opt{CLUSTER_PROJECT} -o $logDir/PostStats_$runName.out -e $logDir/PostStats_$runName.err -N $jobID $bashFile";
+	    system $qsub." -o ".$logDir."/PostStats_".$runName.".out -e ".$logDir."/PostStats_".$runName.".err -N ".$jobID." ".$bashFile;
 	}
 	
 	### Check BamMetrics result
@@ -89,7 +93,8 @@ sub runPostStats {
 	print BMCHECK_SH "fi\n";
 	close BMCHECK_SH;
 
-	system "qsub -q $opt{POSTSTATS_QUEUE} -m a -M $opt{MAIL} -pe threaded $opt{POSTSTATS_THREADS} -R $opt{CLUSTER_RESERVATION} -P $opt{CLUSTER_PROJECT} -o $logDir/PostStats_$runName.out -e $logDir/PostStats_$runName.err -N $jobIDCheck -hold_jid bamMetrics_report_".$runName.",$jobID $bashFileCheck";
+	system $qsub." -o ".$logDir."/PostStats_".$runName.".out -e ".$logDir."/PostStats_".$runName.".err -N ".$jobIDCheck.
+	    " -hold_jid bamMetrics_report_".$runName.",".$jobID." ".$bashFileCheck;
 	return $jobIDCheck;
 
     } else {
@@ -117,11 +122,13 @@ sub bashAndSubmit {
     print OUT "#!/bin/bash\n\n";
     print OUT "cd $opt{OUTPUT_DIR}\n";
     print OUT "$command\n";
-    
+    my $qsub = &qsubTemplate(\%opt,"POSTSTATS");
     if ( @{$opt{RUNNING_JOBS}->{$sample}} ){
-	system "qsub -q $opt{POSTSTATS_QUEUE} -pe threaded $opt{POSTSTATS_THREADS} -R $opt{CLUSTER_RESERVATION} -P $opt{CLUSTER_PROJECT} -o $logDir/PostStats_".$sample."_".$jobID.".out -e $logDir/PostStats_".$sample."_".$jobID.".err -N $jobID -hold_jid ".join(",",@{$opt{RUNNING_JOBS}->{$sample} })." $bashFile";
+	system $qsub." -o ".$logDir."/PostStats_".$sample."_".$jobID.".out -e ".$logDir."/PostStats_".$sample."_".$jobID.".err -N ".$jobID.
+	    " -hold_jid ".join(",",@{$opt{RUNNING_JOBS}->{$sample} })." ".$bashFile;
     } else {
-	system "qsub -q $opt{POSTSTATS_QUEUE} -pe threaded $opt{POSTSTATS_THREADS} -R $opt{CLUSTER_RESERVATION} -P $opt{CLUSTER_PROJECT} -o $logDir/PostStats_".$sample."_".$jobID.".out -e $logDir/PostStats_".$sample."_".$jobID.".err -N $jobID $bashFile";
+	system $qsub." -o ".$logDir."/PostStats_".$sample."_".$jobID.".out -e ".$logDir."/PostStats_".$sample."_".$jobID.".err -N ".$jobID.
+	    " ".$bashFile;
     }
     return $jobID;
 }
