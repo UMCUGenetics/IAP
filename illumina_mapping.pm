@@ -91,7 +91,6 @@ sub runMapping {
     
 	my ($RG_PL, $RG_ID, $RG_LB, $RG_SM) = ('ILLUMINA', $coreName, $sampleName, $sampleName);
 
-	
 	if($opt{MAPPING_MARKDUP} eq "lane"){
 	    print "Creating $opt{OUTPUT_DIR}/$sampleName/mapping/$coreName\_sorted_dedup.bam with:\n";
 	}elsif(($opt{MAPPING_MARKDUP} eq "no") || ($opt{MAPPING_MARKDUP} eq "sample")){
@@ -260,6 +259,7 @@ sub runMapping {
     }
 
     close $QSUB;
+
     system("sh $mainJobID");
     return \%opt;
 }
@@ -269,7 +269,7 @@ sub submitBatchJobs{
     # Submit batch jobs
     # One job per lane
     ###
-    my ($opt,$QSUB ,$samples, $sampleName, $coreName, $R1, $R2, $flowcellID, $qsubMap, $qsubFlag) = @_;
+    my ($opt,$QSUB ,$samples, $sampleName, $coreName, $R1, $R2, $flowcellID) = @_;
     my %opt = %$opt;
     my $jobId = "Map_$coreName\_".get_job_id();
     my ($RG_PL, $RG_ID, $RG_LB, $RG_SM, $RG_PU) = ('ILLUMINA', $coreName, $sampleName, $sampleName, $flowcellID);
@@ -377,6 +377,7 @@ sub submitBatchJobs{
     print BWA_SH "echo \"End cleanup\t\" `date` \"\t $coreName \t\" `uname -n` >> $opt{OUTPUT_DIR}/$sampleName/logs/$sampleName.log\n";
 
     close BWA_SH;
+
     my $qsub = &qsubTemplate(\%opt,"MAPPING");
     print $QSUB $qsub," -o ",$opt{OUTPUT_DIR},"/",$sampleName,"/logs -e ",$opt{OUTPUT_DIR}/$sampleName,"/logs -N ",$jobId," ",$opt{OUTPUT_DIR},"/",$sampleName,"/jobs/",$jobId,".sh\n\n";
 
@@ -387,7 +388,7 @@ sub submitSingleJobs{
     # Submit single jobs
     # One job per lane per step
     ###
-    my ($opt,$QSUB ,$samples, $sampleName, $coreName, $R1, $R2, $flowcellID, $qsubMap, $qsubFlag) = @_;
+    my ($opt,$QSUB ,$samples, $sampleName, $coreName, $R1, $R2, $flowcellID) = @_;
     my %opt = %$opt;
     my ($RG_PL, $RG_ID, $RG_LB, $RG_SM, $RG_PU) = ('ILLUMINA', $coreName, $sampleName, $sampleName, $flowcellID);
     
@@ -517,7 +518,6 @@ sub submitSingleJobs{
 	    print MARKDUP_SH "$opt{SAMBAMBA_PATH}/sambamba markdup --overflow-list-size=500000 --tmpdir=$opt{OUTPUT_DIR}/$sampleName/tmp/ -t $opt{MAPPING_THREADS} $coreName\_sorted.bam $coreName\_sorted_dedup.bam \n";
 	    print MARKDUP_SH "echo \"End markdup\t\" `date` \"\t$coreName\_sorted.bam\t\" `uname -n` >> $opt{OUTPUT_DIR}/$sampleName/logs/$sampleName.log\n";
 	    close MARKDUP_SH;
-	
 	    my $qsub = &qsubTemplate(\%opt,"MAPPING");
 	    print $QSUB $qsub," -o ",$opt{OUTPUT_DIR},"/",$sampleName,"/logs/Mapping_",$coreName,".out -e ",$opt{OUTPUT_DIR},"/",$sampleName,"/logs/Mapping_",$coreName,".err -N ",
 	    $markdupJobId," -hold_jid ",$indexJobId," ",$opt{OUTPUT_DIR},"/",$sampleName,"/jobs/",$markdupJobId,".sh\n";

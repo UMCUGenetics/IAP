@@ -18,7 +18,7 @@ use illumina_sge;
 
 sub runPostStats {
     ###
-    # Run bammetrics with settings from config/ini file.
+    # Run post mapping statistics tools with settings from config/ini file.
     ###
     my $configuration = shift;
     my %opt = %{$configuration};
@@ -27,8 +27,8 @@ sub runPostStats {
     my $jobID = "PostStats_".get_job_id();
     my $jobIDCheck = "PostStats_Check_".get_job_id();
 
-    ### Run bamMetrics
     if(! -e "$opt{OUTPUT_DIR}/logs/PostStats.done"){
+	## Setup Bammetrics
 	my $command = "perl $opt{BAMMETRICS_PATH}/bamMetrics.pl ";
 	foreach my $sample (@{$opt{SAMPLES}}){
 	    my $sampleBam = "$opt{OUTPUT_DIR}/$sample/mapping/$opt{BAM_FILES}->{$sample}";
@@ -67,13 +67,20 @@ sub runPostStats {
 	my $bashFile = $opt{OUTPUT_DIR}."/jobs/".$jobID.".sh";
 	my $logDir = $opt{OUTPUT_DIR}."/logs";
         
-	open BM_SH, ">$bashFile" or die "cannot open file $bashFile\n";
-	print BM_SH "#!/bin/bash\n\n";
-	print BM_SH "cd $opt{OUTPUT_DIR}\n";
-	print BM_SH "echo \"Start poststats\t\" `date` \"\t\" `uname -n` >> $opt{OUTPUT_DIR}/logs/$runName.log\n";
-	print BM_SH "$command\n";
-	print BM_SH "qalter -hold_jid bamMetrics_report_".$runName." $jobIDCheck\n"; #hack to make sure check does not start before bamMetrics ends.
-	close BM_SH;
+	open PS_SH, ">$bashFile" or die "cannot open file $bashFile\n";
+	print PS_SH "#!/bin/bash\n\n";
+	print PS_SH "cd $opt{OUTPUT_DIR}\n";
+	print PS_SH "echo \"Start poststats\t\" `date` \"\t\" `uname -n` >> $opt{OUTPUT_DIR}/logs/$runName.log\n\n";
+	print PS_SH "$command\n";
+	print PS_SH "qalter -hold_jid bamMetrics_report_".$runName.",$jobID $jobIDCheck\n\n"; #hack to make sure check does not start before bamMetrics ends.
+	
+	## Setup ExonCallCov
+	if ( $opt{EXONCALLCOV} eq "yes" ){
+	    $command = "python $opt{EXONCALLCOV_PATH} -b $opt{EXONCALLCOV_BED} -n $opt{EXONCALLCOV_ENS} -p $opt{EXONCALLCOV_PREF} -l $opt{EXONCALLCOV_PANEL}";
+	    print PS_SH "$command\n";
+	}
+	
+	close PS_SH;
 	
 	my $qsub = &qsubTemplate(\%opt,"POSTSTATS");
 	if (@runningJobs){
@@ -83,15 +90,21 @@ sub runPostStats {
 	    system $qsub." -o ".$logDir."/PostStats_".$runName.".out -e ".$logDir."/PostStats_".$runName.".err -N ".$jobID." ".$bashFile;
 	}
 	
-	### Check BamMetrics result
+	### Check Poststats result
 	my $bashFileCheck = $opt{OUTPUT_DIR}."/jobs/".$jobIDCheck.".sh";
-	open BMCHECK_SH, ">$bashFileCheck" or die "cannot open file $bashFileCheck\n";
-	print BMCHECK_SH "cd $opt{OUTPUT_DIR}\n";
-	print BMCHECK_SH "if [ -f QCStats/*.bamMetrics.pdf -a -f QCStats/*.bamMetrics.html ]\nthen\n";
-	print BMCHECK_SH "\ttouch logs/PostStats.done \n";
-	print BMCHECK_SH "\techo \"Finished poststats\t\" `date` \"\t\" `uname -n` >> $opt{OUTPUT_DIR}/logs/$runName.log\n";
-	print BMCHECK_SH "fi\n";
-	close BMCHECK_SH;
+	open PSCHECK_SH, ">$bashFileCheck" or die "cannot open file $bashFileCheck\n";
+	print PSCHECK_SH "cd $opt{OUTPUT_DIR}\n";
+	print PSCHECK_SH "if [ -f QCStats/*.bamMetrics.pdf -a ";
+	if ( $opt{EXONCALLCOV} eq "yes" ){
+	    foreach my $sample (@{$opt{SAMPLES}}){
+		print PSCHECK_SH "-f Exoncov_v3/$sample.html -a ";
+	    }
+	}
+	print PSCHECK_SH "-f QCStats/*.bamMetrics.html ]\nthen\n";
+	print PSCHECK_SH "\ttouch logs/PostStats.done \n";
+	print PSCHECK_SH "fi\n";
+	print PSCHECK_SH "echo \"Finished poststats\t\" `date` \"\t\" `uname -n` >> $opt{OUTPUT_DIR}/logs/$runName.log\n";
+	close PSCHECK_SH;
 
 	system $qsub." -o ".$logDir."/PostStats_".$runName.".out -e ".$logDir."/PostStats_".$runName.".err -N ".$jobIDCheck.
 	    " -hold_jid bamMetrics_report_".$runName.",".$jobID." ".$bashFileCheck;

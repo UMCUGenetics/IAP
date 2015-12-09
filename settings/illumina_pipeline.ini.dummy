@@ -1,17 +1,17 @@
 ####MAIN CLUSTER CONFIGURATION####
-CLUSTER_PATH	/srv/sge/fedor8/common
+CLUSTER_PATH	/opt/sge/default/common
 CLUSTER_TMP	/tmp
 CLUSTER_RESERVATION	yes
 CLUSTER_PROJECT	cog_bioinf
 
 ####DEFAULT TOOL PATHS####
-BWA_PATH	/data_fedor13/common_scripts/bwa/0.7.5a
-SAMBAMBA_PATH	/data_fedor13/common_scripts/sambamba_v0.5.6
-QUEUE_PATH	/data_fedor13/common_scripts/gatk/GenomeAnalysisTK-2.8-1-g932cd3a/Queue-2.8-1-g932cd3a
-PICARD_PATH	/data_fedor13/common_scripts/picard/picard-tools-1.135
+BWA_PATH	/hpc/cog_bioinf/common_scripts/bwa-0.7.5a
+SAMBAMBA_PATH	/hpc/cog_bioinf/common_scripts/sambamba_v0.5.8
+QUEUE_PATH	/hpc/cog_bioinf/common_scripts/GenomeAnalysisTK-3.4-46
+PICARD_PATH	/hpc/cog_bioinf/common_scripts/picard-tools-1.135
 BAMMETRICS_PATH	/hpc/cog_bioinf/data/robert/scripts/bamMetrics
-FASTQC_PATH	/data_fedor13/common_scripts/fastqc/FastQC_v0.10.1
-GATK_PATH	/data_fedor13/common_scripts/gatk/GenomeAnalysisTK-2.8-1-g932cd3a
+FASTQC_PATH	/hpc/local/CentOS6/cog_bioinf/FastQC_v0.11.3
+GATK_PATH	/hpc/cog_bioinf/common_scripts/GenomeAnalysisTK-3.4-46
 SNPEFF_PATH	/hpc/cog_bioinf/data/robert/src/snpEff_v4.1/
 VCFTOOLS_PATH	/hpc/cog_bioinf/common_scripts/vcftools/bin/
 IGVTOOLS_PATH	/hpc/local/CentOS6/cog_bioinf/bin
@@ -24,10 +24,12 @@ INDELREALIGNMENT	yes
 BASEQUALITYRECAL	yes
 VARIANT_CALLING	yes
 SOMATIC_VARIANTS	yes
+SV_CALLING	yes
 COPY_NUMBER	yes
 FILTER_VARIANTS	yes
 ANNOTATE_VARIANTS	yes
 VCF_UTILS	no
+NIPT	no
 CHECKING	yes
 
 QUEUE_RETRY	yes
@@ -61,10 +63,12 @@ POSTSTATS_MEM	8
 POSTSTATS_COVERAGECAP	250
 POSTSTATS_TARGETS	/hpc/cog_bioinf/GENOMES/Homo_sapiens.GRCh37.GATK.illumina/sorted_Homo_sapiens.GRCh37.74_nopseudo_noRNA_CDS_picard.bed
 POSTSTATS_BAITS	/hpc/cog_bioinf/ENRICH/PICARD/sorted_SS_exome_v5_S04380110_Covered_picard.bed
+EXONCALLCOV	no
 
 ####REALIGNMENT CLUSTER CONFIGURATION####
 REALIGNMENT_MASTERQUEUE	long
 REALIGNMENT_MASTERTHREADS	1
+REALIGNMENT_MASTERMEM	4
 REALIGNMENT_QUEUE	all.q
 REALIGNMENT_THREADS	1
 REALIGNMENT_MERGETHREADS	1
@@ -77,6 +81,7 @@ REALIGNMENT_KNOWN	GATK_v2.7/bundle/1000G_phase1.indels.b37.vcf	GATK_v2.7/bundle/
 ####RECALIBRATION CLUSTER CONFIGURATION####
 BASERECALIBRATION_MASTERQUEUE	all.q
 BASERECALIBRATION_MASTERTHREADS	1
+BASERECALIBRATION_MASTERMEM	4
 BASERECALIBRATION_QUEUE	all.q
 BASERECALIBRATION_PROJECT	mapping
 BASERECALIBRATION_THREADS	4
@@ -88,6 +93,7 @@ BASERECALIBRATION_KNOWN	GATK_v2.7/bundle/1000G_phase1.indels.b37.vcf	GATK_v2.7/b
 ####CALLING CLUSTER CONFIGURATION####
 CALLING_MASTERQUEUE	all.q
 CALLING_MASTERTHREADS	1
+CALLING_MASTERMEM	4
 CALLING_QUEUE	all.q
 CALLING_PROJECT	mapping
 CALLING_THREADS	1
@@ -108,6 +114,7 @@ CALLING_PLOIDY	2
 ####VARIANT FILTER CLUSTER CONFIGURATION####
 FILTER_MASTERQUEUE	all.q
 FILTER_MASTERTHREADS	1
+FILTER_MASTERMEM	4
 FILTER_QUEUE	all.q
 FILTER_THREADS	1
 FILTER_MEM	4
@@ -136,10 +143,12 @@ STRELKA_THREADS	6
 ## Varscan
 SOMVAR_VARSCAN	yes
 VARSCAN_PATH	/hpc/local/CentOS6/cog_bioinf/Varscan.v2.3.7/VarScan.v2.3.7.jar
-VARSCAN_QUEUE	long
-VARSCAN_THREADS	4
+VARSCAN_QUEUE	medium
+VARSCAN_THREADS	2
 VARSCAN_SETTINGS	--min-coverage 20 --min-var-freq 0.1 --tumor-purity 0.8
 VARSCAN_POSTSETTINGS	-max-normal-freq 0.02 --p-value 0.05
+PILEUP_QUEUE	medium
+PILEUP_THREADS	7
 
 ## Freebayes
 SOMVAR_FREEBAYES	yes
@@ -198,6 +207,20 @@ FREEC_CHRFILES	/hpc/cog_bioinf/GENOMES/Homo_sapiens.GRCh37.GATK.illumina/chr_fil
 FREEC_PLOIDY	2
 FREEC_WINDOW	1000
 FREEC_TELOCENTROMERIC	50000
+
+#### SV Calling -  DELLY CONFIGURATION####
+DELLY_PATH	/hpc/cog_bioinf/common_scripts/delly_v0.6.7
+DELLY_QUEUE	veryshort
+DELLY_MERGE_QUEUE	veryshort
+DELLY_THREADS	4
+
+DELLY_SVTYPE	DEL	DUP	INV	TRA
+DELLY_SPLIT	no	no	no	yes
+DELLY_MAPQUAL	1
+DELLY_MAD	9
+DELLY_FLANK	13
+DELLY_VCF_GENO	
+DELLY_GENO_QUAL	5
 
 ####VARIANT ANNOTATION CONFIGURATION####
 ANNOTATE_QUEUE	veryshort

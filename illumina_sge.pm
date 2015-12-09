@@ -25,7 +25,15 @@ BEGIN {
 sub qsubTemplate(@){
     my ($opt,$function)=@_;
     my $qsub = "qsub -P ".$$opt{CLUSTER_PROJECT}. " -m a -M ".$$opt{MAIL}." -pe threaded ".$$opt{$function."_THREADS"}." -R ".$$opt{CLUSTER_RESERVATION}.
-        " -l h_rt=".$$opt{$function."_TIME"}.",h_vmem=".$$opt{$function."_MEM"}."G";
+	" -l h_rt=".$$opt{$function."_TIME"}.",h_vmem=".$$opt{$function."_MEM"}."G";
+
+    #EXCEPTIONS
+    if ($function eq "REALIGNMENT"){
+	my $find = "h_vmem=".$$opt{$function."_MEM"}."G";
+	my $replace="h_vmem=".($$opt{$function."_MEM"} * $$opt{$function."_THREADS"})."G";
+	$qsub =~s/$find/$replace/;
+    }
+
     return ($qsub)
 }
 

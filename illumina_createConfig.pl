@@ -19,6 +19,8 @@ my $settingsDir = dirname(abs_path($0))."/settings";
 
 ### Parse options ###
 my $iniFile;
+my $iniPath;
+my $ini;
 my $outputDir;
 my @fastqDirs;
 my @bamDirs;
@@ -28,6 +30,7 @@ my $help;
 my $run;
 
 GetOptions ("iniFile|i=s" => \$iniFile,
+	    "iniPath|ip=s" => \$iniPath,
 	    "outputDir|o=s" => \$outputDir,
 	    "fastqDir|f=s" => \@fastqDirs,
 	    "bamDir|b=s" => \@bamDirs,
@@ -37,11 +40,19 @@ GetOptions ("iniFile|i=s" => \$iniFile,
 	    "run" => \$run)
 or die usage();
 
-if ($help || ! $iniFile || ! $outputDir || ! (@fastqDirs || @bamDirs || $vcfFile ) || ! $mail ) { usage() }
+if ($help || ! ( $iniFile || $iniPath ) || ! $outputDir || ! (@fastqDirs || @bamDirs || $vcfFile ) || ! $mail ) { usage() }
 
 ### Non interactive mode ###
-$iniFile = $settingsDir."/".$iniFile;
-createConfig($iniFile,$outputDir,\@fastqDirs,\@bamDirs,$vcfFile,$mail,$run);
+if ( $iniFile) {
+    $ini = $settingsDir."/".$iniFile;
+} elsif ($iniPath) {
+    $ini = $iniPath;
+}
+
+if ( ! -e $ini ) {
+    print "ERROR: $ini does not exist.\n";
+}
+createConfig($ini,$outputDir,\@fastqDirs,\@bamDirs,$vcfFile,$mail,$run);
 
 ### Parse and print available ini files ###
 sub getIniFiles{
@@ -134,8 +145,8 @@ sub createConfig {
 sub usage{
     print "Usage: perl illumina_createConfig.pl\n\n";
     print "Advanced usage: \n";
-    print "illumina_createConfig.pl -i|-iniFile settings.ini -o|-outputDir /path/to/outputDir (-f|-fastqDir /fastqFolder OR -b|-bamDir /bamFolder OR -v|-vcfFile vcfFile.vcf) -m|-mail example\@mail.nl [-run]\n\n";
-    print "Available ini files:\n";
+    print "illumina_createConfig.pl (-i|-iniFile settings.ini OR -ip|-iniPath /path/to/settings.ini) -o|-outputDir /path/to/outputDir (-f|-fastqDir /fastqFolder OR -b|-bamDir /bamFolder OR -v|-vcfFile vcfFile.vcf) -m|-mail example\@mail.nl [-run]\n\n";
+    print "Available ini files: (use -i)\n";
     getIniFiles($settingsDir);
     exit;
 }

@@ -36,7 +36,7 @@ sub runCheck {
     print BASH "echo \"Check and cleanup for run: $runName \" >>$logFile\n";
 
     ### pipeline version
-    my $version = `git --git-dir $FindBin::Bin/.git log --tags -n 1 --simplify-by-decoration --pretty=\"format:\%d \%ai\"`;
+    my $version = `git --git-dir $FindBin::Bin/.git describe --tags`;
     print BASH "echo \"Pipeline version: $version \" >>$logFile\n\n";
     print BASH "echo \"\">>$logFile\n\n"; ## empty line between samples
 
@@ -99,6 +99,18 @@ sub runCheck {
 	print BASH "fi\n";
 	if ( $opt{RUNNING_JOBS}->{'postStats'} ){
 	    push( @runningJobs, $opt{RUNNING_JOBS}->{'postStats'} );
+	}
+    }
+    if($opt{NIPT} eq "yes" && ! $opt{VCF}){
+	$doneFile = $opt{OUTPUT_DIR}."/logs/NIPT.done";
+	print BASH "if [ -f $doneFile ]; then\n";
+	print BASH "\techo \"NIPT: done \" >>$logFile\n";
+	print BASH "else\n";
+	print BASH "\techo \"NIPT: failed \">>$logFile\n";
+	print BASH "\tfailed=true\n";
+	print BASH "fi\n";
+	if ( $opt{RUNNING_JOBS}->{'nipt'} ){
+	    push( @runningJobs, $opt{RUNNING_JOBS}->{'nipt'} );
 	}
     }
     if($opt{VARIANT_CALLING} eq "yes" && ! $opt{VCF}){
