@@ -39,8 +39,7 @@ sub runBaseRecalibration {
 	}
 	
 	### Build Queue command
-	my $javaMem = $opt{BASERECALIBRATION_MASTERTHREADS} * $opt{BASERECALIBRATION_MEM};
-	my $command = "java -Xmx".$javaMem."G -Xms".$opt{BASERECALIBRATION_MEM}."G -jar $opt{QUEUE_PATH}/Queue.jar ";
+	my $command = "java -Xmx".$opt{BASERECALIBRATION_MASTERMEM}."G -jar $opt{QUEUE_PATH}/Queue.jar ";
 	# cluster options
 	$command .= "-jobQueue $opt{BASERECALIBRATION_QUEUE} -jobNative \"-pe threaded $opt{BASERECALIBRATION_THREADS} -P $opt{CLUSTER_PROJECT}\" -jobRunner GridEngine -jobReport $opt{OUTPUT_DIR}/$sample/logs/BaseRecalibration.jobReport.txt "; #Queue options
 	# baseRecalibration options

@@ -36,7 +36,7 @@ sub runCheck {
     print BASH "echo \"Check and cleanup for run: $runName \" >>$logFile\n";
 
     ### pipeline version
-    my $version = `git --git-dir $FindBin::Bin/.git log --tags -n 1 --simplify-by-decoration --pretty=\"format:\%d \%ai\"`;
+    my $version = `git --git-dir $FindBin::Bin/.git describe --tags`;
     print BASH "echo \"Pipeline version: $version \" >>$logFile\n\n";
     print BASH "echo \"\">>$logFile\n\n"; ## empty line between samples
 
@@ -101,6 +101,18 @@ sub runCheck {
 	    push( @runningJobs, $opt{RUNNING_JOBS}->{'postStats'} );
 	}
     }
+    if($opt{NIPT} eq "yes" && ! $opt{VCF}){
+	$doneFile = $opt{OUTPUT_DIR}."/logs/NIPT.done";
+	print BASH "if [ -f $doneFile ]; then\n";
+	print BASH "\techo \"NIPT: done \" >>$logFile\n";
+	print BASH "else\n";
+	print BASH "\techo \"NIPT: failed \">>$logFile\n";
+	print BASH "\tfailed=true\n";
+	print BASH "fi\n";
+	if ( $opt{RUNNING_JOBS}->{'nipt'} ){
+	    push( @runningJobs, $opt{RUNNING_JOBS}->{'nipt'} );
+	}
+    }
     if($opt{VARIANT_CALLING} eq "yes" && ! $opt{VCF}){
 	$doneFile = $opt{OUTPUT_DIR}."/logs/VariantCaller.done";
 	print BASH "if [ -f $doneFile ]; then\n";
@@ -114,18 +126,16 @@ sub runCheck {
 	print BASH "echo \"Somatic variants:\" >>$logFile\n";
 	foreach my $sample (keys(%{$opt{SOMATIC_SAMPLES}})){
 	    foreach my $sample_tumor (@{$opt{SOMATIC_SAMPLES}{$sample}{'tumor'}}){
-		# Check correct sample ref
-		if (! $opt{SOMATIC_SAMPLES}{$sample}{'ref'}){
-		    next;
+		foreach my $sample_ref (@{$opt{SOMATIC_SAMPLES}{$sample}{'ref'}}){
+		    my $sample_tumor_name = "$sample_ref\_$sample_tumor";
+		    my $done_file = "$opt{OUTPUT_DIR}/somaticVariants/$sample_tumor_name/logs/$sample_tumor_name.done";
+		    print BASH "if [ -f $done_file ]; then\n";
+		    print BASH "\techo \"\t $sample_tumor_name: done \" >>$logFile\n";
+		    print BASH "else\n";
+		    print BASH "\techo \"\t $sample_tumor_name: failed \">>$logFile\n";
+		    print BASH "\tfailed=true\n";
+		    print BASH "fi\n";
 		}
-		my $sample_tumor_name = "$opt{SOMATIC_SAMPLES}{$sample}{'ref'}\_$sample_tumor";
-		my $done_file = "$opt{OUTPUT_DIR}/somaticVariants/$sample_tumor_name/logs/$sample_tumor_name.done";
-		print BASH "if [ -f $done_file ]; then\n";
-		print BASH "\techo \"\t $sample_tumor_name: done \" >>$logFile\n";
-		print BASH "else\n";
-		print BASH "\techo \"\t $sample_tumor_name: failed \">>$logFile\n";
-		print BASH "\tfailed=true\n";
-		print BASH "fi\n";
 	    }
 	}
 	if ( $opt{RUNNING_JOBS}->{'somVar'} ){
@@ -137,18 +147,16 @@ sub runCheck {
 	if($opt{CNV_MODE} eq "sample_control"){
 	    foreach my $sample (keys(%{$opt{SOMATIC_SAMPLES}})){
 		foreach my $sample_tumor (@{$opt{SOMATIC_SAMPLES}{$sample}{'tumor'}}){
-		    # Check correct sample ref
-		    if (! $opt{SOMATIC_SAMPLES}{$sample}{'ref'}){
-			next;
+		    foreach my $sample_ref (@{$opt{SOMATIC_SAMPLES}{$sample}{'ref'}}){
+			my $sample_tumor_name = "$sample_ref\_$sample_tumor";
+			my $done_file = "$opt{OUTPUT_DIR}/copyNumber/$sample_tumor_name/logs/$sample_tumor_name.done";
+			print BASH "if [ -f $done_file ]; then\n";
+			print BASH "\techo \"\t $sample_tumor_name: done \" >>$logFile\n";
+			print BASH "else\n";
+			print BASH "\techo \"\t $sample_tumor_name: failed \">>$logFile\n";
+			print BASH "\tfailed=true\n";
+			print BASH "fi\n";
 		    }
-		    my $sample_tumor_name = "$opt{SOMATIC_SAMPLES}{$sample}{'ref'}\_$sample_tumor";
-		    my $done_file = "$opt{OUTPUT_DIR}/copyNumber/$sample_tumor_name/logs/$sample_tumor_name.done";
-		    print BASH "if [ -f $done_file ]; then\n";
-		    print BASH "\techo \"\t $sample_tumor_name: done \" >>$logFile\n";
-		    print BASH "else\n";
-		    print BASH "\techo \"\t $sample_tumor_name: failed \">>$logFile\n";
-		    print BASH "\tfailed=true\n";
-		    print BASH "fi\n";
 		}
 	    }
 	} elsif($opt{CNV_MODE} eq "sample"){
@@ -164,6 +172,23 @@ sub runCheck {
 	}
 	if ( $opt{RUNNING_JOBS}->{'CNV'} ){
 	    push( @runningJobs, @{$opt{RUNNING_JOBS}->{'CNV'}} );
+	}
+    }
+    if($opt{SV_CALLING} eq "yes"){
+	print BASH "echo \"SV calling:\" >>$logFile\n";
+	# per sv type done file check
+	my @svTypes = split/\t/, $opt{DELLY_SVTYPE};
+	foreach my $type (@svTypes){
+	    my $done_file = "$opt{OUTPUT_DIR}/DELLY/logs/DELLY_$type.done"; 
+	    print BASH "if [ -f $done_file ]; then\n";
+	    print BASH "\techo \"\t $type: done \" >>$logFile\n";
+	    print BASH "else\n";
+	    print BASH "\techo \"\t $type: failed \">>$logFile\n";
+	    print BASH "\tfailed=true\n";
+	    print BASH "fi\n";
+	}
+	if ( $opt{RUNNING_JOBS}->{'sv'} ){
+	    push( @runningJobs, @{$opt{RUNNING_JOBS}->{'sv'}} );
 	}
     }
     if($opt{FILTER_VARIANTS} eq "yes"){
