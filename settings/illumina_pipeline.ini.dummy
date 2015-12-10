@@ -49,6 +49,7 @@ MAPPING_MEM	32
 MAPPING_MODE	single
 #MAPPING_MARKDUP lane sample or no
 MAPPING_MARKDUP	lane
+MAPPING_OVERFLOW_LIST_SIZE	500000
 
 ####FLAGSTAT CONFIGURATION####
 # Used for mapping, realignment and recalibration.
