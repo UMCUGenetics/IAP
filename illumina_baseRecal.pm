@@ -11,6 +11,8 @@ package illumina_baseRecal;
 
 use strict;
 use POSIX qw(tmpnam);
+use lib "$FindBin::Bin"; #locates pipeline directory
+use illumina_sge;
 
 sub runBaseRecalibration {
     ###
@@ -39,9 +41,11 @@ sub runBaseRecalibration {
 	}
 	
 	### Build Queue command
-	my $command = "java -Xmx".$opt{BASERECALIBRATION_MASTERMEM}."G -jar $opt{QUEUE_PATH}/Queue.jar ";
+	my $javaMem = $opt{BASERECALIBRATION_MASTERTHREADS} * $opt{BASERECALIBRATION_MEM};
+	my $command = "java -Xmx".$javaMem."G -Xms".$opt{BASERECALIBRATION_MEM}."G -jar $opt{QUEUE_PATH}/Queue.jar ";
 	# cluster options
-	$command .= "-jobQueue $opt{BASERECALIBRATION_QUEUE} -jobNative \"-pe threaded $opt{BASERECALIBRATION_THREADS} -P $opt{CLUSTER_PROJECT}\" -jobRunner GridEngine -jobReport $opt{OUTPUT_DIR}/$sample/logs/BaseRecalibration.jobReport.txt "; #Queue options
+	my $jobNative = &jobNative(\%opt,"BASERECALIBRATION");
+	$command .= "-jobQueue $opt{BASERECALIBRATION_QUEUE} -jobNative \"$jobNative\" -jobRunner GridEngine -jobReport $opt{OUTPUT_DIR}/$sample/logs/BaseRecalibration.jobReport.txt "; #Queue options
 	# baseRecalibration options
 	$command .= "-S $opt{BASERECALIBRATION_SCALA} -R $opt{GENOME} -I $opt{OUTPUT_DIR}/$sample/mapping/$inBam -mem $opt{BASERECALIBRATION_MEM} -nct $opt{BASERECALIBRATION_THREADS} -nsc $opt{BASERECALIBRATION_SCATTER} ";
 	
@@ -64,6 +68,7 @@ sub runBaseRecalibration {
 	my $jobID = "BR_".$sample."_".get_job_id();
 	my $bashFile = $opt{OUTPUT_DIR}."/".$sample."/jobs/".$jobID.".sh";
 	my $logDir = $opt{OUTPUT_DIR}."/".$sample."/logs";
+	my $qsub = &qsubTemplate(\%opt,"BASERECALIBRATION");
 
 	open BASERECAL_SH, ">$bashFile" or die "cannot open file $bashFile \n";
 	print BASERECAL_SH "#!/bin/bash\n\n";
@@ -81,9 +86,9 @@ sub runBaseRecalibration {
 	
 	### Submit baserecal bash script
 	if ( @{$opt{RUNNING_JOBS}->{$sample}} ){
-	    system "qsub -q $opt{BASERECALIBRATION_MASTERQUEUE} -m a -M $opt{MAIL} -pe threaded $opt{BASERECALIBRATION_MASTERTHREADS} -P $opt{CLUSTER_PROJECT} -o $logDir/BaseRecalibration_$sample.out -e $logDir/BaseRecalibration_$sample.err -N $jobID -hold_jid ".join(",",@{$opt{RUNNING_JOBS}->{$sample}})." $bashFile";
+	    system "$qsub -o $logDir/BaseRecalibration_$sample.out -e $logDir/BaseRecalibration_$sample.err -N $jobID -hold_jid ".join(",",@{$opt{RUNNING_JOBS}->{$sample}})." $bashFile";
 	} else {
-	    system "qsub -q $opt{BASERECALIBRATION_MASTERQUEUE} -m a -M $opt{MAIL} -pe threaded $opt{BASERECALIBRATION_MASTERTHREADS} -P $opt{CLUSTER_PROJECT} -o $logDir/BaseRecalibration_$sample.out -e $logDir/BaseRecalibration_$sample.err -N $jobID $bashFile";
+	    system "$qsub -o $logDir/BaseRecalibration_$sample.out -e $logDir/BaseRecalibration_$sample.err -N $jobID $bashFile";
 	}
 	
 	### Create flagstat bash script
@@ -121,7 +126,8 @@ sub runBaseRecalibration {
 	close BASERECALFS_SH;
 	
 	### Submit flagstat bash script
-	system "qsub -q $opt{FLAGSTAT_QUEUE} -m a -M $opt{MAIL} -pe threaded $opt{FLAGSTAT_THREADS} -R $opt{CLUSTER_RESERVATION} -P $opt{CLUSTER_PROJECT} -o $logDir/BaseRecalibrationFS_$sample.out -e $logDir/BaseRecalibrationFS_$sample.err -N $jobIDFS -hold_jid $jobID $bashFileFS";
+	$qsub = &qsubTemplate(\%opt,"FLAGSTAT");
+	system "$qsub -o $logDir/BaseRecalibrationFS_$sample.out -e $logDir/BaseRecalibrationFS_$sample.err -N $jobIDFS -hold_jid $jobID $bashFileFS";
 
 	push(@{$opt{RUNNING_JOBS}->{$sample}}, $jobID);
 	push(@{$opt{RUNNING_JOBS}->{$sample}}, $jobIDFS);

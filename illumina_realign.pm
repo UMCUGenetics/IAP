@@ -24,7 +24,6 @@ sub runRealignment {
     my %opt = %{$configuration};
     my $realignJobs = {};
     my $javaMem = $opt{REALIGNMENT_MASTERTHREADS} * $opt{REALIGNMENT_MEM};
-    my $h_vmem = 1.25 * $javaMem;
     my $runName = (split("/", $opt{OUTPUT_DIR}))[-1];
 
     print "Running $opt{REALIGNMENT_MODE} sample indel realignment for the following BAM-files:\n";
@@ -46,6 +45,7 @@ sub runRealignment {
 	my $cleanupJobId = "REALIGN_CLEANUP\_".get_job_id();
 	my $mergeJobs = "";
 	my @waitFor = ();
+	my $jobNative = &jobNative(\%opt,"REALIGNMENT");
 	
 	open REALIGN_SH,">$opt{OUTPUT_DIR}/jobs/$jobId.sh" or die "Couldn't create $opt{OUTPUT_DIR}/jobs/$jobId.sh\n";
 	print REALIGN_SH "\#!/bin/sh\n\n";
@@ -53,7 +53,7 @@ sub runRealignment {
 	print REALIGN_SH "cd $opt{OUTPUT_DIR}/tmp\n";
 	print REALIGN_SH "uname -n > ../logs/$jobId.host\n";
 	print REALIGN_SH "echo \"Start indel realignment\t\" `date` >> ../logs/$runName.log\n";
-	print REALIGN_SH "java -Djava.io.tmpdir=$opt{OUTPUT_DIR}/tmp/ -Xmx".$javaMem."G -jar $opt{QUEUE_PATH}/Queue.jar -R $opt{GENOME} -S $opt{REALIGNMENT_SCALA} -jobQueue $opt{REALIGNMENT_QUEUE} -nt $opt{REALIGNMENT_THREADS} -mem $opt{REALIGNMENT_MEM} -nsc $opt{REALIGNMENT_SCATTER} -mode $opt{REALIGNMENT_MODE} -jobNative \"-pe threaded $opt{REALIGNMENT_THREADS} -P $opt{CLUSTER_PROJECT} -l h_rt=$opt{REALIGNMENT_TIME},h_vmem=${h_vmem}G\" -run ";
+	print REALIGN_SH "java -Djava.io.tmpdir=$opt{OUTPUT_DIR}/tmp/ -Xmx".$javaMem."G -jar $opt{QUEUE_PATH}/Queue.jar -R $opt{GENOME} -S $opt{REALIGNMENT_SCALA} -jobQueue $opt{REALIGNMENT_QUEUE} -nt $opt{REALIGNMENT_THREADS} -mem $opt{REALIGNMENT_MEM} -nsc $opt{REALIGNMENT_SCATTER} -mode $opt{REALIGNMENT_MODE} -jobNative \"$jobNative\" -run ";
 	
 	if($opt{REALIGNMENT_KNOWN}) {
 	    foreach my $knownIndelFile (@knownIndelFiles) {
@@ -123,7 +123,7 @@ sub runRealignment {
 	    print CLEAN_SH "\techo \"ERROR: $opt{OUTPUT_DIR}/$sample/mapping/$realignedBam didn't finish properly.\" >> $opt{OUTPUT_DIR}/logs/realn_cleanup.err\n";
 	    print CLEAN_SH "fi\n\n";
 
-	    my $qsub = &qsubTemplate(\%opt,"REALIGNMENT");
+	    my $qsub = &qsubJava(\%opt,"REALIGNMENT");
 	    $mergeJobs .= $qsub." -p 100 -o ".$opt{OUTPUT_DIR}."/".$sample."/logs -e ".$opt{OUTPUT_DIR}."/".$sample."/logs -N ".$mergeJobId." -hold_jid ".$jobId," ".
 		$opt{OUTPUT_DIR}."/".$sample."/jobs/".$mergeJobId.".sh\n";
 	    push(@{$opt{RUNNING_JOBS}->{$sample}}, $mergeJobId);
@@ -140,7 +140,7 @@ sub runRealignment {
 	print CLEAN_SH "fi\n";
 	close CLEAN_SH;
 
-	my $qsub = &qsubTemplate(\%opt,"REALIGNMENT");	
+	my $qsub = &qsubJavaMaster(\%opt,"REALIGNMENT");	
 	print QSUB $qsub," -o ",$opt{OUTPUT_DIR},"/logs -e ",$opt{OUTPUT_DIR},"/logs -N ",$jobId," -hold_jid ",join(",", @waitFor)," ", $opt{OUTPUT_DIR},"/jobs/",$jobId,".sh\n";
 	print QSUB $qsub," -o ",$opt{OUTPUT_DIR},"/logs -e ",$opt{OUTPUT_DIR},"/logs -N ",$cleanupJobId," -hold_jid ",$jobId," ",$opt{OUTPUT_DIR},"/jobs/",$cleanupJobId,".sh\n";
 	print QSUB $mergeJobs."\n";
@@ -170,6 +170,7 @@ sub runRealignment {
 	    my $logDir = $opt{OUTPUT_DIR}."/".$sample."/logs";
 	    my $jobID = "Realign_".$sample."_".get_job_id();
 	    my $bashFile = $opt{OUTPUT_DIR}."/".$sample."/jobs/".$jobID.".sh";
+	    my $jobNative = &jobNative(\%opt,"REALIGNMENT");
 
 	    open REALIGN_SH,">$bashFile" or die "Couldn't create $bashFile\n";
 
@@ -180,7 +181,7 @@ sub runRealignment {
 	    
 	    print REALIGN_SH "if [ -f $opt{OUTPUT_DIR}/$sample/mapping/$bam ]\n";
 	    print REALIGN_SH "then\n";
-	    print REALIGN_SH "\tjava -Djava.io.tmpdir=$opt{OUTPUT_DIR}/$sample/tmp -Xmx".$javaMem."G -jar $opt{QUEUE_PATH}/Queue.jar -R $opt{GENOME} -S $opt{REALIGNMENT_SCALA} -jobQueue $opt{REALIGNMENT_QUEUE} -nt $opt{REALIGNMENT_THREADS} -mem $opt{REALIGNMENT_MEM} -nsc $opt{REALIGNMENT_SCATTER} -mode $opt{REALIGNMENT_MODE} -jobNative \"-pe threaded $opt{REALIGNMENT_THREADS} -P $opt{CLUSTER_PROJECT} -l h_rt=$opt{REALIGNMENT_TIME},h_vmem=${h_vmem}G\" ";
+	    print REALIGN_SH "\tjava -Djava.io.tmpdir=$opt{OUTPUT_DIR}/$sample/tmp -Xmx".$javaMem."G -jar $opt{QUEUE_PATH}/Queue.jar -R $opt{GENOME} -S $opt{REALIGNMENT_SCALA} -jobQueue $opt{REALIGNMENT_QUEUE} -nt $opt{REALIGNMENT_THREADS} -mem $opt{REALIGNMENT_MEM} -nsc $opt{REALIGNMENT_SCATTER} -mode $opt{REALIGNMENT_MODE} -jobNative \"$jobNative\" ";
 	    
 	    if($opt{REALIGNMENT_KNOWN}) {
 		foreach my $knownIndelFile (@knownIndelFiles) {
@@ -201,7 +202,7 @@ sub runRealignment {
 	    close REALIGN_SH;
 
 	    ### Submit realign bash script
-	    my $qsub = &qsubTemplate(\%opt,"REALIGNMENT");
+	    my $qsub = &qsubJavaMaster (\%opt,"REALIGNMENT");
 	    if ( @{$opt{RUNNING_JOBS}->{$sample}} ){
 		system $qsub." -o ".$logDir."/Realignment_".$sample.".out -e ".$logDir."/Realignment_".$sample.".err -N ".$jobID." -hold_jid ".join(",",@{$opt{RUNNING_JOBS}->{$sample}})." ".$bashFile;
 	    } else {

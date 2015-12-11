@@ -331,6 +331,7 @@ sub checkConfig{
 	if(! $opt{PRESTATS_THREADS}){ print "ERROR: No PRESTATS_THREADS option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{PRESTATS_MEM}){ print "ERROR: No PRESTATS_MEM option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{PRESTATS_QUEUE}){ print "ERROR: No PRESTATS_QUEUE option found in config files.\n"; $checkFailed = 1; }
+	if(! $opt{PRESTATS_TIME}){ print "ERROR: No PRESTATS_TIME option found in config files.\n"; $checkFailed = 1; }
     }
     ## MAPPING
     if($opt{MAPPING} eq "yes"){
@@ -338,6 +339,7 @@ sub checkConfig{
 	if(! $opt{MAPPING_THREADS}){ print "ERROR: No MAPPING_THREADS option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{MAPPING_MEM}){ print "ERROR: No MAPPING_MEM option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{MAPPING_QUEUE}){ print "ERROR: No MAPPING_QUEUE option found in config files.\n"; $checkFailed = 1; }
+	if(! $opt{MAPPING_TIME}){ print "ERROR: No MAPPING_TIME option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{MAPPING_MODE}){ print "ERROR: No MAPPING_MODE option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{MAPPING_MARKDUP}){ print "ERROR: No MAPPING_MARKDUP option found in config files.\n"; $checkFailed = 1; }
 	if( ($opt{MAPPING_MARKDUP} ne "lane") && ($opt{MAPPING_MARKDUP} ne "sample") && ($opt{MAPPING_MARKDUP} ne "no")){
@@ -346,6 +348,8 @@ sub checkConfig{
 	if($opt{MAPPING_MODE} eq 'single'){
 	    if(! $opt{FLAGSTAT_QUEUE}){ print "ERROR: No FLAGSTAT_QUEUE option found in config files.\n"; $checkFailed = 1; }
 	    if(! $opt{FLAGSTAT_THREADS}){ print "ERROR: No FLAGSTAT_THREADS option found in config files.\n"; $checkFailed = 1; }
+	    if(! $opt{FLAGSTAT_MEM}){ print "ERROR: No FLAGSTAT_MEM option found in config files.\n"; $checkFailed = 1; }
+	    if(! $opt{FLAGSTAT_TIME}){ print "ERROR: No FLAGSTAT_TIME option found in config files.\n"; $checkFailed = 1; }
 	}
     }
     ## POSTSTATS
@@ -354,7 +358,8 @@ sub checkConfig{
 	if(! $opt{PICARD_PATH}){ print "ERROR: No PICARD_PATH option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{POSTSTATS_THREADS}){ print "ERROR: No POSTSTATS_THREADS option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{POSTSTATS_MEM}){ print "ERROR: No POSTSTATS_MEM option found in config files.\n"; $checkFailed = 1; }
-	if(! $opt{POSTSTATS_QUEUE}){ print "ERROR: No POSTSTATS_THREADS option found in config files.\n"; $checkFailed = 1; }
+	if(! $opt{POSTSTATS_QUEUE}){ print "ERROR: No POSTSTATS_QUEUE option found in config files.\n"; $checkFailed = 1; }
+	if(! $opt{POSTSTATS_TIME}){ print "ERROR: No POSTSTATS_TIME option found in config files.\n"; $checkFailed = 1; }
 	if(! ($opt{POSTSTATS_TARGETS}) && ! ($opt{POSTSTATS_BAITS}) ){
 	    if(! $opt{POSTSTATS_COVERAGECAP}){ print "ERROR: No POSTSTATS_COVERAGECAP or (POSTSTATS_TARGETS & POSTSTATS_BAITS) options found in config files.\n"; $checkFailed = 1; }
 	}
@@ -373,40 +378,44 @@ sub checkConfig{
     if($opt{INDELREALIGNMENT} eq "yes"){
 	if(! $opt{REALIGNMENT_MASTERQUEUE}){ print "ERROR: No REALIGNMENT_MASTERQUEUE option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{REALIGNMENT_MASTERTHREADS}){ print "ERROR: No REALIGNMENT_MASTERTHREADS option found in config files.\n"; $checkFailed = 1; }
-	if(! $opt{REALIGNMENT_MASTERMEM}){ print "ERROR: No REALIGNMENT_MASTERMEM option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{REALIGNMENT_QUEUE}){ print "ERROR: No REALIGNMENT_QUEUE option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{REALIGNMENT_THREADS}){ print "ERROR: No REALIGNMENT_THREADS option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{REALIGNMENT_MERGETHREADS}){ print "ERROR: No REALIGNMENT_MERGETHREADS option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{REALIGNMENT_MEM}){ print "ERROR: No REALIGNMENT_MEM option found in config files.\n"; $checkFailed = 1; }
+	if(! $opt{REALIGNMENT_TIME}){ print "ERROR: No REALIGNMENT_TIME option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{REALIGNMENT_SCALA}){ print "ERROR: No REALIGNMENT_SCALA option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{REALIGNMENT_SCATTER}){ print "ERROR: No REALIGNMENT_SCATTER option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{REALIGNMENT_MODE}){ print "ERROR: No REALIGNMENT_MODE option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{QUEUE_RETRY}){ print "ERROR: No QUEUE_RETRY option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{FLAGSTAT_QUEUE}){ print "ERROR: No FLAGSTAT_QUEUE option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{FLAGSTAT_THREADS}){ print "ERROR: No FLAGSTAT_THREADS option found in config files.\n"; $checkFailed = 1; }
+	if(! $opt{FLAGSTAT_MEM}){ print "ERROR: No FLAGSTAT_MEM option found in config files.\n"; $checkFailed = 1; }
+	if(! $opt{FLAGSTAT_TIME}){ print "ERROR: No FLAGSTAT_TIME option found in config files.\n"; $checkFailed = 1; }
     }
     ## BASEQUALITYRECAL
     if($opt{BASEQUALITYRECAL} eq "yes"){
-	if(! $opt{BASERECALIBRATION_MASTERQUEUE}){ print "ERROR: No BASERECALIBRATION_QUEUE option found in config files.\n"; $checkFailed = 1; }
+	if(! $opt{BASERECALIBRATION_MASTERQUEUE}){ print "ERROR: No BASERECALIBRATION_MASTERQUEUE option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{BASERECALIBRATION_MASTERTHREADS}){ print "ERROR: No BASERECALIBRATION_MASTERTHREADS option found in config files.\n"; $checkFailed = 1; }
-	if(! $opt{BASERECALIBRATION_MASTERMEM}){ print "ERROR: No BASERECALIBRATION_MASTERMEM option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{BASERECALIBRATION_QUEUE}){ print "ERROR: No BASERECALIBRATION_QUEUE option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{BASERECALIBRATION_THREADS}){ print "ERROR: No BASERECALIBRATION_THREADS option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{BASERECALIBRATION_MEM}){ print "ERROR: No BASERECALIBRATION_MEM option found in config files.\n"; $checkFailed = 1; }
+	if(! $opt{BASERECALIBRATION_TIME}){ print "ERROR: No BASERECALIBRATION_TIME option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{BASERECALIBRATION_SCALA}){ print "ERROR: No BASERECALIBRATION_SCALA option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{BASERECALIBRATION_SCATTER}){ print "ERROR: No BASERECALIBRATION_SCATTER option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{QUEUE_RETRY}){ print "ERROR: No QUEUE_RETRY option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{FLAGSTAT_QUEUE}){ print "ERROR: No FLAGSTAT_QUEUE option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{FLAGSTAT_THREADS}){ print "ERROR: No FLAGSTAT_THREADS option found in config files.\n"; $checkFailed = 1; }
+	if(! $opt{FLAGSTAT_MEM}){ print "ERROR: No FLAGSTAT_MEM option found in config files.\n"; $checkFailed = 1; }
+	if(! $opt{FLAGSTAT_TIME}){ print "ERROR: No FLAGSTAT_TIME option found in config files.\n"; $checkFailed = 1; }
     }
     ## VARIANT_CALLING
     if($opt{VARIANT_CALLING} eq "yes"){
 	if(! $opt{CALLING_MASTERQUEUE}){ print "ERROR: No CALLING_MASTERQUEUE option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{CALLING_MASTERTHREADS}){ print "ERROR: No CALLING_MASTERTHREADS option found in config files.\n"; $checkFailed = 1; }
-	if(! $opt{CALLING_MASTERMEM}){ print "ERROR: No CALLING_MASTERMEM option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{CALLING_QUEUE}){ print "ERROR: No CALLING_QUEUE option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{CALLING_THREADS}){ print "ERROR: No CALLING_THREADS option found in config files.\n"; $checkFailed = 1; }
-	if(! $opt{CALLING_MEM}){ print "ERROR: No CALLING_QUEUE option found in config files.\n"; $checkFailed = 1; }
+	if(! $opt{CALLING_MEM}){ print "ERROR: No CALLING_MEM option found in config files.\n"; $checkFailed = 1; }
+	if(! $opt{CALLING_TIME}){ print "ERROR: No CALLING_TIME option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{CALLING_SCATTER}){ print "ERROR: No CALLING_SCATTER option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{CALLING_GVCF}){ print "ERROR: No CALLING_GVCF option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{CALLING_SCALA}){ print "ERROR: No CALLING_SCALA option found in config files.\n"; $checkFailed = 1; }
@@ -423,10 +432,10 @@ sub checkConfig{
     if($opt{FILTER_VARIANTS} eq "yes"){
 	if(! $opt{FILTER_MASTERQUEUE}){ print "ERROR: No FILTER_MASTERQUEUE option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{FILTER_MASTERTHREADS}){ print "ERROR: No FILTER_MASTERTHREADS option found in config files.\n"; $checkFailed = 1; }
-	if(! $opt{FILTER_MASTERMEM}){ print "ERROR: No FILTER_MASTERMEM option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{FILTER_QUEUE}){ print "ERROR: No FILTER_QUEUE option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{FILTER_THREADS}){ print "ERROR: No FILTER_THREADS option found in config files.\n"; $checkFailed = 1; }
-	if(! $opt{FILTER_MEM}){ print "ERROR: No FILTER_QUEUE option found in config files.\n"; $checkFailed = 1; }
+	if(! $opt{FILTER_MEM}){ print "ERROR: No FILTER_MEM option found in config files.\n"; $checkFailed = 1; }
+	if(! $opt{FILTER_TIME}){ print "ERROR: No FILTER_TIME option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{FILTER_SCATTER}){ print "ERROR: No FILTER_SCATTER option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{FILTER_SCALA}){ print "ERROR: No FILTER_SCALA option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{FILTER_MODE}){ print "ERROR: No FILTER_MODE  option found in config files.\n"; $checkFailed = 1; }
@@ -452,16 +461,22 @@ sub checkConfig{
 	    if(! $opt{STRELKA_INI}){ print "ERROR: No STRELKA_INI option found in config files.\n"; $checkFailed = 1; }
 	    if(! $opt{STRELKA_QUEUE}){ print "ERROR: No STRELKA_QUEUE option found in config files.\n"; $checkFailed = 1; }
 	    if(! $opt{STRELKA_THREADS}){ print "ERROR: No STRELKA_THREADS option found in config files.\n"; $checkFailed = 1; }
+	    if(! $opt{STRELKA_MEM}){ print "ERROR: No STRELKA_MEM option found in config files.\n"; $checkFailed = 1; }
+	    if(! $opt{STRELKA_TIME}){ print "ERROR: No STRELKA_TIME option found in config files.\n"; $checkFailed = 1; }
 	}
 	if(! $opt{SOMVAR_VARSCAN}){ print "ERROR: No SOMVAR_VARSCAN option found in config files.\n"; $checkFailed = 1; }
 	if($opt{SOMVAR_VARSCAN} eq "yes"){
 	    if(! $opt{VARSCAN_PATH}){ print "ERROR: No VARSCAN_PATH option found in config files.\n"; $checkFailed = 1; }
 	    if(! $opt{VARSCAN_QUEUE}){ print "ERROR: No VARSCAN_QUEUE option found in config files.\n"; $checkFailed = 1; }
 	    if(! $opt{VARSCAN_THREADS}){ print "ERROR: No VARSCAN_THREADS option found in config files.\n"; $checkFailed = 1; }
+	    if(! $opt{VARSCAN_TIME}){ print "ERROR: No VARSCAN_TIME option found in config files.\n"; $checkFailed = 1; }
+	    if(! $opt{VARSCAN_MEM}){ print "ERROR: No VARSCAN_MEM option found in config files.\n"; $checkFailed = 1; }
 	    if(! $opt{VARSCAN_SETTINGS}){ print "ERROR: No VARSCAN_SETTINGS option found in config files.\n"; $checkFailed = 1; }
 	    if(! $opt{VARSCAN_POSTSETTINGS}){ print "ERROR: No VARSCAN_POSTSETTINGS option found in config files.\n"; $checkFailed = 1; }
 	    if(! $opt{PILEUP_QUEUE}){ print "ERROR: No PILEUP_QUEUE option found in config files.\n"; $checkFailed = 1; }
 	    if(! $opt{PILEUP_THREADS}){ print "ERROR: No PILEUP_THREADS option found in config files.\n"; $checkFailed = 1; }
+	    if(! $opt{PILEUP_MEM}){ print "ERROR: No PILEUP_MEM option found in config files.\n"; $checkFailed = 1; }
+	    if(! $opt{PILEUP_TIME}){ print "ERROR: No PILEUP_TIME option found in config files.\n"; $checkFailed = 1; }
 	}
 	if(! $opt{SOMVAR_FREEBAYES}){ print "ERROR: No SOMVAR_FREEBAYES option found in config files.\n"; $checkFailed = 1; }
 	if($opt{SOMVAR_FREEBAYES} eq "yes"){
@@ -470,6 +485,8 @@ sub checkConfig{
 	    if(! $opt{BIOVCF_PATH}){ print "ERROR: No BIOVCF_PATH option found in config files.\n"; $checkFailed = 1; }
 	    if(! $opt{FREEBAYES_QUEUE}){ print "ERROR: No FREEBAYES_QUEUE option found in config files.\n"; $checkFailed = 1; }
 	    if(! $opt{FREEBAYES_THREADS}){ print "ERROR: No FREEBAYES_THREADS option found in config files.\n"; $checkFailed = 1; }
+	    if(! $opt{FREEBAYES_MEM}){ print "ERROR: No FREEBAYES_MEM option found in config files.\n"; $checkFailed = 1; }
+	    if(! $opt{FREEBAYES_TIME}){ print "ERROR: No FREEBAYES_TIME option found in config files.\n"; $checkFailed = 1; }
 	    if(! $opt{FREEBAYES_SETTINGS}){ print "ERROR: No FREEBAYES_SETTINGS option found in config files.\n"; $checkFailed = 1; }
 	    if(! $opt{FREEBAYES_SOMATICFILTER}){ print "ERROR: No FREEBAYES_SOMATICFILTER option found in config files.\n"; $checkFailed = 1; }
 	    if(! $opt{FREEBAYES_GERMLINEFILTER}){ print "ERROR: No FREEBAYES_GERMLINEFILTER option found in config files.\n"; $checkFailed = 1; }
@@ -480,10 +497,13 @@ sub checkConfig{
 	    if(! $opt{MUTECT_QUEUE}){ print "ERROR: No MUTECT_QUEUE option found in config files.\n"; $checkFailed = 1; }
 	    if(! $opt{MUTECT_THREADS}){ print "ERROR: No MUTECT_THREADS option found in config files.\n"; $checkFailed = 1; }
 	    if(! $opt{MUTECT_MEM}){ print "ERROR: No MUTECT_MEM option found in config files.\n"; $checkFailed = 1; }
+	    if(! $opt{MUTECT_TIME}){ print "ERROR: No MUTECT_TIME option found in config files.\n"; $checkFailed = 1; }
 	    if(! $opt{MUTECT_COSMIC}){ print "ERROR: No MUTECT_COSMIC option found in config files.\n"; $checkFailed = 1; }
 	}
 	if(! $opt{SOMVARMERGE_QUEUE}){ print "ERROR: No SOMVARMERGE_QUEUE option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{SOMVARMERGE_THREADS}){ print "ERROR: No SOMVARMERGE_THREADS option found in config files.\n"; $checkFailed = 1; }
+	if(! $opt{SOMVARMERGE_MEM}){ print "ERROR: No SOMVARMERGE_MEM option found in config files.\n"; $checkFailed = 1; }
+	if(! $opt{SOMVARMERGE_TIME}){ print "ERROR: No SOMVARMERGE_TIME option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{SOMVAR_ANNOTATE}){ print "ERROR: No SOMVAR_ANNOTATE option found in config files.\n"; $checkFailed = 1; }
 	if($opt{SOMVAR_ANNOTATE} eq "yes"){
 	    if(! $opt{ANNOTATE_DB}){ print "ERROR: No ANNOTATE_DB option found in config files.\n"; $checkFailed = 1; }
@@ -497,6 +517,8 @@ sub checkConfig{
     if($opt{COPY_NUMBER} eq "yes"){
 	if(! $opt{CNVCHECK_QUEUE} ) { print "ERROR: No CNVCHECK_QUEUE in config files.\n"; $checkFailed = 1; }
 	if(! $opt{CNVCHECK_THREADS} ) { print "ERROR: No CNVCHECK_THREADS  in config files.\n"; $checkFailed = 1; }
+	if(! $opt{CNVCHECK_MEM} ) { print "ERROR: No CNVCHECK_MEM in config files.\n"; $checkFailed = 1; }
+	if(! $opt{CNVCHECK_TIME} ) { print "ERROR: No CNVCHECK_TIME in config files.\n"; $checkFailed = 1; }
 	if(! $opt{CNV_CONTRA}){ print "ERROR: No CNV_CONTRA  in config files.\n"; $checkFailed = 1; }
 	if(! $opt{CNV_MODE}){ print "ERROR: No CNV_MODE in config files. \n"; $checkFailed = 1; }
 	if($opt{CNV_MODE} eq "sample_control"){
@@ -520,6 +542,8 @@ sub checkConfig{
 	    if(! $opt{FREEC_PATH}){ print "ERROR: No FREEC_PATH option found in config files.\n"; $checkFailed = 1; }
 	    if(! $opt{FREEC_QUEUE}){ print "ERROR: No FREEC_QUEUE option found in config files.\n"; $checkFailed = 1; }
 	    if(! $opt{FREEC_THREADS}){ print "ERROR: No FREEC_THREADS option found in config files.\n"; $checkFailed = 1; }
+	    if(! $opt{FREEC_MEM}){ print "ERROR: No FREEC_MEM option found in config files.\n"; $checkFailed = 1; }
+	    if(! $opt{FREEC_TIME}){ print "ERROR: No FREEC_TIME option found in config files.\n"; $checkFailed = 1; }
 	    if(! $opt{FREEC_CHRLENFILE}){ print "ERROR: No FREEC_CHRLENFILE option found in config files.\n"; $checkFailed = 1; }
 	    if(! $opt{FREEC_CHRFILES}){ print "ERROR: No FREEC_CHRFILES option found in config files.\n"; $checkFailed = 1; }
 	    if(! $opt{FREEC_PLOIDY}){ print "ERROR: No FREEC_PLOIDY option found in config files.\n"; $checkFailed = 1; }
@@ -533,6 +557,8 @@ sub checkConfig{
 	if(! $opt{DELLY_QUEUE}){ print "ERROR: No DELLY_QUEUE option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{DELLY_MERGE_QUEUE}){ print "ERROR: No DELLY_MERGE_QUEUE option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{DELLY_THREADS}){ print "ERROR: No DELLY_THREADS option found in config files.\n"; $checkFailed = 1; }
+	if(! $opt{DELLY_MEM}){ print "ERROR: No DELLY_MEM option found in config files.\n"; $checkFailed = 1; }
+	if(! $opt{DELLY_TIME}){ print "ERROR: No DELLY_TIME option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{DELLY_SVTYPE}){ print "ERROR: No DELLY_SVTYPE option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{DELLY_SPLIT}){ print "ERROR: No DELLY_SPLIT option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{DELLY_MAPQUAL}){ print "ERROR: No DELLY_MAPQUAL option found in config files.\n"; $checkFailed = 1; }
@@ -548,6 +574,7 @@ sub checkConfig{
 	if(! $opt{ANNOTATE_QUEUE}){ print "ERROR: No ANNOTATE_QUEUE option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{ANNOTATE_THREADS}){ print "ERROR: No ANNOTATE_THREADS option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{ANNOTATE_MEM}){ print "ERROR: No ANNOTATE_MEM option found in config files.\n"; $checkFailed = 1; }
+	if(! $opt{ANNOTATE_TIME}){ print "ERROR: No ANNOTATE_TIME option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{ANNOTATE_SNPEFF}){ print "ERROR: No ANNOTATE_SNPEFF option found in config files.\n"; $checkFailed = 1; }
 	if($opt{ANNOTATE_SNPEFF} eq "yes"){
 	    if(! $opt{ANNOTATE_DB}){ print "ERROR: No ANNOTATE_DB option found in config files.\n"; $checkFailed = 1; }
@@ -578,7 +605,7 @@ sub checkConfig{
 	if(! $opt{VCFUTILS_THREADS}){ print "ERROR: No VCFUTILS_THREADS found in .ini file\n"; $checkFailed = 1; }
 	#if(! $opt{VCFUTILS_SCATTER}){ print "ERROR: No VCFUTILS_SCATTER found in .ini file\n"; $checkFailed = 1; }
 	if(! $opt{VCFUTILS_MEM}){ print "ERROR: No VCFUTILS_MEM found in .ini file\n"; $checkFailed = 1; }
-	
+	if(! $opt{VCFUTILS_TIME}){ print "ERROR: No VCFUTILS_TIME option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{VCFUTILS_KINSHIP}){ print "ERROR: No VCFUTILS_KINSHIP found in .ini file\n"; $checkFailed = 1; }
 	if ( $opt{VCFUTILS_KINSHIP} eq "yes" ) {
 	    if(! $opt{PLINK_PATH}){ print "ERROR: No PLINK_PATH found in .ini file\n"; $checkFailed = 1; }
