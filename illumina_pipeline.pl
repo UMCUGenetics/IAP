@@ -632,9 +632,20 @@ sub checkConfig{
     if($opt{NIPT} eq "yes"){
 	if(! $opt{NIPT_QUEUE}){ print "ERROR: No NIPT_QUEUE found in .ini file\n"; $checkFailed = 1; }
 	if(! $opt{NIPT_THREADS}){ print "ERROR: No NIPT_THREADS found in .ini file\n"; $checkFailed = 1; }
+	if(! $opt{NIPT_MEM}){ print "ERROR: No NIPT_MEM found in .ini file\n"; $checkFailed = 1; }
+	if(! $opt{NIPT_TIME}){ print "ERROR: No NIPT_TIME found in .ini file\n"; $checkFailed = 1; }
 	if(! $opt{CHROMATE_PATH}){ print "ERROR: No CHROMATE_PATH found in .ini file\n"; $checkFailed = 1; }
 	if(! $opt{NIPT_REFERENCESET}){ print "ERROR: No NIPT_REFERENCESET found in .ini file\n"; $checkFailed = 1; }
     }
+
+    ## CHECKING
+    if(! $opt{CHECKING} eq "yes"){
+	if(! $opt{CHECKING_QUEUE}){ print "ERROR: No CHECKING_QUEUE found in .ini file\n"; $checkFailed = 1; }
+        if(! $opt{CHECKING_THREADS}){ print "ERROR: No CHECKING_THREADS found in .ini file\n"; $checkFailed = 1; }
+        if(! $opt{CHECKING_MEM}){ print "ERROR: No CHECKING_MEM found in .ini file\n"; $checkFailed = 1; }
+        if(! $opt{CHECKING_TIME}){ print "ERROR: No CHECKING_TIME found in .ini file\n"; $checkFailed = 1; }
+    }
+
 
     if ($checkFailed) { 
 	print "One or more options not found in config files.";

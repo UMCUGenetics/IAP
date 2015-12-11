@@ -14,6 +14,9 @@ package illumina_copyNumber;
 use strict;
 use POSIX qw(tmpnam);
 use File::Path qw(make_path);
+use lib "$FindBin::Bin"; #locates pipeline directory
+use illumina_sge;
+
 
 sub parseSamples {
     ###
@@ -135,10 +138,11 @@ sub runCopyNumberTools {
 		    print CHECK_SH "fi\n\n";
 		    print CHECK_SH "echo \"End Check\t\" `date` `uname -n` >> $sample_tumor_log_dir/check.log\n";
 		    close CHECK_SH;
+		    my $qsub = &qsubTemplate(\%opt,"CNVCHECK");
 		    if ( @cnv_jobs ){
-			system "qsub -q $opt{CNVCHECK_QUEUE} -m a -M $opt{MAIL} -pe threaded $opt{CNVCHECK_THREADS} -P $opt{CLUSTER_PROJECT} -o $sample_tumor_log_dir -e $sample_tumor_log_dir -N $job_id -hold_jid ".join(",",@cnv_jobs)." $bash_file";
+			system "$qsub -o $sample_tumor_log_dir -e $sample_tumor_log_dir -N $job_id -hold_jid ".join(",",@cnv_jobs)." $bash_file";
 		    } else {
-			system "qsub -q $opt{CNVCHECK_QUEUE} -m a -M $opt{MAIL} -pe threaded $opt{CNVCHECK_THREADS} -P $opt{CLUSTER_PROJECT} -o $sample_tumor_log_dir -e $sample_tumor_log_dir -N $job_id $bash_file";
+			system "$qsub -o $sample_tumor_log_dir -e $sample_tumor_log_dir -N $job_id $bash_file";
 		    }
 		    push(@check_cnv_jobs, $job_id);
 		}
@@ -185,26 +189,26 @@ sub runCopyNumberTools {
 		    my $freec_job = runFreec($sample, $sample_out_dir, $sample_job_dir, $sample_log_dir, $sample_bam, "", \@running_jobs, \%opt);
 		    if($freec_job){push(@cnv_jobs, $freec_job)};
 		}
-		## Check copy number analysis
-		my $job_id = "CHECK_".$sample."_".get_job_id();
-		my $bash_file = $sample_job_dir."/".$job_id.".sh";
+	    ## Check copy number analysis
+	    my $job_id = "CHECK_".$sample."_".get_job_id();
+	    my $bash_file = $sample_job_dir."/".$job_id.".sh";
 
-		open CHECK_SH, ">$bash_file" or die "cannot open file $bash_file \n";
-		print CHECK_SH "#!/bin/bash\n\n";
-		print CHECK_SH "echo \"Start Check\t\" `date` `uname -n` >> $sample_log_dir/check.log\n\n";
-		print CHECK_SH "if [[ -f $sample_log_dir/freec.done ]]\n";
-		print CHECK_SH "then\n";
-		print CHECK_SH "\ttouch $sample_log_dir/$sample.done\n";
-		print CHECK_SH "fi\n\n";
-		print CHECK_SH "echo \"End Check\t\" `date` `uname -n` >> $sample_log_dir/check.log\n";
-		close CHECK_SH;
-	    
-		if ( @cnv_jobs ){
-		    system "qsub -q $opt{CNVCHECK_QUEUE} -m a -M $opt{MAIL} -pe threaded $opt{CNVCHECK_THREADS} -P $opt{CLUSTER_PROJECT} -o $sample_log_dir -e $sample_log_dir -N $job_id -hold_jid ".join(",",@cnv_jobs)." $bash_file";
-		} else {
-		    system "qsub -q $opt{CNVCHECK_QUEUE} -m a -M $opt{MAIL} -pe threaded $opt{CNVCHECK_THREADS} -P $opt{CLUSTER_PROJECT} -o $sample_log_dir -e $sample_log_dir -N $job_id $bash_file";
-		}
-		push(@check_cnv_jobs, $job_id);
+	    open CHECK_SH, ">$bash_file" or die "cannot open file $bash_file \n";
+	    print CHECK_SH "#!/bin/bash\n\n";
+	    print CHECK_SH "echo \"Start Check\t\" `date` `uname -n` >> $sample_log_dir/check.log\n\n";
+	    print CHECK_SH "if [[ -f $sample_log_dir/freec.done ]]\n";
+	    print CHECK_SH "then\n";
+	    print CHECK_SH "\ttouch $sample_log_dir/$sample.done\n";
+	    print CHECK_SH "fi\n\n";
+	    print CHECK_SH "echo \"End Check\t\" `date` `uname -n` >> $sample_log_dir/check.log\n";
+	    close CHECK_SH;
+	    my $qsub = &qsubTemplate(\%opt,"CNVCHECK");
+	    if ( @cnv_jobs ){
+		system "$qsub -o $sample_log_dir -e $sample_log_dir -N $job_id -hold_jid ".join(",",@cnv_jobs)." $bash_file";
+	    } else {
+		system "$qsub -o $sample_log_dir -e $sample_log_dir -N $job_id $bash_file";
+	    }
+	    push(@check_cnv_jobs, $job_id);
 	}
     }
     return \@check_cnv_jobs;

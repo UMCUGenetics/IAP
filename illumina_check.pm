@@ -12,6 +12,8 @@ package illumina_check;
 use strict;
 use POSIX qw(tmpnam);
 use FindBin;
+use lib "$FindBin::Bin"; #locates pipeline directory
+use illumina_sge;
 
 sub runCheck {
     ### 
@@ -261,10 +263,11 @@ sub runCheck {
     print BASH "sleep 5s \n";
 
     #Start main bash script
+    my $qsub = &qsubTemplate(\%opt,"CHECKING");
     if (@runningJobs){
-	system "qsub -q $opt{CHECKING_QUEUE} -m as -M $opt{MAIL} -pe threaded $opt{CHECKING_THREADS} -P $opt{CLUSTER_PROJECT} -o /dev/null -e /dev/null -N check_$jobID -hold_jid ".join(",",@runningJobs)." $bashFile";
+	system "$qsub -o /dev/null -e /dev/null -N check_$jobID -hold_jid ".join(",",@runningJobs)." $bashFile";
     } else {
-	system "qsub -q $opt{CHECKING_QUEUE} -m as -M $opt{MAIL} -pe threaded $opt{CHECKING_THREADS} -P $opt{CLUSTER_PROJECT} -o /dev/null -e /dev/null -N check_$jobID $bashFile";
+	system "$qsub -o /dev/null -e /dev/null -N check_$jobID $bashFile";
     }
 }
 
