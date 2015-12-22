@@ -30,33 +30,35 @@ BEGIN {
 
 sub generic(@){
     my ($opt,$function)=@_;
-    my $qsub = "qsub -P ".$$opt{CLUSTER_PROJECT}." -pe threaded ".$$opt{$function."_THREADS"}." -q ".$$opt{$function."_QUEUE"};
+    my $tmp="";
+    $tmp = ",tmpspace=".$$opt{$function."_TMP"}."G" if ($$opt{$function."_TMP"});
+    my $qsub = "qsub -P ".$$opt{CLUSTER_PROJECT}." -pe threaded ".$$opt{$function."_THREADS"}." -q ".$$opt{$function."_QUEUE"}." -l h_rt=".$$opt{$function."_TIME"}.$tmp;
     return ($qsub);
 }
 
 sub qsubTemplate(@){
     my ($opt,$function)=@_;
-    my $qsub = &generic($opt,$function)." -m a -M ".$$opt{MAIL}." -R ".$$opt{CLUSTER_RESERVATION}." -l h_rt=".$$opt{$function."_TIME"}.",h_vmem=".$$opt{$function."_MEM"}."G";
+    my $qsub = &generic($opt,$function)." -m a -M ".$$opt{MAIL}." -R ".$$opt{CLUSTER_RESERVATION}." -l h_vmem=".$$opt{$function."_MEM"}."G";
     return ($qsub)
 }
 sub qsubMemThreads(@){
     my ($opt,$function)=@_;
     my $h_vmem= ($$opt{$function."_MEM"} * $$opt{$function."_THREADS"})."G";
-    my $qsub = &generic($opt,$function)." -m a -M ".$$opt{MAIL}." -R ".$$opt{CLUSTER_RESERVATION}." -l h_rt=".$$opt{$function."_TIME"}.",h_vmem=".$h_vmem;
+    my $qsub = &generic($opt,$function)." -m a -M ".$$opt{MAIL}." -R ".$$opt{CLUSTER_RESERVATION}." -l h_vmem=".$h_vmem;
     return ($qsub)
 }
 
 sub qsubJavaMaster(@){
     my ($opt,$function)=@_;
     my $h_vmem = (4 + $$opt{$function."_MASTERTHREADS"} * $$opt{$function."_MEM"})."G";
-    my $qsub = &generic($opt,$function)." -m a -M ".$$opt{MAIL}." -R ".$$opt{CLUSTER_RESERVATION}." -l h_rt=".$$opt{$function."_TIME"}.",h_vmem=".$h_vmem;
+    my $qsub = &generic($opt,$function)." -m a -M ".$$opt{MAIL}." -R ".$$opt{CLUSTER_RESERVATION}." -l h_vmem=".$h_vmem;
     return ($qsub)
 }
 
 sub qsubJava(@){
     my ($opt,$function)=@_;
     my $h_vmem = (4 + $$opt{$function."_THREADS"} * $$opt{$function."_MEM"})."G";
-    my $qsub = &generic($opt,$function)." -m a -M ".$$opt{MAIL}." -R ".$$opt{CLUSTER_RESERVATION}." -l h_rt=".$$opt{$function."_TIME"}.",h_vmem=".$h_vmem;
+    my $qsub = &generic($opt,$function)." -m a -M ".$$opt{MAIL}." -R ".$$opt{CLUSTER_RESERVATION}." -l h_vmem=".$h_vmem;
     return ($qsub)
 }
 
@@ -64,7 +66,8 @@ sub qsubJava(@){
 sub jobNative(@){
     my ($opt,$function)=@_;
     my $h_vmem = (4 + $$opt{$function."_MASTERTHREADS"} * $$opt{$function."_MEM"})."G";
-    my $qsub = &generic($opt,$function)." -l h_rt=".$$opt{$function."_TIME"}.",h_vmem=".$h_vmem;
+    my $qsub = &generic($opt,$function).",h_vmem=".$h_vmem;
+    $qsub=~s/^qsub//;
     return ($qsub)
 }
 
