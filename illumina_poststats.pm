@@ -43,6 +43,7 @@ sub runPostStats {
 	$command .= "-queue $opt{POSTSTATS_QUEUE} ";
 	$command .= "-queue_threads $opt{POSTSTATS_THREADS} ";
 	$command .= "-queue_mem $opt{POSTSTATS_MEM} ";
+	$command .= "-queue_time $opt{POSTSTATS_TIME} ";
 	$command .= "-queue_project $opt{CLUSTER_PROJECT} ";
 	$command .= "-picard_path $opt{PICARD_PATH} ";
 	$command .= "-debug ";
