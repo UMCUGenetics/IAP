@@ -91,9 +91,9 @@ sub runMapping {
     
 	my ($RG_PL, $RG_ID, $RG_LB, $RG_SM) = ('ILLUMINA', $coreName, $sampleName, $sampleName);
 
-	if($opt{MAPPING_MARKDUP} eq "lane"){
+	if($opt{MARKDUP_LEVEL} eq "lane"){
 	    print "Creating $opt{OUTPUT_DIR}/$sampleName/mapping/$coreName\_sorted_dedup.bam with:\n";
-	}elsif(($opt{MAPPING_MARKDUP} eq "no") || ($opt{MAPPING_MARKDUP} eq "sample")){
+	}elsif(($opt{MARKDUP_LEVEL} eq "no") || ($opt{MARKDUP_LEVEL} eq "sample")){
 	    print "Creating $opt{OUTPUT_DIR}/$sampleName/mapping/$coreName\_sorted.bam with:\n";
 	}
 	if($opt{MAPPING_MODE} eq 'batch'){
@@ -115,10 +115,10 @@ sub runMapping {
 	    push(@jobIds, $chunk->{'jobId'});
 	}
 
-	if(($opt{MAPPING_MARKDUP} eq "lane") || ($opt{MAPPING_MARKDUP} eq "sample")){
+	if(($opt{MARKDUP_LEVEL} eq "lane") || ($opt{MARKDUP_LEVEL} eq "sample")){
 	    $opt{BAM_FILES}->{$sample} = "$sample\_dedup.bam";
 	    print "Creating $opt{BAM_FILES}->{$sample}\n";
-	}elsif($opt{MAPPING_MARKDUP} eq "no"){
+	}elsif($opt{MARKDUP_LEVEL} eq "no"){
 	    $opt{BAM_FILES}->{$sample} = "$sample.bam";
 	    print "Creating $opt{BAM_FILES}->{$sample}\n";
 	}
@@ -154,7 +154,7 @@ sub runMapping {
 	print MERGE_SH "\techo \"ERROR: merging failed due to incomplete BAM-file(s)\" >> logs/merge.err\n";
 	print MERGE_SH "else\n";
 	
-	if($opt{MAPPING_MARKDUP} eq "lane"){
+	if($opt{MARKDUP_LEVEL} eq "lane"){
 	    if(scalar(@bamList) > 1){
 		print MERGE_SH "\t$opt{SAMBAMBA_PATH}/sambamba merge -t $opt{MAPPING_THREADS} mapping/$sample\_dedup.bam ".join(" ",@bamList)."\n";
 	    } else {
@@ -163,30 +163,36 @@ sub runMapping {
 	    print MERGE_SH "\t$opt{SAMBAMBA_PATH}/sambamba index -t $opt{MAPPING_THREADS} mapping/$sample\_dedup.bam mapping/$sample\_dedup.bai\n";
 	    print MERGE_SH "\t$opt{SAMBAMBA_PATH}/sambamba flagstat -t $opt{MAPPING_THREADS} mapping/$sample\_dedup.bam > mapping/$sample\_dedup.flagstat\n";
 	
-	} elsif($opt{MAPPING_MARKDUP} eq "sample") {
+	} elsif($opt{MARKDUP_LEVEL} eq "sample") {
 	    ### Use markdup to merge and markdup in one step, since sambamba v0.5.8
-	    print MERGE_SH "\techo \"Start markdup\t\" `date` \"\t$sample.bam\t\" `uname -n` >> $opt{OUTPUT_DIR}/$sample/logs/$sample.log\n";
-	    print MERGE_SH "\t$opt{SAMBAMBA_PATH}/sambamba markdup --tmpdir=$opt{OUTPUT_DIR}/$sample/tmp/ --overflow-list-size=500000 -t $opt{MAPPING_THREADS} ".join(" ",@bamList)." mapping/$sample\_dedup.bam \n";
-	    print MERGE_SH "\t$opt{SAMBAMBA_PATH}/sambamba index -t $opt{MAPPING_THREADS} mapping/$sample\_dedup.bam mapping/$sample\_dedup.bai\n";
-	    print MERGE_SH "\t$opt{SAMBAMBA_PATH}/sambamba flagstat -t $opt{MAPPING_THREADS} mapping/$sample\_dedup.bam > mapping/$sample\_dedup.flagstat\n";
-	    print MERGE_SH "\techo \"End markdup\t\" `date` \"\t$sample.bam\t\" `uname -n` >> $opt{OUTPUT_DIR}/$sample/logs/$sample.log\n";
+	    print MERGE_SH "\techo \"Start markdup\t\" `date` \"\t$sample.bam\t\" `uname -n` >> $opt{OUTPUT_DIR}/$sample/logs/$sample.log\n",
+	    "ulimit -n 16384\n",
+	    "\t",$opt{SAMBAMBA_PATH},"/sambamba markdup --tmpdir=\$TMPDIR --overflow-list-size=900000 -t ",$opt{MARKDUP_THREADS}," ",join(" ",@bamList)," mapping/",$sample,"_dedup.bam\n",
+	    "\t",$opt{SAMBAMBA_PATH},"/sambamba index -t ",$opt{MARKDUP_THREADS}," mapping/",$sample,"_dedup.bam mapping/",$sample,"_dedup.bai\n";
+	    ### compute resource efficient alternative
+	    #print MERGE_SH "module load sambamcram/biobambam\n",
+	    #"bammerge level=0 tmpfile=\$TMPDIR/",$sample,"merge I=",join(" I=",@bamList)," |bammarkduplicates2 tmpfile=\$TMPDIR/",$sample,
+	    #"mark markthreads=",$opt{MARKDUP_THREADS}," index=1 M=mapping/",$sample,"_metrics.txt O=mapping/",$sample,"_dedup.bam\n",
+	    
+	    "\t",$opt{SAMBAMBA_PATH},"/sambamba flagstat -t ",$opt{MARKDUP_THREADS}," mapping/",$sample,"\_dedup.bam > mapping/",$sample,"\_dedup.flagstat\n",
+	    "\techo \"End markdup\t\" `date` \"\t",$sample,".bam\t\" `uname -n` >> ",$opt{OUTPUT_DIR},"/",$sample,"/logs/",$sample,".log\n";
 	
-	} elsif($opt{MAPPING_MARKDUP} eq "no") {
+	} elsif($opt{MARKDUP_LEVEL} eq "no") {
 	    if(scalar(@bamList) > 1){
-		print MERGE_SH "\t$opt{SAMBAMBA_PATH}/sambamba merge -t $opt{MAPPING_THREADS} mapping/$sample.bam ".join(" ",@bamList)."\n";
+		print MERGE_SH "\t$opt{SAMBAMBA_PATH}/sambamba merge -t $opt{MARKDUP_THREADS} mapping/$sample.bam ".join(" ",@bamList)."\n";
 	    } else {
 		print MERGE_SH "\tmv $bamList[0] mapping/$sample.bam\n";
 	    }
-	    print MERGE_SH "\t$opt{SAMBAMBA_PATH}/sambamba index -t $opt{MAPPING_THREADS} mapping/$sample.bam mapping/$sample.bai\n";
-	    print MERGE_SH "\t$opt{SAMBAMBA_PATH}/sambamba flagstat -t $opt{MAPPING_THREADS} mapping/$sample.bam > mapping/$sample.flagstat\n";
+	    print MERGE_SH "\t$opt{SAMBAMBA_PATH}/sambamba index -t $opt{MARKDUP_THREADS} mapping/$sample.bam mapping/$sample.bai\n";
+	    print MERGE_SH "\t$opt{SAMBAMBA_PATH}/sambamba flagstat -t $opt{MARKDUP_THREADS} mapping/$sample.bam > mapping/$sample.flagstat\n";
 	}
 	
 	print MERGE_SH "fi\n\n";
 	
 	print MERGE_SH "TOTALREADS=0\n";
-	if($opt{MAPPING_MARKDUP} eq "lane"){
+	if($opt{MARKDUP_LEVEL} eq "lane"){
 	    print MERGE_SH "for i in \$( find \$PWD/mapping -name '*sorted_dedup.flagstat')\n";
-	}elsif(($opt{MAPPING_MARKDUP} eq "no") || ($opt{MAPPING_MARKDUP} eq "sample")){
+	}elsif(($opt{MARKDUP_LEVEL} eq "no") || ($opt{MARKDUP_LEVEL} eq "sample")){
 	    print MERGE_SH "for i in \$( find \$PWD/mapping -name '*sorted.flagstat')\n";
 	}
 	print MERGE_SH "do\n";
@@ -194,7 +200,7 @@ sub runMapping {
         print MERGE_SH "\tTOTALREADS=\$((\$TOTALREADS + \$VAL))\n";
 	print MERGE_SH "done\n\n";
 	
-	if($opt{MAPPING_MARKDUP} eq "lane"){
+	if($opt{MARKDUP_LEVEL} eq "lane"){
 	    print MERGE_SH "if [ -s mapping/$sample\_dedup.flagstat ]\n";
 	    print MERGE_SH "then\n";
 	    print MERGE_SH "\tFS1=\`grep -m 1 -P \"\\d+ \" mapping/$sample\_dedup.flagstat | awk '{{split(\$0,columns , \"+\")} print columns[1]}'\`\n";
@@ -210,14 +216,14 @@ sub runMapping {
 	    print MERGE_SH "else\n";
 	    print MERGE_SH "\techo \"ERROR: mapping/$sample\_dedup.flagstat is empty.\" >> logs/$sample\_cleanup.err\n";
 	    print MERGE_SH "fi\n\n";
-	}elsif($opt{MAPPING_MARKDUP} eq "sample"){
+	}elsif($opt{MARKDUP_LEVEL} eq "sample"){
 	    print MERGE_SH "if [ -s mapping/$sample\_dedup.flagstat ]\n";
 	    print MERGE_SH "then\n";
 	    print MERGE_SH "\tFS1=\`grep -m 1 -P \"\\d+ \" mapping/$sample\_dedup.flagstat | awk '{{split(\$0,columns , \"+\")} print columns[1]}'\`\n";
 	    print MERGE_SH "\tif [ \$FS1 -eq \$TOTALREADS ]\n";
 	    print MERGE_SH "\tthen\n";
-	    print MERGE_SH "\t\trm mapping/$sample.bam\n";
-	    print MERGE_SH "\t\trm mapping/$sample.bai\n";
+	    print MERGE_SH "\t\trm mapping/$sample.bam 2> /dev/null\n";
+	    print MERGE_SH "\t\trm mapping/$sample.bai 2> /dev/null\n";
     	    print MERGE_SH "\t\tfor i in \$( find \$PWD/mapping -name '*sorted.bam')\n";
     	    print MERGE_SH "\t\tdo\n";
     	    print MERGE_SH "\t\t\trm \$i\n";
@@ -228,7 +234,7 @@ sub runMapping {
 	    print MERGE_SH "else\n";
 	    print MERGE_SH "\techo \"ERROR: mapping/$sample\_dedup.flagstat is empty.\" >> logs/$sample\_cleanup.err\n";
 	    print MERGE_SH "fi\n\n";
-	} elsif($opt{MAPPING_MARKDUP} eq "no"){
+	} elsif($opt{MARKDUP_LEVEL} eq "no"){
 	    print MERGE_SH "if [ -s mapping/$sample.flagstat ]\n";
 	    print MERGE_SH "then\n";
 	    print MERGE_SH "\tFS1=\`grep -m 1 -P \"\\d+ \" mapping/$sample.flagstat | awk '{{split(\$0,columns , \"+\")} print columns[1]}'\`\n";
@@ -252,7 +258,7 @@ sub runMapping {
 	
 	print MERGE_SH "echo \"End merge \t\" `date` \"\t$sample\t\" `uname -n` >> $opt{OUTPUT_DIR}/$sample/logs/$sample.log\n\n";
 	close MERGE_SH;
-	my $qsub = &qsubTemplate(\%opt,"MAPPING");
+	my $qsub = &qsubTemplate(\%opt,"MARKDUP");
 	print $QSUB $qsub," -o ",$opt{OUTPUT_DIR},"/",$sample,"/logs/Merge_",$sample,".out -e ",$opt{OUTPUT_DIR},"/",$sample,"/logs/Merge_",$sample,".err -N ",$jobId,
 	" -hold_jid ",join(",",@jobIds)," ",$opt{OUTPUT_DIR},"/",$sample,"/jobs/",$jobId,".sh\n\n";
     
@@ -274,9 +280,9 @@ sub submitBatchJobs{
     my $jobId = "Map_$coreName\_".get_job_id();
     my ($RG_PL, $RG_ID, $RG_LB, $RG_SM, $RG_PU) = ('ILLUMINA', $coreName, $sampleName, $sampleName, $flowcellID);
     
-    if($opt{MAPPING_MARKDUP} eq "lane"){
+    if($opt{MARKDUP_LEVEL} eq "lane"){
 	push(@{$samples->{$sampleName}}, {'jobId'=>$jobId, 'file'=>"$opt{OUTPUT_DIR}/$sampleName/mapping/$coreName\_sorted_dedup.bam"});
-    }elsif(($opt{MAPPING_MARKDUP} eq "no") || ($opt{MAPPING_MARKDUP} eq "sample")){
+    }elsif(($opt{MARKDUP_LEVEL} eq "no") || ($opt{MARKDUP_LEVEL} eq "sample")){
 	push(@{$samples->{$sampleName}}, {'jobId'=>$jobId, 'file'=>"$opt{OUTPUT_DIR}/$sampleName/mapping/$coreName\_sorted.bam"});
     }
     ### Skip mapping if coreName_sorted_dedup.done file already exists
@@ -344,7 +350,7 @@ sub submitBatchJobs{
     print BWA_SH "\techo \"ERROR: Either $coreName.flagstat or $coreName\_sorted.flagstat is empty.\" >> $opt{OUTPUT_DIR}/$sampleName/logs/$coreName\_cleanup.err\n";
     print BWA_SH "fi\n\n";
     
-    if($opt{MAPPING_MARKDUP} eq "lane"){
+    if($opt{MARKDUP_LEVEL} eq "lane"){
 	print BWA_SH "if [ -s $coreName\_sorted.flagstat ] && [ -s $coreName\_sorted_dedup.flagstat ]\n";
 	print BWA_SH "then\n";
 	print BWA_SH "\tFS1=\`grep -m 1 -P \"\\d+ \" $coreName\_sorted.flagstat | awk '{{split(\$0,columns , \"+\")} print columns[1]}'\`\n";
@@ -367,9 +373,9 @@ sub submitBatchJobs{
     print BWA_SH "fi\n\n";
 
     print BWA_SH "mv -f $opt{CLUSTER_TMP}/$jobId/* $opt{OUTPUT_DIR}/$sampleName/mapping/\n";
-    if($opt{MAPPING_MARKDUP} eq "lane"){
+    if($opt{MARKDUP_LEVEL} eq "lane"){
 	print BWA_SH "if [ -f $opt{OUTPUT_DIR}/$sampleName/mapping/$coreName\_sorted_dedup.bam ];then\n";
-    }elsif(($opt{MAPPING_MARKDUP} eq "no") || ($opt{MAPPING_MARKDUP} eq "sample")){
+    }elsif(($opt{MARKDUP_LEVEL} eq "no") || ($opt{MARKDUP_LEVEL} eq "sample")){
 	print BWA_SH "if [ -f $opt{OUTPUT_DIR}/$sampleName/mapping/$coreName\_sorted.bam ];then\n";
     }
     print BWA_SH "\trm -r $opt{CLUSTER_TMP}/$jobId/\n";
@@ -401,9 +407,9 @@ sub submitSingleJobs{
     my $markdupFSJobId = "MarkDupFS_$coreName\_".get_job_id();
     my $cleanupJobId = "Clean_$coreName\_".get_job_id();
     
-    if($opt{MAPPING_MARKDUP} eq "lane"){
+    if($opt{MARKDUP_LEVEL} eq "lane"){
 	push(@{$samples->{$sampleName}}, {'jobId'=>$cleanupJobId, 'file'=>"$opt{OUTPUT_DIR}/$sampleName/mapping/$coreName\_sorted_dedup.bam"});
-    }elsif(($opt{MAPPING_MARKDUP} eq "no") || ($opt{MAPPING_MARKDUP} eq "sample")){
+    }elsif(($opt{MARKDUP_LEVEL} eq "no") || ($opt{MARKDUP_LEVEL} eq "sample")){
 	push(@{$samples->{$sampleName}}, {'jobId'=>$cleanupJobId, 'file'=>"$opt{OUTPUT_DIR}/$sampleName/mapping/$coreName\_sorted.bam"});
     }
     
