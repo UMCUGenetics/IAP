@@ -203,9 +203,9 @@ sub runSomaticVariantCallers {
 		# Run job
 		my $qsub = &qsubJava(\%opt,"SOMVARMERGE");
 		if ( @somvar_jobs ){
-		    system "qsub -q $opt{SOMVARMERGE_QUEUE} -m a -M $opt{MAIL} -pe threaded $opt{SOMVARMERGE_THREADS} -P $opt{CLUSTER_PROJECT} -o $sample_tumor_log_dir -e $sample_tumor_log_dir -N $job_id -hold_jid ".join(",",@somvar_jobs)." $bash_file";
+		    system "$qsub -o $sample_tumor_log_dir -e $sample_tumor_log_dir -N $job_id -hold_jid ".join(",",@somvar_jobs)." $bash_file";
 		} else {
-		    system "qsub -q $opt{SOMVARMERGE_QUEUE} -m a -M $opt{MAIL} -pe threaded $opt{SOMVARMERGE_THREADS} -P $opt{CLUSTER_PROJECT} -o $sample_tumor_log_dir -e $sample_tumor_log_dir -N $job_id $bash_file";
+		    system "$qsub -o $sample_tumor_log_dir -e $sample_tumor_log_dir -N $job_id $bash_file";
 		}
 		push(@merge_somvar_jobs, $job_id);
 	    }
