@@ -68,7 +68,7 @@ sub runBaseRecalibration {
 	my $jobID = "BR_".$sample."_".get_job_id();
 	my $bashFile = $opt{OUTPUT_DIR}."/".$sample."/jobs/".$jobID.".sh";
 	my $logDir = $opt{OUTPUT_DIR}."/".$sample."/logs";
-	my $qsub = &qsubTemplate(\%opt,"BASERECALIBRATION");
+	my $qsub = &qsubJava(\%opt,"BASERECALIBRATION");
 
 	open BASERECAL_SH, ">$bashFile" or die "cannot open file $bashFile \n";
 	print BASERECAL_SH "#!/bin/bash\n\n";
