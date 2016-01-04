@@ -156,19 +156,18 @@ if(! $opt{VCF} ){
 	my $cnv_jobs = illumina_copyNumber::runCopyNumberTools(\%opt);
 	$opt{RUNNING_JOBS}->{'CNV'} = $cnv_jobs;
     }
-    ### GATK
-    if($opt{VARIANT_CALLING} eq "yes"){
-	print "\n###SCHEDULING VARIANT CALLING####\n";
-	$opt_ref = illumina_calling::runVariantCalling(\%opt);
-	%opt = %$opt_ref;
-    }
     ### SV - Delly
     if($opt{SV_CALLING} eq "yes"){
 	print "\n###SCHEDULING SV CALLING####\n";
 	my $sv_jobs = illumina_structuralVariants::runDelly(\%opt);
 	$opt{RUNNING_JOBS}->{'sv'} = $sv_jobs;
     }
-
+    ### GATK
+    if($opt{VARIANT_CALLING} eq "yes"){
+	print "\n###SCHEDULING VARIANT CALLING####\n";
+	$opt_ref = illumina_calling::runVariantCalling(\%opt);
+	%opt = %$opt_ref;
+    }
 } elsif ( $opt{VCF} ) {
     print "\n###RUNNING VCF PREP###\n";
     $opt_ref = illumina_calling::runVcfPrep(\%opt);
