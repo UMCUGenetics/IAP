@@ -296,7 +296,7 @@ sub runPileup {
     print PILEUP_SH "then\n";
     print PILEUP_SH "\tPATH=$opt{SAMTOOLS_PATH}:\$PATH\n";
     print PILEUP_SH "\texport PATH\n";
-    print PILEUP_SH "\t$opt{SAMBAMBA_PATH}/sambamba mpileup -t $opt{VARSCAN_THREADS} --tmpdir=$opt{OUTPUT_DIR}/tmp/ -L $opt{SOMVAR_TARGETS} -o $pileup $opt{OUTPUT_DIR}/$sample/mapping/$bam --samtools \"-q 1 -f $opt{GENOME}\"\n";
+    print PILEUP_SH "\t$opt{SAMBAMBA_PATH}/sambamba mpileup -t $opt{PILEUP_THREADS} --tmpdir=$opt{OUTPUT_DIR}/tmp/ -L $opt{SOMVAR_TARGETS} -o $pileup $opt{OUTPUT_DIR}/$sample/mapping/$bam --samtools \"-q 1 -f $opt{GENOME}\"\n";
     print PILEUP_SH "\tif [ \"\$(tail -n 1 $pileup | cut -f 1)\" = \"MT\" ]\n";
     print PILEUP_SH "\tthen\n";
     print PILEUP_SH "\t\tmv $pileup $opt{OUTPUT_DIR}/$sample/mapping/\n";
