@@ -151,7 +151,7 @@ sub runSomaticVariantCallers {
 		if($opt{SOMVAR_STRELKA} eq "yes"){ print MERGE_SH "-V:strelka $sample_tumor_out_dir/strelka/passed.somatic.merged.vcf "; }
 		if($opt{SOMVAR_VARSCAN} eq "yes"){ print MERGE_SH "-V:varscan $sample_tumor_out_dir/varscan/$sample_tumor_name.merged.Somatic.hc.vcf "; }
 		if($opt{SOMVAR_FREEBAYES} eq "yes"){ print MERGE_SH "-V:freebayes $sample_tumor_out_dir/freebayes/$sample_tumor_name\_somatic_filtered.vcf "; }
-		if($opt{SOMVAR_MUTECT} eq "yes"){ print MERGE_SH "-V:mutect $sample_tumor_out_dir/mutect/$sample_tumor_name\_mutect.vcf ";}
+		if($opt{SOMVAR_MUTECT} eq "yes"){ print MERGE_SH "-V:mutect $sample_tumor_out_dir/mutect/$sample_tumor_name\_mutect_passed.vcf ";}
 
 		# Filter vcf on target
 		if($opt{SOMVAR_TARGETS}){
