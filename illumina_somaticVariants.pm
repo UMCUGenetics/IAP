@@ -524,10 +524,10 @@ sub runFreeBayes {
     my $concat_command = "$opt{VCFTOOLS_PATH}/vcf-concat ";
     my $rm_command = "rm ";
     foreach my $chr (@chrs){
-	my $snp_output = $sample_tumor_name."_".$chr.".vcf";
-	$file_test .= "-a -f $snp_output ";
-	$concat_command .= "$snp_output ";
-	$rm_command .= "$snp_output ";
+	my $snp_output = $sample_tumor_name."_".$chr;
+	$file_test .= "-a -f $snp_output\.vcf ";
+	$concat_command .= "$snp_output\.vcf ";
+	$rm_command .= "$snp_output\* ";
     }
     $file_test .= "]";
     $concat_command .= "> $sample_tumor_name.vcf";
