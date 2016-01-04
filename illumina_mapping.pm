@@ -168,7 +168,7 @@ sub runMapping {
 	    print MERGE_SH "\techo \"Start markdup\t\" `date` \"\t$sample.bam\t\" `uname -n` >> $opt{OUTPUT_DIR}/$sample/logs/$sample.log\n",
 	    "ulimit -n 4096\n",
 	    "\t",$opt{SAMBAMBA_PATH},"/sambamba markdup --tmpdir=\$TMPDIR --overflow-list-size=900000 -t ",$opt{MARKDUP_THREADS}," ",join(" ",@bamList)," mapping/",$sample,"_dedup.bam\n",
-	    "\t",$opt{SAMBAMBA_PATH},"/sambamba index -t ",$opt{MARKDUP_THREADS}," mapping/",$sample,"_dedup.bam mapping/",$sample,"_dedup.bai\n";
+	    "\t",$opt{SAMBAMBA_PATH},"/sambamba index -t ",$opt{MARKDUP_THREADS}," mapping/",$sample,"_dedup.bam mapping/",$sample,"_dedup.bai\n",
 	    ### compute resource efficient alternative
 	    #print MERGE_SH "module load sambamcram/biobambam\n",
 	    #"bammerge level=0 tmpfile=\$TMPDIR/",$sample,"merge I=",join(" I=",@bamList)," |bammarkduplicates2 tmpfile=\$TMPDIR/",$sample,
