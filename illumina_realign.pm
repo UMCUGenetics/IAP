@@ -68,10 +68,10 @@ sub runRealignment {
 	
 	foreach my $sample (@{$opt{SAMPLES}}){
 	    my $bam = $opt{BAM_FILES}->{$sample};
-	    (my $flagstat = $bam) =~ s/.bam/.flagstat/;
-	    (my $realignedBam = $bam) =~ s/.bam/.realigned.bam/;
-	    (my $realignedBai = $bam) =~ s/.bam/.realigned.bai/;
-	    (my $realignedFlagstat = $bam) =~ s/.bam/.realigned.flagstat/;
+	    (my $flagstat = $bam) =~ s/\.bam/\.flagstat/;
+	    (my $realignedBam = $bam) =~ s/\.bam/\.realigned\.bam/;
+	    (my $realignedBai = $bam) =~ s/\.bam/\.realigned\.bai/;
+	    (my $realignedFlagstat = $bam) =~ s/\.bam/\.realigned\.flagstat/;
 	    $opt{BAM_FILES}->{$sample} = $realignedBam;
 	    
 	    print "\t$opt{OUTPUT_DIR}/$sample/mapping/$bam\n";
@@ -145,10 +145,10 @@ sub runRealignment {
     elsif($opt{REALIGNMENT_MODE} eq 'single'){
 	foreach my $sample (@{$opt{SAMPLES}}){
 	    my $bam = $opt{BAM_FILES}->{$sample};
-	    (my $flagstat = $bam) =~ s/.bam/.flagstat/;
-	    (my $realignedBam = $bam) =~ s/.bam/.realigned.bam/;
-	    (my $realignedBai = $bam) =~ s/.bam/.realigned.bai/;
-	    (my $realignedFlagstat = $bam) =~ s/.bam/.realigned.flagstat/;
+	    (my $flagstat = $bam) =~ s/\.bam/.flagstat/;
+	    (my $realignedBam = $bam) =~ s/\.bam/\.realigned\.bam/;
+	    (my $realignedBai = $bam) =~ s/\.bam/\.realigned\.bai/;
+	    (my $realignedFlagstat = $bam) =~ s/\.bam/\.realigned\.flagstat/;
 	    $opt{BAM_FILES}->{$sample} = $realignedBam;
 
 	    print "\t$opt{OUTPUT_DIR}/$sample/mapping/$bam\n";

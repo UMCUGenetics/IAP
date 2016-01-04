@@ -274,7 +274,7 @@ sub runPileup {
     my $runName = (split("/", $opt{OUTPUT_DIR}))[-1];
 
     my $bam = $opt{BAM_FILES}->{$sample};
-    (my $pileup = $bam) =~ s/.bam/.pileup/;
+    (my $pileup = $bam) =~ s/\.bam/\.pileup/;
     my $jobID = "PILEUP_$sample\_".get_job_id();
     
     ## Check for pileup.done file
@@ -325,8 +325,8 @@ sub runVarscan {
     my @running_jobs = @{$running_jobs};
     push(@running_jobs, @{$opt{RUNNING_JOBS}->{'pileup'}});
     my $varscan_out_dir = "$out_dir/varscan";
-    (my $sample_tumor_pileup = $sample_tumor_bam) =~ s/.bam/.pileup/;
-    (my $sample_ref_pileup = $sample_ref_bam) =~ s/.bam/.pileup/;
+    (my $sample_tumor_pileup = $sample_tumor_bam) =~ s/\.bam/\.pileup/;
+    (my $sample_ref_pileup = $sample_ref_bam) =~ s/\.bam/\.pileup/;
 
     ## Create output dir
     if( ! -e $varscan_out_dir ){
