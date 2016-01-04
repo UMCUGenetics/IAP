@@ -387,11 +387,8 @@ sub runVarscan {
     my $job_id = "VS_".$sample_tumor."_".get_job_id();
     my $bash_file = $job_dir."/".$job_id.".sh";
 
-    open VARSCAN_SH, ">$bash_file" or die "cannot open file $bash_file \n";
-    print VARSCAN_SH "#!/bin/bash\n\n";
-    print VARSCAN_SH "cd $varscan_out_dir\n";
-
-    my $file_test = "if [ -f $sample_ref_pileup -a -f $sample_tumor_pileup ";
+    # Setup test, concat and rm of chr chunks
+    my $file_test = "if [ -f $sample_ref_bam -a -f $sample_tumor_bam ";
     my $snp_concat_command = "$opt{VCFTOOLS_PATH}/vcf-concat ";
     my $indel_concat_command = "$opt{VCFTOOLS_PATH}/vcf-concat ";
     my $rm_command = "rm ";
@@ -407,13 +404,18 @@ sub runVarscan {
     $file_test .= "]";
     $snp_concat_command .= "> $sample_tumor_name.snp.vcf";
     $indel_concat_command .= "> $sample_tumor_name.indel.vcf";
-    
+
+    # Create bash script
+    open VARSCAN_SH, ">$bash_file" or die "cannot open file $bash_file \n";
+    print VARSCAN_SH "#!/bin/bash\n\n";
+
+    print VARSCAN_SH "cd $varscan_out_dir\n";
     print VARSCAN_SH "$file_test\n";
     print VARSCAN_SH "then\n";
     print VARSCAN_SH "\techo \"Start concat and postprocess Varscan\t\" `date` \"\t $sample_ref_pileup \t $sample_tumor_pileup\t\" `uname -n` >> $log_dir/varscan.log\n";
     print VARSCAN_SH "\t$snp_concat_command\n";
     print VARSCAN_SH "\t$indel_concat_command\n\n";
-    
+
     # postprocessing
     print VARSCAN_SH "\tjava -Xmx12g -jar $opt{VARSCAN_PATH} processSomatic $sample_tumor_name.indel.vcf $opt{VARSCAN_POSTSETTINGS}\n";
     print VARSCAN_SH "\tjava -Xmx12g -jar $opt{VARSCAN_PATH} processSomatic $sample_tumor_name.snp.vcf $opt{VARSCAN_POSTSETTINGS}\n\n";
@@ -461,25 +463,84 @@ sub runFreeBayes {
 	return;
     }
 
-    ## Setup freebayes bash script and output dir
+    ## Run freebayes per chromosome
+    my $dictFile = $opt{GENOME};
+    $dictFile =~ s/.fasta$/.dict/;
+    my @chrs = @{get_chrs_from_dict($dictFile)};
+    my @freebayes_jobs;
+
+    foreach my $chr (@chrs){
+	## ADD: Chunk done check and skip if done.
+	my $job_id = "FB_".$sample_tumor."_".$chr."_".get_job_id();
+	my $bash_file = $job_dir."/".$job_id.".sh";
+	my $output_name = $sample_tumor_name."_".$chr;
+
+	## Create freebayes command
+	my $freebayes_command = "$opt{FREEBAYES_PATH}/freebayes -f $opt{GENOME} -r $chr ";
+	$freebayes_command .= "$opt{FREEBAYES_SETTINGS} $sample_ref_bam $sample_tumor_bam > $freebayes_out_dir/$output_name.vcf";
+
+	## Sort vcf, remove duplicate lines and filter on target
+	my $sort_uniq_filter_command = "$opt{VCFTOOLS_PATH}/vcf-sort -c $freebayes_out_dir/$output_name.vcf | $opt{VCFLIB_PATH}/vcfuniq > $freebayes_out_dir/$output_name.sorted_uniq.vcf";
+	my $mv_command;
+	# Filter vcf on target
+	if($opt{SOMVAR_TARGETS}){
+	    $sort_uniq_filter_command .= "\njava -Xmx6G -jar $opt{GATK_PATH}/GenomeAnalysisTK.jar -T SelectVariants -R $opt{GENOME} -L $opt{SOMVAR_TARGETS} -V $freebayes_out_dir/$output_name.sorted_uniq.vcf -o $freebayes_out_dir/$output_name.sorted_uniq_targetfilter.vcf\n";
+	    $mv_command = "mv $freebayes_out_dir/$output_name.sorted_uniq_targetfilter.vcf $freebayes_out_dir/$output_name.vcf";
+	} else {
+	    $mv_command = "mv $freebayes_out_dir/$output_name.sorted_uniq.vcf $freebayes_out_dir/$output_name.vcf";
+	}
+	## Create bashscript
+	open FREEBAYES_SH, ">$bash_file" or die "cannot open file $bash_file \n";
+	print FREEBAYES_SH "#!/bin/bash\n\n";
+	print FREEBAYES_SH "cd $freebayes_out_dir\n";
+	print FREEBAYES_SH "if [ -f $sample_tumor_bam -a -f $sample_ref_bam ]\n";
+	print FREEBAYES_SH "then\n";
+	print FREEBAYES_SH "\techo \"Start Freebayes\t\" `date` \"\t $chr \t $sample_ref_bam \t $sample_tumor_bam\t\" `uname -n` >> $log_dir/freebayes.log\n\n";
+	print FREEBAYES_SH "\t$freebayes_command\n";
+	print FREEBAYES_SH "\t$sort_uniq_filter_command\n";
+	print FREEBAYES_SH "\t$mv_command\n\n";
+	print FREEBAYES_SH "\techo \"End Freebayes\t\" `date` \"\t $chr $sample_ref_bam \t $sample_tumor_bam\t\" `uname -n` >> $log_dir/freebayes.log\n";
+	print FREEBAYES_SH "else\n";
+	print FREEBAYES_SH "\techo \"ERROR: $sample_tumor_bam or $sample_ref_bam does not exist.\" >&2\n";
+	print FREEBAYES_SH "fi\n";
+	close FREEBAYES_SH;
+
+	## Run job
+	if ( @running_jobs ){
+	    system "qsub -q $opt{FREEBAYES_QUEUE} -pe threaded $opt{FREEBAYES_THREADS} -R $opt{CLUSTER_RESERVATION} -P $opt{CLUSTER_PROJECT} -m a -M $opt{MAIL} -o $log_dir -e $log_dir -N $job_id -hold_jid ".join(",",@running_jobs)." $bash_file";
+	} else {
+	    system "qsub -q $opt{FREEBAYES_QUEUE} -pe threaded $opt{FREEBAYES_THREADS} -R $opt{CLUSTER_RESERVATION} -P $opt{CLUSTER_PROJECT} -m a -M $opt{MAIL} -o $log_dir -e $log_dir -N $job_id $bash_file";
+	}
+	
+	push(@freebayes_jobs,$job_id);
+    }
+
+    ## Concat chromosome vcfs and postprocess vcf
     my $job_id = "FB_".$sample_tumor."_".get_job_id();
     my $bash_file = $job_dir."/".$job_id.".sh";
+
+    # Setup test, concat and rm of chr chunks
+    my $file_test = "if [ -f $sample_ref_bam -a -f $sample_tumor_bam ";
+    my $concat_command = "$opt{VCFTOOLS_PATH}/vcf-concat ";
+    my $rm_command = "rm ";
+    foreach my $chr (@chrs){
+	my $snp_output = $sample_tumor_name."_".$chr.".vcf";
+	$file_test .= "-a -f $snp_output ";
+	$concat_command .= "$snp_output ";
+	$rm_command .= "$snp_output ";
+    }
+    $file_test .= "]";
+    $concat_command .= "> $sample_tumor_name.vcf";
 
     # Create bash script
     open FREEBAYES_SH, ">$bash_file" or die "cannot open file $bash_file \n";
     print FREEBAYES_SH "#!/bin/bash\n\n";
-    print FREEBAYES_SH "if [ -f $sample_tumor_bam -a -f $sample_ref_bam ]\n";
-    print FREEBAYES_SH "then\n";
-    
-    print FREEBAYES_SH "\techo \"Start Freebayes\t\" `date` \"\t $sample_ref_bam \t $sample_tumor_bam\t\" `uname -n` >> $log_dir/freebayes.log\n";
 
-    # Run freebayes
-    my $command = "$opt{FREEBAYES_PATH}/freebayes -f $opt{GENOME} ";
-    if ( $opt{SOMVAR_TARGETS} ) {
-	$command .= "-t $opt{SOMVAR_TARGETS} ";
-    }
-    $command .= "$opt{FREEBAYES_SETTINGS} $sample_ref_bam $sample_tumor_bam > $freebayes_out_dir/$sample_tumor_name.vcf";
-    print FREEBAYES_SH "\t$command\n\n";
+    print FREEBAYES_SH "cd $freebayes_out_dir\n";
+    print FREEBAYES_SH "$file_test\n";
+    print FREEBAYES_SH "then\n";
+    print FREEBAYES_SH "\techo \"Start concat and postprocess Freebayes\t\" `date` \"\t $sample_ref_bam \t $sample_tumor_bam\t\" `uname -n` >> $log_dir/freebayes.log\n";
+    print FREEBAYES_SH "\t$concat_command\n\n";
 
     # Uniqify freebayes output 
     print FREEBAYES_SH "\tuniq $freebayes_out_dir/$sample_tumor_name.vcf > $freebayes_out_dir/$sample_tumor_name.uniq.vcf\n";
@@ -505,10 +566,11 @@ sub runFreeBayes {
     #Check freebayes completed
     print FREEBAYES_SH "\tif [ -f $freebayes_out_dir/$sample_tumor_name\_somatic_filtered.vcf -a -f $freebayes_out_dir/$sample_tumor_name\_germline_filtered.vcf ]\n";
     print FREEBAYES_SH "\tthen\n";
+    print FREEBAYES_SH "\t\t$rm_command\n";
     print FREEBAYES_SH "\t\ttouch $log_dir/freebayes.done\n\n"; ## Check on complete output!!!
     print FREEBAYES_SH "\tfi\n";
     
-    print FREEBAYES_SH "\techo \"End Freebayes\t\" `date` \"\t $sample_ref_bam \t $sample_tumor_bam\t\" `uname -n` >> $log_dir/freebayes.log\n";
+    print FREEBAYES_SH "\techo \"End concat and postprocess Freebayes\t\" `date` \"\t $sample_ref_bam \t $sample_tumor_bam\t\" `uname -n` >> $log_dir/freebayes.log\n";
     print FREEBAYES_SH "else\n";
     print FREEBAYES_SH "\techo \"ERROR: $sample_tumor_bam or $sample_ref_bam does not exist.\" >&2\n";
     print FREEBAYES_SH "fi\n";
@@ -516,8 +578,8 @@ sub runFreeBayes {
     close FREEBAYES_SH;
 
     # Run job
-    if ( @running_jobs ){
-	system "qsub -q $opt{FREEBAYES_QUEUE} -pe threaded $opt{FREEBAYES_THREADS} -R $opt{CLUSTER_RESERVATION} -P $opt{CLUSTER_PROJECT} -m a -M $opt{MAIL} -o $log_dir -e $log_dir -N $job_id -hold_jid ".join(",",@running_jobs)." $bash_file";
+    if ( @freebayes_jobs ){
+	system "qsub -q $opt{FREEBAYES_QUEUE} -pe threaded $opt{FREEBAYES_THREADS} -R $opt{CLUSTER_RESERVATION} -P $opt{CLUSTER_PROJECT} -m a -M $opt{MAIL} -o $log_dir -e $log_dir -N $job_id -hold_jid ".join(",",@freebayes_jobs)." $bash_file";
     } else {
 	system "qsub -q $opt{FREEBAYES_QUEUE} -pe threaded $opt{FREEBAYES_THREADS} -R $opt{CLUSTER_RESERVATION} -P $opt{CLUSTER_PROJECT} -m a -M $opt{MAIL} -o $log_dir -e $log_dir -N $job_id $bash_file";
     }
