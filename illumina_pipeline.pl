@@ -341,9 +341,14 @@ sub checkConfig{
 	if(! $opt{MAPPING_QUEUE}){ print "ERROR: No MAPPING_QUEUE option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{MAPPING_TIME}){ print "ERROR: No MAPPING_TIME option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{MAPPING_MODE}){ print "ERROR: No MAPPING_MODE option found in config files.\n"; $checkFailed = 1; }
-	if(! $opt{MAPPING_MARKDUP}){ print "ERROR: No MAPPING_MARKDUP option found in config files.\n"; $checkFailed = 1; }
-	if( ($opt{MAPPING_MARKDUP} ne "lane") && ($opt{MAPPING_MARKDUP} ne "sample") && ($opt{MAPPING_MARKDUP} ne "no")){
-	    print "ERROR: MAPPING_MARKDUP should be set to sample, lane or no.\n"; $checkFailed = 1;
+	if(! $opt{MARKDUP_LEVEL}){ print "ERROR: No MARKDUP_LEVEL option found in config files.\n"; $checkFailed = 1; }
+	if( ($opt{MARKDUP_LEVEL} ne "lane") && ($opt{MARKDUP_LEVEL} ne "sample") && ($opt{MARKDUP_LEVEL} ne "no")){
+	    print "ERROR: MARKDUP_LEVEL should be set to sample, lane or no.\n"; $checkFailed = 1;
+	    if(! $opt{MARKDUP_THREADS}){ print "ERROR: No MARKDUP_THREADS option found in config files.\n"; $checkFailed = 1; }
+	    if(! $opt{MARKDUP_MEM}){ print "ERROR: No MARKDUP_MEM option found in config files.\n"; $checkFailed = 1; }
+	    if(! $opt{MARKDUP_QUEUE}){ print "ERROR: No MARKDUP_QUEUE option found in config files.\n"; $checkFailed = 1; }
+	    if(! $opt{MARKDUP_TIME}){ print "ERROR: No MARKDUP_TIME option found in config files.\n"; $checkFailed = 1; }
+	    if(! $opt{MARKDUP_TMP}){ print "ERROR: No MARKDUP_TMP option found in config files.\n"; $checkFailed = 1; }
 	}
 	if($opt{MAPPING_MODE} eq 'single'){
 	    if(! $opt{FLAGSTAT_QUEUE}){ print "ERROR: No FLAGSTAT_QUEUE option found in config files.\n"; $checkFailed = 1; }
