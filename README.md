@@ -48,6 +48,9 @@ perl illumina_pipeline.pl /path/to/output_dir/settings.config>
 - [Freebayes](https://github.com/ekg/freebayes)
 - [Tabix](http://www.htslib.org/doc/tabix.html)
 - [vcflib](https://github.com/ekg/vcflib)
+- [delly](https://github.com/tobiasrausch/delly/)
+- [plink](http://pngu.mgh.harvard.edu/~purcell/plink/)
+- [king](http://people.virginia.edu/~wc9c/KING/)
 
 #### Perl modules
 - strict
@@ -312,6 +315,7 @@ VCFUTILS_THREADS	number_of_threads
 VCFUTILS_MEM	maximum_memory
 VCFUTILS_KINSHIP	yes/no
 PLINK_PATH	/path/to/plink
+KING_PATH	/path/to/king
 VCFUTILS_PHASE	yes
 PED	/path/to/file.ped
 

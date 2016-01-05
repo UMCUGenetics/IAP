@@ -248,7 +248,8 @@ VCFUTILS_QUEUE	veryshort
 VCFUTILS_THREADS	1
 VCFUTILS_MEM	8
 VCFUTILS_KINSHIP	yes
-PLINK_PATH	/hpc/local/CentOS6/cog_bioinf/plink-1.07-x86_64
+PLINK_PATH	/hpc/local/CentOS6/cog_bioinf/plink_1.9b3
+KING_PATH	/hpc/local/CentOS6/cog_bioinf/king_1.4
 VCFUTILS_PHASE	yes
 PED	/path/to/file.ped
 
