@@ -60,7 +60,7 @@ sub runVcfUtils {
 	    print VCFUTILS_SH "cp king.kin0 $opt{OUTPUT_DIR}/$runName.kinship\n";
 	    print VCFUTILS_SH "mv $opt{OUTPUT_DIR}/tmp/plink.log $opt{OUTPUT_DIR}/logs/\n";
 	    print VCFUTILS_SH "mv $opt{OUTPUT_DIR}/tmp/out.log $opt{OUTPUT_DIR}/logs/\n";
-	    print VCFUTILS_SH "if [ -f $opt{OUTPUT_DIR}/$runName.kinship ]; then\n";
+	    print VCFUTILS_SH "if [ -s $opt{OUTPUT_DIR}/$runName.kinship ]; then\n";
 	    print VCFUTILS_SH "\ttouch $opt{OUTPUT_DIR}/logs/Kinship.done\n";
 	    print VCFUTILS_SH "else\n";
 	    print VCFUTILS_SH "\tfailed=true\n";
@@ -77,7 +77,7 @@ sub runVcfUtils {
 	    print VCFUTILS_SH "java -Xmx8G -jar $opt{GATK_PATH}/GenomeAnalysisTK.jar -T PhaseByTransmission -R $opt{GENOME} -V $opt{OUTPUT_DIR}/$vcf -ped $opt{OUTPUT_DIR}/$runName.ped -o $runName.phased.vcf --MendelianViolationsFile $runName.MendelViol\n\n";
 	    
 	    ## Check output
-	    print VCFUTILS_SH "if [ \"\$(tail -n 1 $opt{OUTPUT_DIR}/$vcf | cut -f 1,2)\" = \"\$(tail -n 1 $runName.phased.vcf | cut -f 1,2)\" -a -f $runName.MendelViol ]\n";
+	    print VCFUTILS_SH "if [ \"\$(tail -n 1 $opt{OUTPUT_DIR}/$vcf | cut -f 1,2)\" = \"\$(tail -n 1 $runName.phased.vcf | cut -f 1,2)\" -a -s $runName.MendelViol ]\n";
 	    print VCFUTILS_SH "then\n";
 	    print VCFUTILS_SH "\tmv $runName.phased.vcf $opt{OUTPUT_DIR}/\n";
 	    print VCFUTILS_SH "\tmv $runName.MendelViol $opt{OUTPUT_DIR}/\n";
@@ -98,7 +98,7 @@ sub runVcfUtils {
 	    print VCFUTILS_SH "java -Xmx8G -jar $opt{GATK_PATH}/GenomeAnalysisTK.jar -T VariantsToBinaryPed -R $opt{GENOME} -V $opt{OUTPUT_DIR}/$vcf -m $opt{OUTPUT_DIR}/$runName.fam -bed gender_check.bed -bim gender_check.bim -fam gender_check.fam -mgq 20\n";
 	    print VCFUTILS_SH "$opt{PLINK_PATH}/plink -bfile gender_check --check-sex\n";
 	    print VCFUTILS_SH "mv plink.sexcheck $opt{OUTPUT_DIR}/gender_check.out\n";
-	    print VCFUTILS_SH "if [ -f $opt{OUTPUT_DIR}/gender_check.out ]; then\n";
+	    print VCFUTILS_SH "if [ -s $opt{OUTPUT_DIR}/gender_check.out ]; then\n";
 	    print VCFUTILS_SH "\ttouch $opt{OUTPUT_DIR}/logs/Gender_check.done\n";
 	    print VCFUTILS_SH "else\n";
 	    print VCFUTILS_SH "\tfailed=true\n";

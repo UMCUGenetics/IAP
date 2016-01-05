@@ -207,7 +207,7 @@ sub runRealignment {
 	    open REALIGNFS_SH, ">$bashFileFS" or die "cannot open file $bashFileFS \n";
 	    print REALIGNFS_SH "cd $opt{OUTPUT_DIR}/$sample/tmp\n";
 	    
-	    print REALIGNFS_SH "if [ -f $opt{OUTPUT_DIR}/$sample/tmp/$realignedBam ]\n";
+	    print REALIGNFS_SH "if [ -s $opt{OUTPUT_DIR}/$sample/tmp/$realignedBam ]\n";
 	    print REALIGNFS_SH "then\n";
 	    print REALIGNFS_SH "\t$opt{SAMBAMBA_PATH}/sambamba flagstat -t $opt{REALIGNMENT_THREADS} $opt{OUTPUT_DIR}/$sample/tmp/$realignedBam > $opt{OUTPUT_DIR}/$sample/mapping/$realignedFlagstat\n";
 	    print REALIGNFS_SH "\tmv $opt{OUTPUT_DIR}/$sample/tmp/$realignedBam $opt{OUTPUT_DIR}/$sample/mapping/$realignedBam\n";
