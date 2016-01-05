@@ -230,7 +230,7 @@ sub runStrelka {
 
     open STRELKA_SH, ">$bash_file" or die "cannot open file $bash_file \n";
     print STRELKA_SH "#!/bin/bash\n\n";
-    print STRELKA_SH "if [ -f $sample_tumor_bam -a -f $sample_ref_bam ]\n";
+    print STRELKA_SH "if [ -s $sample_tumor_bam -a -s $sample_ref_bam ]\n";
     print STRELKA_SH "then\n";
     print STRELKA_SH "\techo \"Start Strelka\t\" `date` \"\t $sample_ref_bam \t $sample_tumor_bam\t\" `uname -n` >> $log_dir/strelka.log\n\n";
 
@@ -300,7 +300,7 @@ sub runPileup {
     print PILEUP_SH "\#!/bin/sh\n\n";
     print PILEUP_SH "cd $opt{OUTPUT_DIR}/$sample/tmp\n";
     print PILEUP_SH "echo \"Start pileup\t\" `date` \"\t$bam\t\" `uname -n` >> $logDir/$sample.log\n\n";
-    print PILEUP_SH "if [ -f $opt{OUTPUT_DIR}/$sample/mapping/$bam ]\n";
+    print PILEUP_SH "if [ -s $opt{OUTPUT_DIR}/$sample/mapping/$bam ]\n";
     print PILEUP_SH "then\n";
     print PILEUP_SH "\tPATH=$opt{SAMTOOLS_PATH}:\$PATH\n";
     print PILEUP_SH "\texport PATH\n";
@@ -362,7 +362,7 @@ sub runVarscan {
 	open VARSCAN_SH, ">$bash_file" or die "cannot open file $bash_file \n";
 	print VARSCAN_SH "#!/bin/bash\n\n";
 	print VARSCAN_SH "cd $varscan_out_dir\n";
-	print VARSCAN_SH "if [ -f $sample_ref_pileup -a -f $sample_tumor_pileup ]\n";
+	print VARSCAN_SH "if [ -s $sample_ref_pileup -a -s $sample_tumor_pileup ]\n";
 	print VARSCAN_SH "then\n";
 
 	print VARSCAN_SH "\techo \"Start Varscan\t\" `date` \"\t $chr \t $sample_ref_pileup \t $sample_tumor_pileup\t\" `uname -n` >> $log_dir/varscan.log\n";
@@ -388,7 +388,7 @@ sub runVarscan {
     my $bash_file = $job_dir."/".$job_id.".sh";
 
     # Setup test, concat and rm of chr chunks
-    my $file_test = "if [ -f $sample_ref_bam -a -f $sample_tumor_bam ";
+    my $file_test = "if [ -s $sample_ref_bam -a -s $sample_tumor_bam ";
     my $snp_concat_command = "$opt{VCFTOOLS_PATH}/vcf-concat ";
     my $indel_concat_command = "$opt{VCFTOOLS_PATH}/vcf-concat ";
     my $rm_command = "rm ";
@@ -396,7 +396,7 @@ sub runVarscan {
     foreach my $chr (@chrs){
 	my $snp_output = $sample_tumor_name."_".$chr.".snp.vcf";
 	my $indel_output = $sample_tumor_name."_".$chr.".indel.vcf";
-	$file_test .= "-a -f $snp_output -a -f $indel_output ";
+	$file_test .= "-a -s $snp_output -a -s $indel_output ";
 	$snp_concat_command .= "$snp_output ";
 	$indel_concat_command .= "$indel_output ";
 	$rm_command .= "$snp_output $indel_output ";
@@ -425,7 +425,7 @@ sub runVarscan {
     print VARSCAN_SH "\tsed -i 's/SSC/VS_SSC/' $sample_tumor_name.merged.Somatic.hc.vcf\n\n"; # to resolve merge conflict with FB vcfs
 
     # Check varscan completed
-    print VARSCAN_SH "\tif [ -f $sample_tumor_name.merged.Somatic.hc.vcf ]\n";
+    print VARSCAN_SH "\tif [ -s $sample_tumor_name.merged.Somatic.hc.vcf ]\n";
     print VARSCAN_SH "\tthen\n";
     print VARSCAN_SH "\t\t$rm_command\n"; #remove tmp chr vcf files
     print VARSCAN_SH "\t\ttouch $log_dir/varscan.done\n";
@@ -493,7 +493,7 @@ sub runFreeBayes {
 	open FREEBAYES_SH, ">$bash_file" or die "cannot open file $bash_file \n";
 	print FREEBAYES_SH "#!/bin/bash\n\n";
 	print FREEBAYES_SH "cd $freebayes_out_dir\n";
-	print FREEBAYES_SH "if [ -f $sample_tumor_bam -a -f $sample_ref_bam ]\n";
+	print FREEBAYES_SH "if [ -s $sample_tumor_bam -a -s $sample_ref_bam ]\n";
 	print FREEBAYES_SH "then\n";
 	print FREEBAYES_SH "\techo \"Start Freebayes\t\" `date` \"\t $chr \t $sample_ref_bam \t $sample_tumor_bam\t\" `uname -n` >> $log_dir/freebayes.log\n\n";
 	print FREEBAYES_SH "\t$freebayes_command\n";
@@ -520,12 +520,12 @@ sub runFreeBayes {
     my $bash_file = $job_dir."/".$job_id.".sh";
 
     # Setup test, concat and rm of chr chunks
-    my $file_test = "if [ -f $sample_ref_bam -a -f $sample_tumor_bam ";
+    my $file_test = "if [ -s $sample_ref_bam -a -s $sample_tumor_bam ";
     my $concat_command = "$opt{VCFTOOLS_PATH}/vcf-concat ";
     my $rm_command = "rm ";
     foreach my $chr (@chrs){
 	my $snp_output = $sample_tumor_name."_".$chr;
-	$file_test .= "-a -f $snp_output\.vcf ";
+	$file_test .= "-a -s $snp_output\.vcf ";
 	$concat_command .= "$snp_output\.vcf ";
 	$rm_command .= "$snp_output\* ";
     }
@@ -564,7 +564,7 @@ sub runFreeBayes {
     print FREEBAYES_SH "\tcat $freebayes_out_dir/$sample_tumor_name\_germline.vcf | $opt{BIOVCF_PATH}/bio-vcf $opt{FREEBAYES_GERMLINEFILTER} > $freebayes_out_dir/$sample_tumor_name\_germline_filtered.vcf\n\n";
     
     #Check freebayes completed
-    print FREEBAYES_SH "\tif [ -f $freebayes_out_dir/$sample_tumor_name\_somatic_filtered.vcf -a -f $freebayes_out_dir/$sample_tumor_name\_germline_filtered.vcf ]\n";
+    print FREEBAYES_SH "\tif [ -s $freebayes_out_dir/$sample_tumor_name\_somatic_filtered.vcf -a -s $freebayes_out_dir/$sample_tumor_name\_germline_filtered.vcf ]\n";
     print FREEBAYES_SH "\tthen\n";
     print FREEBAYES_SH "\t\t$rm_command\n";
     print FREEBAYES_SH "\t\ttouch $log_dir/freebayes.done\n\n"; ## Check on complete output!!!
@@ -644,7 +644,7 @@ sub runMutect {
     my $bash_file = $job_dir."/".$job_id.".sh";
     open MUTECT_SH, ">$bash_file" or die "cannot open file $bash_file \n";
     print MUTECT_SH "#!/bin/bash\n\n";
-    print MUTECT_SH "if [ -f $sample_tumor_bam -a -f $sample_ref_bam ]\n";
+    print MUTECT_SH "if [ -s $sample_tumor_bam -a -s $sample_ref_bam ]\n";
     print MUTECT_SH "then\n";
     print MUTECT_SH "\techo \"Start Mutect\t\" `date` \"\t $sample_ref_bam \t $sample_tumor_bam\t\" `uname -n` >> $log_dir/mutect.log\n\n";
 
@@ -656,7 +656,7 @@ sub runMutect {
     $command = "cat $sample_tumor_name\_mutect.vcf | java -Xmx".$opt{MUTECT_MEM}."G -jar $opt{SNPEFF_PATH}/SnpSift.jar filter \"( na FILTER ) | (FILTER = 'PASS')\" > $sample_tumor_name\_mutect_passed.vcf \n";
     print MUTECT_SH "\t$command\n\n";
     # Check Mutect completed
-    print MUTECT_SH "\tif [ -f $sample_tumor_name\_mutect.vcf -a -f $sample_tumor_name\_mutect_passed.vcf ]\n";
+    print MUTECT_SH "\tif [ -s $sample_tumor_name\_mutect.vcf -a -s $sample_tumor_name\_mutect_passed.vcf ]\n";
     print MUTECT_SH "\tthen\n";
     print MUTECT_SH "\t\tmv $sample_tumor_name\_mutect.vcf $mutect_out_dir/\n";
     print MUTECT_SH "\t\tmv $sample_tumor_name\_mutect.vcf.idx $mutect_out_dir/\n";
