@@ -308,6 +308,10 @@ ANNOTATE_FREQUENCIES	yes/no
 ANNOTATE_FREQNAME	GoNLv5 | Info field name
 ANNOTATE_FREQDB	/path/to/vcf.gz
 ANNOTATE_FREQINFO	AF,AN,AC | Fields to annotate vcf with.
+## GATK Annotate ID's
+ANNOTATE_IDFIELD	yes/no
+ANNOTATE_IDNAME	ID name for header
+ANNOTATE_IDDB	/path/to/id.vcf
 
 ####VCF UTILS CONFIUGARTION#####
 VCFUTILS_QUEUE	queue_name
