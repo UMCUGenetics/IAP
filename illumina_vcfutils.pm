@@ -23,7 +23,7 @@ sub runVcfUtils {
     my $jobID = "VCFUTILS_".get_job_id();
 
     if (-e "$opt{OUTPUT_DIR}/logs/VCF_UTILS.done"){
-	warn "WARNING: $opt{OUTPUT_DIR}/logs/VCF_UTILS.done exists, skipping \n";
+	print "WARNING: $opt{OUTPUT_DIR}/logs/VCF_UTILS.done exists, skipping \n";
 	return $jobID;
     }
 
@@ -51,7 +51,7 @@ sub runVcfUtils {
     ### Run kinship analyses
     if ( $opt{VCFUTILS_KINSHIP} eq "yes" ) {
 	if (-e "$opt{OUTPUT_DIR}/logs/Kinship.done"){
-	    warn "WARNING: $opt{OUTPUT_DIR}/logs/Kinship.done exists, skipping \n";
+	    print "WARNING: $opt{OUTPUT_DIR}/logs/Kinship.done exists, skipping \n";
 	} else {
 	    print VCFUTILS_SH "cd $opt{OUTPUT_DIR}/tmp/\n";
 	    print VCFUTILS_SH "$opt{VCFTOOLS_PATH}/vcftools --vcf $opt{OUTPUT_DIR}/$vcf --plink\n";
@@ -71,7 +71,7 @@ sub runVcfUtils {
     ### Phase by transmission
     if ( $opt{VCFUTILS_PHASE} eq "yes" ) {
 	if (-e "$opt{OUTPUT_DIR}/logs/PhaseByTransmission.done"){
-	    warn "WARNING: $opt{OUTPUT_DIR}/logs/Phase.done exists, skipping \n";
+	    print "WARNING: $opt{OUTPUT_DIR}/logs/Phase.done exists, skipping \n";
 	} else {
 	    print VCFUTILS_SH "cd $opt{OUTPUT_DIR}/tmp/\n";
 	    print VCFUTILS_SH "java -Xmx8G -jar $opt{GATK_PATH}/GenomeAnalysisTK.jar -T PhaseByTransmission -R $opt{GENOME} -V $opt{OUTPUT_DIR}/$vcf -ped $opt{OUTPUT_DIR}/$runName.ped -o $runName.phased.vcf --MendelianViolationsFile $runName.MendelViol\n\n";
@@ -91,7 +91,7 @@ sub runVcfUtils {
     ### Gender check using plink
     if ( $opt{VCFUTILS_GENDERCHECK} eq "yes" ){
 	if (-e "$opt{OUTPUT_DIR}/logs/Gender_check.done"){
-	    warn "WARNING: $opt{OUTPUT_DIR}/logs/Gender_check.done exists, skipping \n";
+	    print "WARNING: $opt{OUTPUT_DIR}/logs/Gender_check.done exists, skipping \n";
 	} else {
 	    print VCFUTILS_SH "cd $opt{OUTPUT_DIR}/tmp/\n";
 	    print VCFUTILS_SH "ln -sd $opt{OUTPUT_DIR}/$runName.ped $opt{OUTPUT_DIR}/$runName.fam\n";
