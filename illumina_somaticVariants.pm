@@ -299,13 +299,15 @@ sub runPileup {
     print PILEUP_SH "then\n";
     print PILEUP_SH "\tPATH=$opt{SAMTOOLS_PATH}:\$PATH\n";
     print PILEUP_SH "\texport PATH\n";
-    print PILEUP_SH "\t$opt{SAMBAMBA_PATH}/sambamba mpileup -t $opt{PILEUP_THREADS} --tmpdir=$opt{OUTPUT_DIR}/tmp/ -L $opt{SOMVAR_TARGETS} -o $pileup $opt{OUTPUT_DIR}/$sample/mapping/$bam --samtools \"-q 1 -f $opt{GENOME}\"\n";
-    print PILEUP_SH "\tif [ \"\$(tail -n 1 $pileup | cut -f 1)\" = \"MT\" ]\n";
+    print PILEUP_SH "\t$opt{SAMBAMBA_PATH}/sambamba mpileup -t $opt{PILEUP_THREADS} --tmpdir=$opt{OUTPUT_DIR}/tmp/ -L $opt{SOMVAR_TARGETS} $opt{OUTPUT_DIR}/$sample/mapping/$bam --samtools \"-q 1 -f $opt{GENOME}\" |gzip -c >$pileup.gz\n";
+#here a faster compressor (snappy) or multithreaded gzip (pigz -p4 ) will allow for more speed
+    print PILEUP_SH "\t lastScaffold=`tail -n1 $opt{SOMVAR_TARGETS} |cut -f 1`;\n";
+    print PILEUP_SH "\tif [ \"\$(gunzip -c $pileup |tail -n 1 | cut -f 1)\" = \"\$lastScaffold\" ]\n";
     print PILEUP_SH "\tthen\n";
-    print PILEUP_SH "\t\tmv $pileup $opt{OUTPUT_DIR}/$sample/mapping/\n";
+    print PILEUP_SH "\t\tmv $pileup.gz $opt{OUTPUT_DIR}/$sample/mapping/\n";
     print PILEUP_SH "\t\ttouch $opt{OUTPUT_DIR}/$sample/logs/Pileup_$sample.done\n";
     print PILEUP_SH "\telse\n";
-    print PILEUP_SH "\t\techo \"ERROR: $pileup seems incomplete, it does not end with MT\" >&2\n";
+    print PILEUP_SH "\t\techo \"ERROR: $pileup.gz seems incomplete, it does not end with \$lastScaffold\" >&2\n";
     print PILEUP_SH "\tfi\n";
     print PILEUP_SH "else\n";
     print PILEUP_SH "\techo \"ERROR: $opt{OUTPUT_DIR}/$sample/mapping/$bam does not exist.\" >&2\n";
@@ -353,6 +355,11 @@ sub runVarscan {
     print VARSCAN_SH "cd $varscan_out_dir\n";
     print VARSCAN_SH "if [ -f $sample_ref_pileup -a -f $sample_tumor_pileup ]\n";
     print VARSCAN_SH "then\n";
+
+    # make named pipes
+    print VARSCAN_SH "mkfifo ",$sample_ref_pileup,";\nmkfifo ",$sample_tumor_pileup,";\n",
+    "gunzip -c ",$sample_ref_pileup,".gz >",$sample_ref_pileup,"&;\n",
+    "gunzip -c ",$sample_tumor_pileup,".gz >",$sample_tumor_pileup,"&;\n";
 
     # run varscan
     print VARSCAN_SH "\techo \"Start Varscan\t\" `date` \"\t $sample_ref_pileup \t $sample_tumor_pileup\t\" `uname -n` >> $log_dir/varscan.log\n";
