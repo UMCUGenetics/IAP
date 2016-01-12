@@ -320,8 +320,9 @@ VCFUTILS_MEM	maximum_memory
 VCFUTILS_KINSHIP	yes/no
 PLINK_PATH	/path/to/plink
 KING_PATH	/path/to/king
-VCFUTILS_PHASE	yes
-PED	/path/to/file.ped
+VCFUTILS_PHASE	yes/no
+VCFUTILS_GENDERCHECK	yes/no
+PED	/path/to/ped_file_folder/
 
 ####NIPT CLUSTER CONFIGURATION####
 CHROMATE_PATH	/path/to/chromate.py
