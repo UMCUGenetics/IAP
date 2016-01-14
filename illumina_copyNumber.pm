@@ -6,7 +6,7 @@
 ###   - Contra and freec
 ###   - Tow modes: sample_control (CPCT) & sample (WGS only)
 ###
-### Author: R.F.Ernst
+### Author: R.F.Ernst & H.H.D.Kerstens
 ##################################################################################################################################################
 
 package illumina_copyNumber;
@@ -298,12 +298,12 @@ sub runFreec {
     print FREEC_SH "fi\n";
     
     close FREEC_SH;
-    
+    my $qsub = &qsubTemplate(\%opt,"FREEC");
     ## Run job
     if ( @running_jobs ){
-	system "qsub -q $opt{FREEC_QUEUE} -m a -M $opt{MAIL} -pe threaded $opt{FREEC_THREADS} -R $opt{CLUSTER_RESERVATION} -P $opt{CLUSTER_PROJECT} -o $log_dir -e $log_dir -N $job_id -hold_jid ".join(",",@running_jobs)." $bash_file";
+	system "$qsub -o $log_dir -e $log_dir -N $job_id -hold_jid ".join(",",@running_jobs)." $bash_file";
     } else {
-	system "qsub -q $opt{FREEC_QUEUE} -m a -M $opt{MAIL} -pe threaded $opt{FREEC_THREADS} -R $opt{CLUSTER_RESERVATION} -P $opt{CLUSTER_PROJECT} -o $log_dir -e $log_dir -N $job_id $bash_file";
+	system "$qsub -o $log_dir -e $log_dir -N $job_id $bash_file";
     }
     return $job_id;
 }
@@ -351,10 +351,11 @@ sub runContra {
     close CONTRA_SH;
 
     ## Run job
+    my $qsub = &qsubTemplate(\%opt,"CONTRA");
     if ( @running_jobs ){
-	system "qsub -q $opt{CONTRA_QUEUE} -m a -M $opt{MAIL} -pe threaded $opt{CONTRA_THREADS} -R $opt{CLUSTER_RESERVATION} -P $opt{CLUSTER_PROJECT} -o $log_dir -e $log_dir -N $job_id -hold_jid ".join(",",@running_jobs)." $bash_file";
+	system "$qsub -o $log_dir -e $log_dir -N $job_id -hold_jid ".join(",",@running_jobs)." $bash_file";
     } else {
-	system "qsub -q $opt{CONTRA_QUEUE} -m a -M $opt{MAIL} -pe threaded $opt{CONTRA_THREADS} -R $opt{CLUSTER_RESERVATION} -P $opt{CLUSTER_PROJECT} -o $log_dir -e $log_dir -N $job_id $bash_file";
+	system "$qsub -o $log_dir -e $log_dir -N $job_id $bash_file";
     }
     return $job_id;
 }
@@ -386,10 +387,11 @@ sub runContraVisualization {
     close CONTRAVIS_SH;
 
     ## Run job
+    my $qsub = &qsubTemplate(\%opt,"CONTRAVIS");
     if ( $contra_job ){
-	system "qsub -q $opt{CONTRA_QUEUE} -m a -M $opt{MAIL} -pe threaded $opt{CONTRA_THREADS} -R $opt{CLUSTER_RESERVATION} -P $opt{CLUSTER_PROJECT} -o $log_dir -e $log_dir -N $job_id -hold_jid $contra_job $bash_file";
+	system "$qsub -o $log_dir -e $log_dir -N $job_id -hold_jid $contra_job $bash_file";
     } else {
-	system "qsub -q $opt{CONTRA_QUEUE} -m a -M $opt{MAIL} -pe threaded $opt{CONTRA_THREADS} -R $opt{CLUSTER_RESERVATION} -P $opt{CLUSTER_PROJECT} -o $log_dir -e $log_dir -N $job_id $bash_file";
+	system "$qsub -o $log_dir -e $log_dir -N $job_id $bash_file";
     }
     return $job_id;
 }
