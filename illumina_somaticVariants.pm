@@ -353,24 +353,24 @@ sub runVarscan {
     open VARSCAN_SH, ">$bash_file" or die "cannot open file $bash_file \n";
     print VARSCAN_SH "#!/bin/bash\n\n";
     print VARSCAN_SH "cd $varscan_out_dir\n";
-    print VARSCAN_SH "if [ -f $sample_ref_pileup -a -f $sample_tumor_pileup ]\n";
+    print VARSCAN_SH "if [ -f $sample_ref_pileup.gz -a -f $sample_tumor_pileup.gz ]\n";
     print VARSCAN_SH "then\n";
 
     # make named pipes
     print VARSCAN_SH "mkfifo ",$sample_ref_pileup,";\nmkfifo ",$sample_tumor_pileup,";\n",
-    "gunzip -c ",$sample_ref_pileup,".gz >",$sample_ref_pileup,"&;\n",
-    "gunzip -c ",$sample_tumor_pileup,".gz >",$sample_tumor_pileup,"&;\n";
+    "gunzip -c ",$sample_ref_pileup,".gz >",$sample_ref_pileup," &\n",
+    "gunzip -c ",$sample_tumor_pileup,".gz >",$sample_tumor_pileup," &\n";
 
     # run varscan
     print VARSCAN_SH "\techo \"Start Varscan\t\" `date` \"\t $sample_ref_pileup \t $sample_tumor_pileup\t\" `uname -n` >> $log_dir/varscan.log\n";
-    print VARSCAN_SH "\tjava -Xmx.$opt{VARSCAN_MEM}.G -jar $opt{VARSCAN_PATH} somatic $sample_ref_pileup $sample_tumor_pileup $sample_tumor_name $opt{VARSCAN_SETTINGS} --output-vcf 1\n\n";
+    print VARSCAN_SH "\tjava -Xmx".$opt{VARSCAN_MEM}."G -jar $opt{VARSCAN_PATH} somatic $sample_ref_pileup $sample_tumor_pileup $sample_tumor_name $opt{VARSCAN_SETTINGS} --output-vcf 1\n\n";
 
     # postprocessing
-    print VARSCAN_SH "\tjava -Xmx.$opt{VARSCAN_MEM}.G -jar $opt{VARSCAN_PATH} processSomatic $sample_tumor_name.indel.vcf $opt{VARSCAN_POSTSETTINGS}\n";
-    print VARSCAN_SH "\tjava -Xmx.$opt{VARSCAN_MEM}.G -jar $opt{VARSCAN_PATH} processSomatic $sample_tumor_name.snp.vcf $opt{VARSCAN_POSTSETTINGS}\n\n";
+    print VARSCAN_SH "\tjava -Xmx".$opt{VARSCAN_MEM}."G -jar $opt{VARSCAN_PATH} processSomatic $sample_tumor_name.indel.vcf $opt{VARSCAN_POSTSETTINGS}\n";
+    print VARSCAN_SH "\tjava -Xmx".$opt{VARSCAN_MEM}."G -jar $opt{VARSCAN_PATH} processSomatic $sample_tumor_name.snp.vcf $opt{VARSCAN_POSTSETTINGS}\n\n";
 
     # merge varscan hc snps and indels
-    print VARSCAN_SH "\tjava -Xmx.$opt{VARSCAN_MEM}.G -jar $opt{GATK_PATH}/GenomeAnalysisTK.jar -T CombineVariants -R $opt{GENOME} --genotypemergeoption unsorted -o $sample_tumor_name.merged.Somatic.hc.vcf -V $sample_tumor_name.snp.Somatic.hc.vcf -V $sample_tumor_name.indel.Somatic.hc.vcf\n";
+    print VARSCAN_SH "\tjava -Xmx".$opt{VARSCAN_MEM}."G -jar $opt{GATK_PATH}/GenomeAnalysisTK.jar -T CombineVariants -R $opt{GENOME} --genotypemergeoption unsorted -o $sample_tumor_name.merged.Somatic.hc.vcf -V $sample_tumor_name.snp.Somatic.hc.vcf -V $sample_tumor_name.indel.Somatic.hc.vcf\n";
     print VARSCAN_SH "\tsed -i 's/SSC/VS_SSC/' $sample_tumor_name.merged.Somatic.hc.vcf\n\n"; # to resolve merge conflict with FB vcfs
 
     # Check varscan completed
