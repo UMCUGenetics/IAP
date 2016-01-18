@@ -46,6 +46,11 @@ perl illumina_pipeline.pl /path/to/output_dir/settings.config>
 - [Varscan](http://varscan.sourceforge.net/)
 - [Strelka](https://sites.google.com/site/strelkasomaticvariantcaller/)
 - [Freebayes](https://github.com/ekg/freebayes)
+- [Tabix](http://www.htslib.org/doc/tabix.html)
+- [vcflib](https://github.com/ekg/vcflib)
+- [delly](https://github.com/tobiasrausch/delly/)
+- [plink](http://pngu.mgh.harvard.edu/~purcell/plink/)
+- [king](http://people.virginia.edu/~wc9c/KING/)
 
 #### Perl modules
 - strict
@@ -208,6 +213,7 @@ STRELKA_THREADS	number_of_threads
 ## Varscan
 SOMVAR_VARSCAN	yes/no
 VARSCAN_PATH	/path/to/varscan.jar
+TABIX_PATH /path/to/tabix/
 VARSCAN_QUEUE	queue_name
 VARSCAN_THREADS	number_of_threads
 VARSCAN_SETTINGS	--min-coverage 20 --min-var-freq 0.1 --tumor-purity 0.8 | Varscan settings
@@ -218,6 +224,7 @@ SOMVAR_FREEBAYES	yes/no
 FREEBAYES_PATH	/path/to/freebayes/bin
 VCFSAMPLEDIFF_PATH	/path/to/vcflib/bin
 BIOVCF_PATH	/path/to/biovcf/
+VCFLIB_PATH /path/to/vcflib/
 FREEBAYES_QUEUE	queue_name
 FREEBAYES_THREADS	number_of_threads
 FREEBAYES_SETTINGS	-C 3 --pooled-discrete --genotype-qualities --min-coverage 5 --no-mnps --no-complex | Freebayes settings
@@ -301,6 +308,10 @@ ANNOTATE_FREQUENCIES	yes/no
 ANNOTATE_FREQNAME	GoNLv5 | Info field name
 ANNOTATE_FREQDB	/path/to/vcf.gz
 ANNOTATE_FREQINFO	AF,AN,AC | Fields to annotate vcf with.
+## GATK Annotate ID's
+ANNOTATE_IDFIELD	yes/no
+ANNOTATE_IDNAME	ID name for header
+ANNOTATE_IDDB	/path/to/id.vcf
 
 ####VCF UTILS CONFIUGARTION#####
 VCFUTILS_QUEUE	queue_name
@@ -308,8 +319,10 @@ VCFUTILS_THREADS	number_of_threads
 VCFUTILS_MEM	maximum_memory
 VCFUTILS_KINSHIP	yes/no
 PLINK_PATH	/path/to/plink
-VCFUTILS_PHASE	yes
-PED	/path/to/file.ped
+KING_PATH	/path/to/king
+VCFUTILS_PHASE	yes/no
+VCFUTILS_GENDERCHECK	yes/no
+PED	/path/to/ped_file_folder/
 
 ####NIPT CLUSTER CONFIGURATION####
 CHROMATE_PATH	/path/to/chromate.py

@@ -83,7 +83,7 @@ sub runFilterVariants {
     print FILTER_SH "cd $opt{OUTPUT_DIR}/tmp/\n";
     print FILTER_SH "echo \"Start variant filter\t\" `date` \"\t$runName.raw_variants.vcf\t\" `uname -n` >> $opt{OUTPUT_DIR}/logs/$runName.log\n\n";
     
-    print FILTER_SH "if [ -f $opt{OUTPUT_DIR}/$runName\.raw_variants.vcf ]\n";
+    print FILTER_SH "if [ -s $opt{OUTPUT_DIR}/$runName\.raw_variants.vcf ]\n";
     print FILTER_SH "then\n";
     print FILTER_SH "\t$command\n";
     print FILTER_SH "else\n";

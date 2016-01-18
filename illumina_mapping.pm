@@ -164,7 +164,7 @@ sub runMapping {
 	} elsif($opt{MAPPING_MARKDUP} eq "sample") {
 	    ### Use markdup to merge and markdup in one step, since sambamba v0.5.8
 	    print MERGE_SH "\techo \"Start markdup\t\" `date` \"\t$sample.bam\t\" `uname -n` >> $opt{OUTPUT_DIR}/$sample/logs/$sample.log\n";
-	    print MERGE_SH "\t$opt{SAMBAMBA_PATH}/sambamba markdup --tmpdir=$opt{OUTPUT_DIR}/$sample/tmp/ --overflow-list-size=500000 -t $opt{MAPPING_THREADS} ".join(" ",@bamList)." mapping/$sample\_dedup.bam \n";
+	    print MERGE_SH "\t$opt{SAMBAMBA_PATH}/sambamba markdup --tmpdir=$opt{OUTPUT_DIR}/$sample/tmp/ --overflow-list-size=$opt{MAPPING_OVERFLOW_LIST_SIZE} -t $opt{MAPPING_THREADS} ".join(" ",@bamList)." mapping/$sample\_dedup.bam \n";
 	    print MERGE_SH "\t$opt{SAMBAMBA_PATH}/sambamba index -t $opt{MAPPING_THREADS} mapping/$sample\_dedup.bam mapping/$sample\_dedup.bai\n";
 	    print MERGE_SH "\t$opt{SAMBAMBA_PATH}/sambamba flagstat -t $opt{MAPPING_THREADS} mapping/$sample\_dedup.bam > mapping/$sample\_dedup.flagstat\n";
 	    print MERGE_SH "\techo \"End markdup\t\" `date` \"\t$sample.bam\t\" `uname -n` >> $opt{OUTPUT_DIR}/$sample/logs/$sample.log\n";
@@ -290,11 +290,11 @@ sub submitBatchJobs{
     
     if($R2){
         print "\t$R1\n\t$R2\n";
-        print BWA_SH "$opt{BWA_PATH}/bwa mem -t $opt{MAPPING_THREADS} -c 100 -M -R \"\@RG\tID:$RG_ID\tSM:$RG_SM\tPL:$RG_PL\tLB:$RG_LB\tPU:$RG_PU\" $opt{GENOME} $R1 $R2 2>>$opt{OUTPUT_DIR}/$sampleName/logs/$coreName\_bwa_log | $opt{SAMBAMBA_PATH}/sambamba view -t $opt{MAPPING_THREADS} --format=bam -S -o $coreName.bam.tmp /dev/stdin\n";
+        print BWA_SH "$opt{BWA_PATH}/bwa mem -t $opt{MAPPING_THREADS} $opt{MAPPING_SETTINGS} -R \"\@RG\tID:$RG_ID\tSM:$RG_SM\tPL:$RG_PL\tLB:$RG_LB\tPU:$RG_PU\" $opt{GENOME} $R1 $R2 2>>$opt{OUTPUT_DIR}/$sampleName/logs/$coreName\_bwa_log | $opt{SAMBAMBA_PATH}/sambamba view -t $opt{MAPPING_THREADS} --format=bam -S -o $coreName.bam.tmp /dev/stdin\n";
         print BWA_SH "mv $coreName.bam.tmp $coreName.bam\n";
     }else{
         print "\t$R1\n";
-        print BWA_SH "$opt{BWA_PATH}/bwa mem -t $opt{MAPPING_THREADS} -c 100 -M -R \"\@RG\tID:$RG_ID\tSM:$RG_SM\tPL:$RG_PL\tLB:$RG_LB\tPU:$RG_PU\" $opt{GENOME} $R1 2>>$opt{OUTPUT_DIR}/$sampleName/logs/$coreName\_bwa_log | $opt{SAMBAMBA_PATH}/sambamba view -t $opt{MAPPING_THREADS} --format=bam -S -o $coreName.bam.tmp /dev/stdin\n";
+        print BWA_SH "$opt{BWA_PATH}/bwa mem -t $opt{MAPPING_THREADS} $opt{MAPPING_SETTINGS} -R \"\@RG\tID:$RG_ID\tSM:$RG_SM\tPL:$RG_PL\tLB:$RG_LB\tPU:$RG_PU\" $opt{GENOME} $R1 2>>$opt{OUTPUT_DIR}/$sampleName/logs/$coreName\_bwa_log | $opt{SAMBAMBA_PATH}/sambamba view -t $opt{MAPPING_THREADS} --format=bam -S -o $coreName.bam.tmp /dev/stdin\n";
         print BWA_SH "mv $coreName.bam.tmp $coreName.bam\n";
     }
     print BWA_SH "echo \"End mapping\t\" `date` \"\t$coreName\t\" `uname -n` >> $opt{OUTPUT_DIR}/$sampleName/logs/$sampleName.log\n\n";
@@ -318,7 +318,7 @@ sub submitBatchJobs{
     ### MarkDup
     if($opt{MAPPING_MARKDUP} eq "lane"){
 	print BWA_SH "echo \"Start markdup\t\" `date` \"\t$coreName\_sorted.bam\t\" `uname -n` >> $opt{OUTPUT_DIR}/$sampleName/logs/$sampleName.log\n";
-	print BWA_SH "$opt{SAMBAMBA_PATH}/sambamba markdup --overflow-list-size=500000 --tmpdir=$opt{OUTPUT_DIR}/$sampleName/tmp/ -t $opt{MAPPING_THREADS} $coreName\_sorted.bam $coreName\_sorted_dedup.bam 1>>$opt{OUTPUT_DIR}/$sampleName/logs/$coreName\_dedup.log 2>>$opt{OUTPUT_DIR}/$sampleName/logs/$coreName\_dedup.err\n";
+	print BWA_SH "$opt{SAMBAMBA_PATH}/sambamba markdup --overflow-list-size=$opt{MAPPING_OVERFLOW_LIST_SIZE} --tmpdir=$opt{OUTPUT_DIR}/$sampleName/tmp/ -t $opt{MAPPING_THREADS} $coreName\_sorted.bam $coreName\_sorted_dedup.bam 1>>$opt{OUTPUT_DIR}/$sampleName/logs/$coreName\_dedup.log 2>>$opt{OUTPUT_DIR}/$sampleName/logs/$coreName\_dedup.err\n";
 	print BWA_SH "echo \"End markdup\t\" `date` \"\t$coreName\_sorted.bam\t\" `uname -n` >> $opt{OUTPUT_DIR}/$sampleName/logs/$sampleName.log\n";
 	print BWA_SH "echo \"Start flagstat\t\" `date` \"\t$coreName\_sorted_dedup.bam\t\" `uname -n` >> $opt{OUTPUT_DIR}/$sampleName/logs/$sampleName.log\n";
 	print BWA_SH "$opt{SAMBAMBA_PATH}/sambamba flagstat -t $opt{MAPPING_THREADS} $coreName\_sorted_dedup.bam > $coreName\_sorted_dedup.flagstat\n";
@@ -418,10 +418,10 @@ sub submitSingleJobs{
 
 	if($R2){
 	    print "\t$R1\n\t$R2\n";
-	    print BWA_SH "$opt{BWA_PATH}/bwa mem -t $opt{MAPPING_THREADS} -c 100 -M -R \"\@RG\tID:$RG_ID\tSM:$RG_SM\tPL:$RG_PL\tLB:$RG_LB\tPU:$RG_PU\" $opt{GENOME} $R1 $R2 2>>$opt{OUTPUT_DIR}/$sampleName/logs/$coreName\_bwa_log | $opt{SAMBAMBA_PATH}/sambamba view -t $opt{MAPPING_THREADS} --format=bam -S -o $coreName.bam.tmp /dev/stdin\n\n";
+	    print BWA_SH "$opt{BWA_PATH}/bwa mem -t $opt{MAPPING_THREADS} $opt{MAPPING_SETTINGS} -R \"\@RG\tID:$RG_ID\tSM:$RG_SM\tPL:$RG_PL\tLB:$RG_LB\tPU:$RG_PU\" $opt{GENOME} $R1 $R2 2>>$opt{OUTPUT_DIR}/$sampleName/logs/$coreName\_bwa_log | $opt{SAMBAMBA_PATH}/sambamba view -t $opt{MAPPING_THREADS} --format=bam -S -o $coreName.bam.tmp /dev/stdin\n\n";
 	}else{
 	    print "\t$R1\n";
-	    print BWA_SH "$opt{BWA_PATH}/bwa mem -t $opt{MAPPING_THREADS} -c 100 -M -R \"\@RG\tID:$RG_ID\tSM:$RG_SM\tPL:$RG_PL\tLB:$RG_LB\tPU:$RG_PU\" $opt{GENOME} $R1 2>>$opt{OUTPUT_DIR}/$sampleName/logs/$coreName\_bwa_log | $opt{SAMBAMBA_PATH}/sambamba view -t $opt{MAPPING_THREADS} --format=bam -S -o $coreName.bam.tmp /dev/stdin\n\n";
+	    print BWA_SH "$opt{BWA_PATH}/bwa mem -t $opt{MAPPING_THREADS} $opt{MAPPING_SETTINGS} -R \"\@RG\tID:$RG_ID\tSM:$RG_SM\tPL:$RG_PL\tLB:$RG_LB\tPU:$RG_PU\" $opt{GENOME} $R1 2>>$opt{OUTPUT_DIR}/$sampleName/logs/$coreName\_bwa_log | $opt{SAMBAMBA_PATH}/sambamba view -t $opt{MAPPING_THREADS} --format=bam -S -o $coreName.bam.tmp /dev/stdin\n\n";
 	}
 	### Check bwa completion
 	print BWA_SH "if grep -Fq '[main] Real time:' $opt{OUTPUT_DIR}/$sampleName/logs/$coreName\_bwa_log\n";
@@ -501,7 +501,7 @@ sub submitSingleJobs{
 	    print MARKDUP_SH "\#!/bin/sh\n\n";
 	    print MARKDUP_SH "cd $opt{OUTPUT_DIR}/$sampleName/mapping \n";
 	    print MARKDUP_SH "echo \"Start markdup\t\" `date` \"\t$coreName\_sorted.bam\t\" `uname -n` >> $opt{OUTPUT_DIR}/$sampleName/logs/$sampleName.log\n";
-	    print MARKDUP_SH "$opt{SAMBAMBA_PATH}/sambamba markdup --overflow-list-size=500000 --tmpdir=$opt{OUTPUT_DIR}/$sampleName/tmp/ -t $opt{MAPPING_THREADS} $coreName\_sorted.bam $coreName\_sorted_dedup.bam \n";
+	    print MARKDUP_SH "$opt{SAMBAMBA_PATH}/sambamba markdup --overflow-list-size=$opt{MAPPING_OVERFLOW_LIST_SIZE} --tmpdir=$opt{OUTPUT_DIR}/$sampleName/tmp/ -t $opt{MAPPING_THREADS} $coreName\_sorted.bam $coreName\_sorted_dedup.bam \n";
 	    print MARKDUP_SH "echo \"End markdup\t\" `date` \"\t$coreName\_sorted.bam\t\" `uname -n` >> $opt{OUTPUT_DIR}/$sampleName/logs/$sampleName.log\n";
 	    close MARKDUP_SH;
 	

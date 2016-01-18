@@ -58,7 +58,7 @@ sub runNipt {
 	my $bashFileCheck = $opt{OUTPUT_DIR}."/jobs/".$jobIDCheck.".sh";
 	open NIPTCHECK_SH, ">$bashFileCheck" or die "cannot open file $bashFileCheck\n";
 	print NIPTCHECK_SH "cd $opt{OUTPUT_DIR}\n";
-	print NIPTCHECK_SH "if [ -f $runName.pdf ]\nthen\n";
+	print NIPTCHECK_SH "if [ -s $runName.pdf ]\nthen\n";
 	print NIPTCHECK_SH "\ttouch logs/NIPT.done \n";
 	print NIPTCHECK_SH "fi\n";
 	print NIPTCHECK_SH "echo \"Finished NIPT\t\" `date` \"\t\" `uname -n` >> $opt{OUTPUT_DIR}/logs/$runName.log\n";

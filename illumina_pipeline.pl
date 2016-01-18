@@ -156,19 +156,18 @@ if(! $opt{VCF} ){
 	my $cnv_jobs = illumina_copyNumber::runCopyNumberTools(\%opt);
 	$opt{RUNNING_JOBS}->{'CNV'} = $cnv_jobs;
     }
-    ### GATK
-    if($opt{VARIANT_CALLING} eq "yes"){
-	print "\n###SCHEDULING VARIANT CALLING####\n";
-	$opt_ref = illumina_calling::runVariantCalling(\%opt);
-	%opt = %$opt_ref;
-    }
     ### SV - Delly
     if($opt{SV_CALLING} eq "yes"){
 	print "\n###SCHEDULING SV CALLING####\n";
 	my $sv_jobs = illumina_structuralVariants::runDelly(\%opt);
 	$opt{RUNNING_JOBS}->{'sv'} = $sv_jobs;
     }
-
+    ### GATK
+    if($opt{VARIANT_CALLING} eq "yes"){
+	print "\n###SCHEDULING VARIANT CALLING####\n";
+	$opt_ref = illumina_calling::runVariantCalling(\%opt);
+	%opt = %$opt_ref;
+    }
 } elsif ( $opt{VCF} ) {
     print "\n###RUNNING VCF PREP###\n";
     $opt_ref = illumina_calling::runVcfPrep(\%opt);
@@ -339,9 +338,13 @@ sub checkConfig{
 	if(! $opt{MAPPING_MEM}){ print "ERROR: No MAPPING_MEM option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{MAPPING_QUEUE}){ print "ERROR: No MAPPING_QUEUE option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{MAPPING_MODE}){ print "ERROR: No MAPPING_MODE option found in config files.\n"; $checkFailed = 1; }
+	if(! $opt{MAPPING_SETTINGS}){ print "ERROR: No MAPPING_SETTINGS option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{MAPPING_MARKDUP}){ print "ERROR: No MAPPING_MARKDUP option found in config files.\n"; $checkFailed = 1; }
 	if( ($opt{MAPPING_MARKDUP} ne "lane") && ($opt{MAPPING_MARKDUP} ne "sample") && ($opt{MAPPING_MARKDUP} ne "no")){
 	    print "ERROR: MAPPING_MARKDUP should be set to sample, lane or no.\n"; $checkFailed = 1;
+	}
+	if( ($opt{MAPPING_MARKDUP} eq "lane") || ($opt{MAPPING_MARKDUP} eq "sample")){
+	    if(! $opt{MAPPING_OVERFLOW_LIST_SIZE}){ print "ERROR: No MAPPING_OVERFLOW_LIST_SIZE option found in config files.\n"; $checkFailed = 1; }
 	}
 	if($opt{MAPPING_MODE} eq 'single'){
 	    if(! $opt{FLAGSTAT_QUEUE}){ print "ERROR: No FLAGSTAT_QUEUE option found in config files.\n"; $checkFailed = 1; }
@@ -444,7 +447,7 @@ sub checkConfig{
     ## SOMATIC_VARIANTS
     if($opt{SOMATIC_VARIANTS} eq "yes"){
 	if(! $opt{SAMTOOLS_PATH}){ print "ERROR: No SAMTOOLS_PATH option found in config files.\n"; $checkFailed = 1; }
-	if(! $opt{SOMVAR_TARGETS}){ print "ERROR: No SOMVAR_TARGETS option found in config files.\n"; $checkFailed = 1; }
+	if( $opt{SOMVAR_TARGETS} && ! -e $opt{SOMVAR_TARGETS}) { print"ERROR: $opt{SOMVAR_TARGETS} does not exist\n"; $checkFailed = 1; }
 	if(! $opt{SOMVAR_REGEX}){ print "ERROR: No SOMVAR_REGEX option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{SOMVAR_STRELKA}){ print "ERROR: No SOMVAR_STRELKA option found in config files.\n"; $checkFailed = 1; }
 	if($opt{SOMVAR_STRELKA} eq "yes"){
@@ -456,6 +459,7 @@ sub checkConfig{
 	if(! $opt{SOMVAR_VARSCAN}){ print "ERROR: No SOMVAR_VARSCAN option found in config files.\n"; $checkFailed = 1; }
 	if($opt{SOMVAR_VARSCAN} eq "yes"){
 	    if(! $opt{VARSCAN_PATH}){ print "ERROR: No VARSCAN_PATH option found in config files.\n"; $checkFailed = 1; }
+	    if(! $opt{TABIX_PATH}){ print "ERROR: No TABIX_PATH option found in config files.\n"; $checkFailed = 1; }
 	    if(! $opt{VARSCAN_QUEUE}){ print "ERROR: No VARSCAN_QUEUE option found in config files.\n"; $checkFailed = 1; }
 	    if(! $opt{VARSCAN_THREADS}){ print "ERROR: No VARSCAN_THREADS option found in config files.\n"; $checkFailed = 1; }
 	    if(! $opt{VARSCAN_SETTINGS}){ print "ERROR: No VARSCAN_SETTINGS option found in config files.\n"; $checkFailed = 1; }
@@ -468,6 +472,7 @@ sub checkConfig{
 	    if(! $opt{FREEBAYES_PATH}){ print "ERROR: No FREEBAYES_PATH option found in config files.\n"; $checkFailed = 1; }
 	    if(! $opt{VCFSAMPLEDIFF_PATH}){ print "ERROR: No VCFSAMPLEDIFF_PATH option found in config files.\n"; $checkFailed = 1; }
 	    if(! $opt{BIOVCF_PATH}){ print "ERROR: No BIOVCF_PATH option found in config files.\n"; $checkFailed = 1; }
+	    if(! $opt{VCFLIB_PATH}){ print "ERROR: No VCFLIB_PATH option found in config files.\n"; $checkFailed = 1; }
 	    if(! $opt{FREEBAYES_QUEUE}){ print "ERROR: No FREEBAYES_QUEUE option found in config files.\n"; $checkFailed = 1; }
 	    if(! $opt{FREEBAYES_THREADS}){ print "ERROR: No FREEBAYES_THREADS option found in config files.\n"; $checkFailed = 1; }
 	    if(! $opt{FREEBAYES_SETTINGS}){ print "ERROR: No FREEBAYES_SETTINGS option found in config files.\n"; $checkFailed = 1; }
@@ -582,6 +587,7 @@ sub checkConfig{
 	if(! $opt{VCFUTILS_KINSHIP}){ print "ERROR: No VCFUTILS_KINSHIP found in .ini file\n"; $checkFailed = 1; }
 	if ( $opt{VCFUTILS_KINSHIP} eq "yes" ) {
 	    if(! $opt{PLINK_PATH}){ print "ERROR: No PLINK_PATH found in .ini file\n"; $checkFailed = 1; }
+	    if(! $opt{KING_PATH}){ print "ERROR: No KING_PATH found in .ini file\n"; $checkFailed = 1; }
 	    if(! $opt{VCFTOOLS_PATH}){ print "ERROR: No VCFTOOLS_PATH found in .ini file\n"; $checkFailed = 1; }
 	}
 	if(! $opt{VCFUTILS_PHASE}){ print "ERROR: No VCFUTILS_PHASE found in .ini file\n"; $checkFailed = 1; }

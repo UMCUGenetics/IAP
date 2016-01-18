@@ -68,10 +68,10 @@ sub runRealignment {
 	
 	foreach my $sample (@{$opt{SAMPLES}}){
 	    my $bam = $opt{BAM_FILES}->{$sample};
-	    (my $flagstat = $bam) =~ s/.bam/.flagstat/;
-	    (my $realignedBam = $bam) =~ s/.bam/.realigned.bam/;
-	    (my $realignedBai = $bam) =~ s/.bam/.realigned.bai/;
-	    (my $realignedFlagstat = $bam) =~ s/.bam/.realigned.flagstat/;
+	    (my $flagstat = $bam) =~ s/\.bam/\.flagstat/;
+	    (my $realignedBam = $bam) =~ s/\.bam/\.realigned\.bam/;
+	    (my $realignedBai = $bam) =~ s/\.bam/\.realigned\.bai/;
+	    (my $realignedFlagstat = $bam) =~ s/\.bam/\.realigned\.flagstat/;
 	    $opt{BAM_FILES}->{$sample} = $realignedBam;
 	    
 	    print "\t$opt{OUTPUT_DIR}/$sample/mapping/$bam\n";
@@ -145,10 +145,10 @@ sub runRealignment {
     elsif($opt{REALIGNMENT_MODE} eq 'single'){
 	foreach my $sample (@{$opt{SAMPLES}}){
 	    my $bam = $opt{BAM_FILES}->{$sample};
-	    (my $flagstat = $bam) =~ s/.bam/.flagstat/;
-	    (my $realignedBam = $bam) =~ s/.bam/.realigned.bam/;
-	    (my $realignedBai = $bam) =~ s/.bam/.realigned.bai/;
-	    (my $realignedFlagstat = $bam) =~ s/.bam/.realigned.flagstat/;
+	    (my $flagstat = $bam) =~ s/\.bam/.flagstat/;
+	    (my $realignedBam = $bam) =~ s/\.bam/\.realigned\.bam/;
+	    (my $realignedBai = $bam) =~ s/\.bam/\.realigned\.bai/;
+	    (my $realignedFlagstat = $bam) =~ s/\.bam/\.realigned\.flagstat/;
 	    $opt{BAM_FILES}->{$sample} = $realignedBam;
 
 	    print "\t$opt{OUTPUT_DIR}/$sample/mapping/$bam\n";
@@ -207,7 +207,7 @@ sub runRealignment {
 	    open REALIGNFS_SH, ">$bashFileFS" or die "cannot open file $bashFileFS \n";
 	    print REALIGNFS_SH "cd $opt{OUTPUT_DIR}/$sample/tmp\n";
 	    
-	    print REALIGNFS_SH "if [ -f $opt{OUTPUT_DIR}/$sample/tmp/$realignedBam ]\n";
+	    print REALIGNFS_SH "if [ -s $opt{OUTPUT_DIR}/$sample/tmp/$realignedBam ]\n";
 	    print REALIGNFS_SH "then\n";
 	    print REALIGNFS_SH "\t$opt{SAMBAMBA_PATH}/sambamba flagstat -t $opt{REALIGNMENT_THREADS} $opt{OUTPUT_DIR}/$sample/tmp/$realignedBam > $opt{OUTPUT_DIR}/$sample/mapping/$realignedFlagstat\n";
 	    print REALIGNFS_SH "\tmv $opt{OUTPUT_DIR}/$sample/tmp/$realignedBam $opt{OUTPUT_DIR}/$sample/mapping/$realignedBam\n";
