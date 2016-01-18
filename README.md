@@ -308,6 +308,10 @@ ANNOTATE_FREQUENCIES	yes/no
 ANNOTATE_FREQNAME	GoNLv5 | Info field name
 ANNOTATE_FREQDB	/path/to/vcf.gz
 ANNOTATE_FREQINFO	AF,AN,AC | Fields to annotate vcf with.
+## GATK Annotate ID's
+ANNOTATE_IDFIELD	yes/no
+ANNOTATE_IDNAME	ID name for header
+ANNOTATE_IDDB	/path/to/id.vcf
 
 ####VCF UTILS CONFIUGARTION#####
 VCFUTILS_QUEUE	queue_name
@@ -316,8 +320,9 @@ VCFUTILS_MEM	maximum_memory
 VCFUTILS_KINSHIP	yes/no
 PLINK_PATH	/path/to/plink
 KING_PATH	/path/to/king
-VCFUTILS_PHASE	yes
-PED	/path/to/file.ped
+VCFUTILS_PHASE	yes/no
+VCFUTILS_GENDERCHECK	yes/no
+PED	/path/to/ped_file_folder/
 
 ####NIPT CLUSTER CONFIGURATION####
 CHROMATE_PATH	/path/to/chromate.py
