@@ -5,14 +5,15 @@
 ###
 ### - Filter variants according to the gatk best practices
 ### 
-### Author: R.F.Ernst
+### Authors: R.F.Ernst & H.H.D.Kerstens
 #############################################################
 
 package illumina_filterVariants;
 
 use strict;
 use POSIX qw(tmpnam);
-
+use lib "$FindBin::Bin"; #locates pipeline directory                                                                                                              
+use illumina_sge;
 
 sub runFilterVariants {
     ###
@@ -32,8 +33,10 @@ sub runFilterVariants {
     }
 
     ### Build Queue command
-    my $command = "java -Xmx".$opt{FILTER_MASTERMEM}."G -jar $opt{QUEUE_PATH}/Queue.jar ";
-    $command .= "-jobQueue $opt{FILTER_QUEUE} -jobNative \"-pe threaded $opt{FILTER_THREADS} -P $opt{CLUSTER_PROJECT}\" -jobRunner GridEngine -jobReport $opt{OUTPUT_DIR}/logs/VariantFilter.jobReport.txt ";
+    my $javaMem = $opt{FILTER_MASTERTHREADS} * $opt{FILTER_MEM};
+    my $command = "java -Xmx".$javaMem."G -Xms".$opt{FILTER_MEM}."G -jar $opt{QUEUE_PATH}/Queue.jar ";
+    my $jobNative = &jobNative(\%opt,"FILTER");
+    $command .= "-jobQueue $opt{FILTER_QUEUE} -jobNative \"$jobNative\" -jobRunner GridEngine -jobReport $opt{OUTPUT_DIR}/logs/VariantFilter.jobReport.txt ";
 
     ### Common settings
     $command .= "-S $opt{FILTER_SCALA} -R $opt{GENOME} -V $opt{OUTPUT_DIR}/$runName\.raw_variants.vcf -O $runName -mem $opt{FILTER_MEM} -nsc $opt{FILTER_SCATTER} -mode $opt{FILTER_MODE} ";
@@ -121,10 +124,11 @@ sub runFilterVariants {
     }
 
     ### Start main bash script
+    my $qsub = &qsubJava(\%opt,"FILTER");
     if (@runningJobs){
-	system "qsub -q $opt{FILTER_MASTERQUEUE} -m a -M $opt{MAIL} -pe threaded $opt{FILTER_MASTERTHREADS} -P $opt{CLUSTER_PROJECT} -o $logDir/VariantFilter_$runName.out -e $logDir/VariantFilter_$runName.err -N $jobID -hold_jid ".join(",",@runningJobs)." $bashFile";
+	system "$qsub -o $logDir/VariantFilter_$runName.out -e $logDir/VariantFilter_$runName.err -N $jobID -hold_jid ".join(",",@runningJobs)." $bashFile";
     } else {
-	system "qsub -q $opt{FILTER_MASTERQUEUE} -m a -M $opt{MAIL} -pe threaded $opt{FILTER_MASTERTHREADS} -P $opt{CLUSTER_PROJECT} -o $logDir/VariantFilter_$runName.out -e $logDir/VariantFilter_$runName.err -N $jobID $bashFile";
+	system "$qsub -o $logDir/VariantFilter_$runName.out -e $logDir/VariantFilter_$runName.err -N $jobID $bashFile";
     }
 
     return $jobID;
