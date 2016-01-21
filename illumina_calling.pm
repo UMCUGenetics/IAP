@@ -43,7 +43,7 @@ sub runVariantCalling {
     my $javaMem = $opt{CALLING_MASTERTHREADS} * $opt{CALLING_MEM};
     my $javaJobMem = $opt{CALLING_THREADS} * $opt{CALLING_MEM};
     my $jobNative = &jobNative(\%opt,"CALLING");
-    my $command = "java -Xmx".$javaMem."G -Xms".$opt{CALLING_MEM}."G -jar $opt{QUEUE_PATH}/Queue.jar ";
+    my $command = "java -Djava.io.tmpdir=$opt{OUTPUT_DIR}/tmp/ -Xmx".$javaMem."G -Xms".$opt{CALLING_MEM}."G -jar $opt{QUEUE_PATH}/Queue.jar ";
     $command .= "-jobQueue $opt{CALLING_QUEUE} -jobNative \"$jobNative\" -jobRunner GridEngine -jobReport $opt{OUTPUT_DIR}/logs/VariantCaller.jobReport.txt -memLimit $javaJobMem "; #Queue options
 
     ### Add caller and UG specific settings
