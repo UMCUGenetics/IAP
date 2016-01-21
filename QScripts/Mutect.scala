@@ -2,7 +2,7 @@ package org.broadinstitute.gatk.queue.qscripts
 
 import org.broadinstitute.gatk.queue.QScript
 import org.broadinstitute.gatk.queue.extensions.gatk._
-import org.broadinstitute.gatk.queue.extensions.cancer.MuTect
+import org.broadinstitute.gatk.queue.extensions.cancer._
 
 class SomaticCaller extends QScript {
     // Create an alias 'qscript' to be able to access variables in the SomaticCaller.
@@ -42,19 +42,19 @@ class SomaticCaller extends QScript {
     var intervalPadding: Int = 0
 
     def script() {
-	val mutect = new MuTect
+	val mutect = new MuTect2
 
 	// All required input
 	mutect.input_file :+= new TaggedFile(tumor_bam, "tumor")
 	mutect.input_file :+= new TaggedFile(normal_bam, "normal")
 	mutect.reference_sequence = referenceFile
-	mutect.out = qscript.out + ".call_stats.txt"
-	mutect.vcf = qscript.out + ".vcf"
+	//mutect.out = qscript.out + ".call_stats.txt"
+	mutect.out = qscript.out + ".vcf"
 
 	mutect.scatterCount = numScatters
 	mutect.memoryLimit = maxMem
 
-	mutect.dbsnp :+= dbsnpFile
+	mutect.dbsnp = dbsnpFile
 	mutect.cosmic :+= cosmicFile
 	
 	// Optional input
