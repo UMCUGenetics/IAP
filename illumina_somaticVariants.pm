@@ -6,7 +6,7 @@
 ###   - Varscan, Strelka, FreeBayes
 ### - Merge and annotate somatic high confidence calls.
 ###
-### Author: R.F.Ernst
+### Author: R.F.Ernst & H.H.D.Kerstens
 #########################################################
 
 package illumina_somaticVariants;
@@ -14,7 +14,8 @@ package illumina_somaticVariants;
 use strict;
 use POSIX qw(tmpnam);
 use File::Path qw(make_path);
-
+use lib "$FindBin::Bin"; #locates pipeline directory
+use illumina_sge;
 
 sub parseSamples {
     ###
@@ -200,10 +201,11 @@ sub runSomaticVariantCallers {
 		}
 
 		# Run job
+		my $qsub = &qsubJava(\%opt,"SOMVARMERGE");
 		if ( @somvar_jobs ){
-		    system "qsub -q $opt{SOMVARMERGE_QUEUE} -m a -M $opt{MAIL} -pe threaded $opt{SOMVARMERGE_THREADS} -P $opt{CLUSTER_PROJECT} -o $sample_tumor_log_dir -e $sample_tumor_log_dir -N $job_id -hold_jid ".join(",",@somvar_jobs)." $bash_file";
+		    system "$qsub -o $sample_tumor_log_dir -e $sample_tumor_log_dir -N $job_id -hold_jid ".join(",",@somvar_jobs)." $bash_file";
 		} else {
-		    system "qsub -q $opt{SOMVARMERGE_QUEUE} -m a -M $opt{MAIL} -pe threaded $opt{SOMVARMERGE_THREADS} -P $opt{CLUSTER_PROJECT} -o $sample_tumor_log_dir -e $sample_tumor_log_dir -N $job_id $bash_file";
+		    system "$qsub -o $sample_tumor_log_dir -e $sample_tumor_log_dir -N $job_id $bash_file";
 		}
 		push(@merge_somvar_jobs, $job_id);
 	    }
@@ -259,10 +261,11 @@ sub runStrelka {
     close STRELKA_SH;
 
     ## Run job
+    my $qsub = &qsubTemplate(\%opt,"STRELKA");
     if ( @running_jobs ){
-	system "qsub -q $opt{STRELKA_QUEUE} -m a -M $opt{MAIL} -pe threaded $opt{STRELKA_THREADS} -R $opt{CLUSTER_RESERVATION} -P $opt{CLUSTER_PROJECT} -o $log_dir -e $log_dir -N $job_id -hold_jid ".join(",",@running_jobs)." $bash_file";
+	system "$qsub -o $log_dir -e $log_dir -N $job_id -hold_jid ".join(",",@running_jobs)." $bash_file";
     } else {
-	system "qsub -q $opt{STRELKA_QUEUE} -m a -M $opt{MAIL} -pe threaded $opt{STRELKA_THREADS} -R $opt{CLUSTER_RESERVATION} -P $opt{CLUSTER_PROJECT} -o $log_dir -e $log_dir -N $job_id $bash_file";
+	system "$qsub -o $log_dir -e $log_dir -N $job_id $bash_file";
     }
 
     return $job_id;
@@ -296,13 +299,15 @@ sub runPileup {
     print PILEUP_SH "then\n";
     print PILEUP_SH "\tPATH=$opt{SAMTOOLS_PATH}:\$PATH\n";
     print PILEUP_SH "\texport PATH\n";
-    print PILEUP_SH "\t$opt{SAMBAMBA_PATH}/sambamba mpileup -t $opt{VARSCAN_THREADS} --tmpdir=$opt{OUTPUT_DIR}/tmp/ -L $opt{SOMVAR_TARGETS} -o $pileup $opt{OUTPUT_DIR}/$sample/mapping/$bam --samtools \"-q 1 -f $opt{GENOME}\"\n";
-    print PILEUP_SH "\tif [ \"\$(tail -n 1 $pileup | cut -f 1)\" = \"MT\" ]\n";
+    print PILEUP_SH "\t$opt{SAMBAMBA_PATH}/sambamba mpileup -t $opt{PILEUP_THREADS} --tmpdir=$opt{OUTPUT_DIR}/tmp/ -L $opt{SOMVAR_TARGETS} $opt{OUTPUT_DIR}/$sample/mapping/$bam --samtools \"-q 1 -f $opt{GENOME}\" |gzip -c >$pileup.gz\n";
+#here a faster compressor (snappy) or multithreaded gzip (pigz -p4 ) will allow for more speed
+    print PILEUP_SH "\t lastScaffold=`tail -n1 $opt{SOMVAR_TARGETS} |cut -f 1`;\n";
+    print PILEUP_SH "\tif [ \"\$(gunzip -c $pileup |tail -n 1 | cut -f 1)\" = \"\$lastScaffold\" ]\n";
     print PILEUP_SH "\tthen\n";
-    print PILEUP_SH "\t\tmv $pileup $opt{OUTPUT_DIR}/$sample/mapping/\n";
+    print PILEUP_SH "\t\tmv $pileup.gz $opt{OUTPUT_DIR}/$sample/mapping/\n";
     print PILEUP_SH "\t\ttouch $opt{OUTPUT_DIR}/$sample/logs/Pileup_$sample.done\n";
     print PILEUP_SH "\telse\n";
-    print PILEUP_SH "\t\techo \"ERROR: $pileup seems incomplete, it does not end with MT\" >&2\n";
+    print PILEUP_SH "\t\techo \"ERROR: $pileup.gz seems incomplete, it does not end with \$lastScaffold\" >&2\n";
     print PILEUP_SH "\tfi\n";
     print PILEUP_SH "else\n";
     print PILEUP_SH "\techo \"ERROR: $opt{OUTPUT_DIR}/$sample/mapping/$bam does not exist.\" >&2\n";
@@ -311,10 +316,11 @@ sub runPileup {
     close PILEUP_SH;
     
     ### Submit realign bash script
+    my $qsub = &qsubTemplate(\%opt,"PILEUP");
     if ( @{$opt{RUNNING_JOBS}->{$sample}} ){
-	system "qsub -q $opt{PILEUP_QUEUE} -m a -M $opt{MAIL} -pe threaded $opt{PILEUP_THREADS} -P $opt{CLUSTER_PROJECT} -o $logDir/Pileup_$sample.out -e $logDir/Pileup_$sample.err -N $jobID -hold_jid ".join(",",@{$opt{RUNNING_JOBS}->{$sample}})." $bashFile";
+	system "$qsub -o $logDir/Pileup_$sample.out -e $logDir/Pileup_$sample.err -N $jobID -hold_jid ".join(",",@{$opt{RUNNING_JOBS}->{$sample}})." $bashFile";
     } else {
-	system "qsub -q $opt{PILEUP_QUEUE} -m a -M $opt{MAIL} -pe threaded $opt{PILEUP_THREADS} -P $opt{CLUSTER_PROJECT} -o $logDir/Pileup_$sample.out -e $logDir/Pileup_$sample.err -N $jobID $bashFile";
+	system "$qsub -o $logDir/Pileup_$sample.out -e $logDir/Pileup_$sample.err -N $jobID $bashFile";
     }
     return $jobID;
 }
@@ -347,19 +353,24 @@ sub runVarscan {
     open VARSCAN_SH, ">$bash_file" or die "cannot open file $bash_file \n";
     print VARSCAN_SH "#!/bin/bash\n\n";
     print VARSCAN_SH "cd $varscan_out_dir\n";
-    print VARSCAN_SH "if [ -f $sample_ref_pileup -a -f $sample_tumor_pileup ]\n";
+    print VARSCAN_SH "if [ -f $sample_ref_pileup.gz -a -f $sample_tumor_pileup.gz ]\n";
     print VARSCAN_SH "then\n";
+
+    # make named pipes
+    print VARSCAN_SH "mkfifo ",$sample_ref_pileup,";\nmkfifo ",$sample_tumor_pileup,";\n",
+    "gunzip -c ",$sample_ref_pileup,".gz >",$sample_ref_pileup," &\n",
+    "gunzip -c ",$sample_tumor_pileup,".gz >",$sample_tumor_pileup," &\n";
 
     # run varscan
     print VARSCAN_SH "\techo \"Start Varscan\t\" `date` \"\t $sample_ref_pileup \t $sample_tumor_pileup\t\" `uname -n` >> $log_dir/varscan.log\n";
-    print VARSCAN_SH "\tjava -Xmx12g -jar $opt{VARSCAN_PATH} somatic $sample_ref_pileup $sample_tumor_pileup $sample_tumor_name $opt{VARSCAN_SETTINGS} --output-vcf 1\n\n";
+    print VARSCAN_SH "\tjava -Xmx".$opt{VARSCAN_MEM}."G -jar $opt{VARSCAN_PATH} somatic $sample_ref_pileup $sample_tumor_pileup $sample_tumor_name $opt{VARSCAN_SETTINGS} --output-vcf 1\n\n";
 
     # postprocessing
-    print VARSCAN_SH "\tjava -Xmx12g -jar $opt{VARSCAN_PATH} processSomatic $sample_tumor_name.indel.vcf $opt{VARSCAN_POSTSETTINGS}\n";
-    print VARSCAN_SH "\tjava -Xmx12g -jar $opt{VARSCAN_PATH} processSomatic $sample_tumor_name.snp.vcf $opt{VARSCAN_POSTSETTINGS}\n\n";
+    print VARSCAN_SH "\tjava -Xmx".$opt{VARSCAN_MEM}."G -jar $opt{VARSCAN_PATH} processSomatic $sample_tumor_name.indel.vcf $opt{VARSCAN_POSTSETTINGS}\n";
+    print VARSCAN_SH "\tjava -Xmx".$opt{VARSCAN_MEM}."G -jar $opt{VARSCAN_PATH} processSomatic $sample_tumor_name.snp.vcf $opt{VARSCAN_POSTSETTINGS}\n\n";
 
     # merge varscan hc snps and indels
-    print VARSCAN_SH "\tjava -Xmx6G -jar $opt{GATK_PATH}/GenomeAnalysisTK.jar -T CombineVariants -R $opt{GENOME} --genotypemergeoption unsorted -o $sample_tumor_name.merged.Somatic.hc.vcf -V $sample_tumor_name.snp.Somatic.hc.vcf -V $sample_tumor_name.indel.Somatic.hc.vcf\n";
+    print VARSCAN_SH "\tjava -Xmx".$opt{VARSCAN_MEM}."G -jar $opt{GATK_PATH}/GenomeAnalysisTK.jar -T CombineVariants -R $opt{GENOME} --genotypemergeoption unsorted -o $sample_tumor_name.merged.Somatic.hc.vcf -V $sample_tumor_name.snp.Somatic.hc.vcf -V $sample_tumor_name.indel.Somatic.hc.vcf\n";
     print VARSCAN_SH "\tsed -i 's/SSC/VS_SSC/' $sample_tumor_name.merged.Somatic.hc.vcf\n\n"; # to resolve merge conflict with FB vcfs
 
     # Check varscan completed
@@ -375,10 +386,11 @@ sub runVarscan {
     close VARSCAN_SH;
 
     ## Run job
+    my $qsub = &qsubJava(\%opt,"VARSCAN");
     if ( @running_jobs ){
-        system "qsub -q $opt{VARSCAN_QUEUE} -pe threaded $opt{VARSCAN_THREADS} -R $opt{CLUSTER_RESERVATION} -P $opt{CLUSTER_PROJECT} -m a -M $opt{MAIL} -o $log_dir -e $log_dir -N $job_id -hold_jid ".join(",",@running_jobs)." $bash_file";
+        system "$qsub -o $log_dir -e $log_dir -N $job_id -hold_jid ".join(",",@running_jobs)." $bash_file";
     } else {
-        system "qsub -q $opt{VARSCAN_QUEUE} -pe threaded $opt{VARSCAN_THREADS} -R $opt{CLUSTER_RESERVATION} -P $opt{CLUSTER_PROJECT} -m a -M $opt{MAIL} -o $log_dir -e $log_dir -N $job_id $bash_file";
+        system "$qsub -o $log_dir -e $log_dir -N $job_id $bash_file";
     }
 
     return $job_id;
@@ -451,10 +463,11 @@ sub runFreeBayes {
     close FREEBAYES_SH;
 
     # Run job
+    my $qsub = &qsubTemplate(\%opt,"FREEBAYES");
     if ( @running_jobs ){
-	system "qsub -q $opt{FREEBAYES_QUEUE} -pe threaded $opt{FREEBAYES_THREADS} -R $opt{CLUSTER_RESERVATION} -P $opt{CLUSTER_PROJECT} -m a -M $opt{MAIL} -o $log_dir -e $log_dir -N $job_id -hold_jid ".join(",",@running_jobs)." $bash_file";
+	system "$qsub -o $log_dir -e $log_dir -N $job_id -hold_jid ".join(",",@running_jobs)." $bash_file";
     } else {
-	system "qsub -q $opt{FREEBAYES_QUEUE} -pe threaded $opt{FREEBAYES_THREADS} -R $opt{CLUSTER_RESERVATION} -P $opt{CLUSTER_PROJECT} -m a -M $opt{MAIL} -o $log_dir -e $log_dir -N $job_id $bash_file";
+	system "$qsub -o $log_dir -e $log_dir -N $job_id $bash_file";
     }
     return $job_id;
 }
@@ -505,7 +518,10 @@ sub runMutect {
     
     ### Mutect .jar command
     my $command = "java -Xmx".$opt{MUTECT_MEM}."G -jar $opt{MUTECT_PATH}/mutect.jar -T MuTect ";
-    $command .= "-R $opt{GENOME} --cosmic $opt{MUTECT_COSMIC} --dbsnp $opt{CALLING_DBSNP} --intervals $opt{CALLING_TARGETS} ";
+    $command .= "-R $opt{GENOME} --cosmic $opt{MUTECT_COSMIC} --dbsnp $opt{CALLING_DBSNP} ";
+    if ( $opt{CALLING_TARGETS} ) {
+	$command .= "--intervals $opt{CALLING_TARGETS} ";
+    }
     $command .= "--input_file:normal $sample_ref_bam --input_file:tumor $sample_tumor_bam ";
     $command .= "--out call_stats.out --vcf $sample_tumor_name\_mutect.vcf";
     ## Create mutect bash script
@@ -544,12 +560,13 @@ sub runMutect {
     close MUTECT_SH;
 
     ## Run job
+    my $qsub = &qsubJava(\%opt,"MUTECT");
     if ( @running_jobs ){
 	#system "qsub -q $opt{MUTECT_MASTERQUEUE} -m a -M $opt{MAIL} -pe threaded $opt{MUTECT_MASTERTHREADS} -R $opt{CLUSTER_RESERVATION} -P $opt{CLUSTER_PROJECT} -o $log_dir -e $log_dir -N $job_id -hold_jid ".join(",",@running_jobs)." $bash_file";
-	system "qsub -q $opt{MUTECT_QUEUE} -m a -M $opt{MAIL} -pe threaded $opt{MUTECT_THREADS} -R $opt{CLUSTER_RESERVATION} -P $opt{CLUSTER_PROJECT} -o $log_dir -e $log_dir -N $job_id -hold_jid ".join(",",@running_jobs)." $bash_file";
+	system "$qsub -o $log_dir -e $log_dir -N $job_id -hold_jid ".join(",",@running_jobs)." $bash_file";
     } else {
 	#system "qsub -q $opt{MUTECT_MASTERQUEUE} -m a -M $opt{MAIL} -pe threaded $opt{MUTECT_MASTERTHREADS} -R $opt{CLUSTER_RESERVATION} -P $opt{CLUSTER_PROJECT} -o $log_dir -e $log_dir -N $job_id $bash_file";
-	system "qsub -q $opt{MUTECT_QUEUE} -m a -M $opt{MAIL} -pe threaded $opt{MUTECT_THREADS} -R $opt{CLUSTER_RESERVATION} -P $opt{CLUSTER_PROJECT} -o $log_dir -e $log_dir -N $job_id $bash_file";
+	system "$qsub -o $log_dir -e $log_dir -N $job_id $bash_file";
     }
 
     return $job_id;

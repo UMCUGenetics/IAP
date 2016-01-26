@@ -17,6 +17,9 @@ perl illumina_createConfig.pl
 ```bash
 perl illumina_createConfig.pl -i <filename.ini> -o </path/to/output_dir> (-f /path/to/fastq_dir OR -b /path/to/bam_dir OR -v /path/to/vcfFile.vcf) -m your@mail.com
 ```
+in which fastq files in /path/to/fastq_dir have extension R[12]_fastq.gz and bamfiles in /path/to/bam_dir have extension .bam
+naming convention: sampleName_flowcellID_index_lane_tag_R[12].fastq.gz
+
 #### Run pipeline
 ```bash
 perl illumina_pipeline.pl /path/to/output_dir/settings.config>
@@ -103,10 +106,12 @@ INDELREALIGNMENT	yes/no
 BASEQUALITYRECAL	yes/no
 VARIANT_CALLING	yes/no
 SOMATIC_VARIANTS	yes/no
+SV_CALLING	yes/no
 COPY_NUMBER	yes/no
 FILTER_VARIANTS	yes/no
 ANNOTATE_VARIANTS	yes/no
 VCF_UTILS	yes/no
+NIPT	yes/no
 CHECKING	yes/no
 
 #### GENOME SETTINGS ####
@@ -114,11 +119,13 @@ GENOME	/path/to/genome.fasta
 
 #### PRESTATS CLUSTER CONFIGURATION ####
 PRESTATS_QUEUE	queue_name 
+PRESTATS_TIME	estimated runtime
 PRESTATS_THREADS	number_of_threads
 PRESTATS_MEM	maximum_memory 
 
 #### MAPPING CLUSTER CONFIGURATION ####
-MAPPING_QUEUE	queue_name
+MAPPING_QUEUE	     queue_name
+MAPPING_TIME	     estimated runtime
 MAPPING_THREADS	number_of_threads
 MAPPING_MEM	maximum_memory
 MAPPING_MODE	single/batch | submit mapping jobs as one job (batch) or as separate jobs (single)
@@ -128,6 +135,8 @@ MAPPING_MARKDUP	lane/sample/no | Mark duplicates per lane, per sample (merged la
 # Used for mapping, realignment and recalibration.
 FLAGSTAT_QUEUE	queue_name
 FLAGSTAT_THREADS	number_of_threads
+FLAGSTAT_TIME		estimated runtime
+FLAGSTAT_MEM		maximum_memory
 
 #### POSTSTATS CLUSTER CONFIGURATION ####
 POSTSTATS_QUEUE	queue_name
@@ -142,6 +151,7 @@ REALIGNMENT_MASTERQUEUE	queue_name
 REALIGNMENT_MASTERTHREADS	number_of_threads
 REALIGNMENT_QUEUE	queue_name
 REALIGNMENT_THREADS	number_of_threads
+REALIGNMENT_TIME	estimated runtime
 REALIGNMENT_MERGETHREADS	number_of_threads
 REALIGNMENT_MEM	maximum_memory
 REALIGNMENT_SCALA	QScripts/IndelRealigner.scala
@@ -238,6 +248,20 @@ MUTECT_COSMIC	/path/to/CosmicCodingMuts_v72.vcf.gz
 SOMVARMERGE_QUEUE	queue_name
 SOMVARMERGE_THREADS	number_of_threads
 
+#### SV Calling -  DELLY CONFIGURATION####
+DELLY_PATH	/path/to/delly_v0.6.7
+DELLY_QUEUE	queue_name
+DELLY_MERGE_QUEUE	queue_name
+DELLY_THREADS	number_of_threads
+
+DELLY_SVTYPE	DEL	DUP	INV	TRA
+DELLY_SPLIT	no/yes	no/yes	no/yes	yes/no
+DELLY_MAPQUAL	1
+DELLY_MAD	9
+DELLY_FLANK	13
+#DELLY_VCF_GENO	
+DELLY_GENO_QUAL	5
+
 ####COPY NUMBER VARIANTION CONFIGURATION####
 CNVCHECK_QUEUE	queue_name
 CNVCHECK_THREADS	number_of_threads
@@ -294,6 +318,12 @@ VCFUTILS_KINSHIP	yes/no
 PLINK_PATH	/path/to/plink
 VCFUTILS_PHASE	yes
 PED	/path/to/file.ped
+
+####NIPT CLUSTER CONFIGURATION####
+CHROMATE_PATH	/path/to/chromate.py
+NIPT_REFERENCESET	/path/to/reference_set/
+NIPT_QUEUE	queue_name
+NIPT_THREADS	number_of_threads
 
 ####CHECKING CLUSTER CONFIGURATION####
 CHECKING_QUEUE	queue_name

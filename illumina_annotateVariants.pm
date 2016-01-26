@@ -7,13 +7,15 @@
 ###   - SnpSift -> DBNSFP
 ###   - ID from vcf file, for example Cosmic
 ###   - AC and AF from a vcf file, for example GoNL
-### Author: R.F.Ernst
+### Authors: R.F.Ernst & H.H.D.Kerstens
 ##################################################################################################################################################
 
 package illumina_annotateVariants;
 
 use strict;
 use POSIX qw(tmpnam);
+use lib "$FindBin::Bin"; #locates pipeline directory                                                                                                              
+use illumina_sge;
 
 sub runAnnotateVariants {
     ###
@@ -138,10 +140,11 @@ sub runAnnotateVariants {
     }
 
     ### Start main bash script
+    my $qsub = &qsubTemplate(\%opt,"ANNOTATE");
     if (@runningJobs){
-	system "qsub -q $opt{ANNOTATE_QUEUE} -m a -M $opt{MAIL} -pe threaded $opt{ANNOTATE_THREADS} -R $opt{CLUSTER_RESERVATION} -P $opt{CLUSTER_PROJECT} -o $logDir/VariantAnnotation_$runName.out -e $logDir/VariantAnnotation_$runName.err -N $jobID -hold_jid ".join(",",@runningJobs)." $bashFile";
+	system "$qsub -o $logDir/VariantAnnotation_$runName.out -e $logDir/VariantAnnotation_$runName.err -N $jobID -hold_jid ".join(",",@runningJobs)." $bashFile";
     } else {
-	system "qsub -q $opt{ANNOTATE_QUEUE} -m a -M $opt{MAIL} -pe threaded $opt{ANNOTATE_THREADS} -R $opt{CLUSTER_RESERVATION} -P $opt{CLUSTER_PROJECT} -o $logDir/VariantAnnotation_$runName.out -e $logDir/VariantAnnotation_$runName.err -N $jobID $bashFile";
+	system "$qsub -o $logDir/VariantAnnotation_$runName.out -e $logDir/VariantAnnotation_$runName.err -N $jobID $bashFile";
     }
 
     return $jobID;

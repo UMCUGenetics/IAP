@@ -12,6 +12,8 @@ package illumina_check;
 use strict;
 use POSIX qw(tmpnam);
 use FindBin;
+use lib "$FindBin::Bin"; #locates pipeline directory
+use illumina_sge;
 
 sub runCheck {
     ### 
@@ -36,7 +38,7 @@ sub runCheck {
     print BASH "echo \"Check and cleanup for run: $runName \" >>$logFile\n";
 
     ### pipeline version
-    my $version = `git --git-dir $FindBin::Bin/.git log --tags -n 1 --simplify-by-decoration --pretty=\"format:\%d \%ai\"`;
+    my $version = `git --git-dir $FindBin::Bin/.git describe --tags`;
     print BASH "echo \"Pipeline version: $version \" >>$logFile\n\n";
     print BASH "echo \"\">>$logFile\n\n"; ## empty line between samples
 
@@ -99,6 +101,18 @@ sub runCheck {
 	print BASH "fi\n";
 	if ( $opt{RUNNING_JOBS}->{'postStats'} ){
 	    push( @runningJobs, $opt{RUNNING_JOBS}->{'postStats'} );
+	}
+    }
+    if($opt{NIPT} eq "yes" && ! $opt{VCF}){
+	$doneFile = $opt{OUTPUT_DIR}."/logs/NIPT.done";
+	print BASH "if [ -f $doneFile ]; then\n";
+	print BASH "\techo \"NIPT: done \" >>$logFile\n";
+	print BASH "else\n";
+	print BASH "\techo \"NIPT: failed \">>$logFile\n";
+	print BASH "\tfailed=true\n";
+	print BASH "fi\n";
+	if ( $opt{RUNNING_JOBS}->{'nipt'} ){
+	    push( @runningJobs, $opt{RUNNING_JOBS}->{'nipt'} );
 	}
     }
     if($opt{VARIANT_CALLING} eq "yes" && ! $opt{VCF}){
@@ -249,10 +263,11 @@ sub runCheck {
     print BASH "sleep 5s \n";
 
     #Start main bash script
+    my $qsub = &qsubTemplate(\%opt,"CHECKING");
     if (@runningJobs){
-	system "qsub -q $opt{CHECKING_QUEUE} -m as -M $opt{MAIL} -pe threaded $opt{CHECKING_THREADS} -P $opt{CLUSTER_PROJECT} -o /dev/null -e /dev/null -N check_$jobID -hold_jid ".join(",",@runningJobs)." $bashFile";
+	system "$qsub -o /dev/null -e /dev/null -N check_$jobID -hold_jid ".join(",",@runningJobs)." $bashFile";
     } else {
-	system "qsub -q $opt{CHECKING_QUEUE} -m as -M $opt{MAIL} -pe threaded $opt{CHECKING_THREADS} -P $opt{CLUSTER_PROJECT} -o /dev/null -e /dev/null -N check_$jobID $bashFile";
+	system "$qsub -o /dev/null -e /dev/null -N check_$jobID $bashFile";
     }
 }
 
