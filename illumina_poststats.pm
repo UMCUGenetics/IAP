@@ -95,13 +95,13 @@ sub runPostStats {
 	my $bashFileCheck = $opt{OUTPUT_DIR}."/jobs/".$jobIDCheck.".sh";
 	open PSCHECK_SH, ">$bashFileCheck" or die "cannot open file $bashFileCheck\n";
 	print PSCHECK_SH "cd $opt{OUTPUT_DIR}\n";
-	print PSCHECK_SH "if [ -f QCStats/*.bamMetrics.pdf -a ";
+	print PSCHECK_SH "if [ -s QCStats/*.bamMetrics.pdf -a ";
 	if ( $opt{EXONCALLCOV} eq "yes" ){
 	    foreach my $sample (@{$opt{SAMPLES}}){
-		print PSCHECK_SH "-f Exoncov_v3/$sample.html -a ";
+		print PSCHECK_SH "-s Exoncov_v3/$sample.html -a ";
 	    }
 	}
-	print PSCHECK_SH "-f QCStats/*.bamMetrics.html ]\nthen\n";
+	print PSCHECK_SH "-s QCStats/*.bamMetrics.html ]\nthen\n";
 	print PSCHECK_SH "\ttouch logs/PostStats.done \n";
 	print PSCHECK_SH "fi\n";
 	print PSCHECK_SH "echo \"Finished poststats\t\" `date` \"\t\" `uname -n` >> $opt{OUTPUT_DIR}/logs/$runName.log\n";

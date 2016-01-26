@@ -97,9 +97,9 @@ sub runVariantCalling {
     print CALLING_SH "cd $opt{OUTPUT_DIR}/tmp/\n";
     print CALLING_SH "echo \"Start variant caller\t\" `date` \"\t\" `uname -n` >> $opt{OUTPUT_DIR}/logs/$runName.log\n\n";
     
-    print CALLING_SH "if [ -f ".shift(@sampleBams)." ";
+    print CALLING_SH "if [ -s ".shift(@sampleBams)." ";
     foreach my $sampleBam (@sampleBams){
-	print CALLING_SH "-a -f $sampleBam ";
+	print CALLING_SH "-a -s $sampleBam ";
     }
     print CALLING_SH "]\n";
     print CALLING_SH "then\n";

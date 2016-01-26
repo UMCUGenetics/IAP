@@ -280,9 +280,9 @@ sub runFreec {
 
     print FREEC_SH "#!/bin/bash\n\n";
     if($control_bam){
-	print FREEC_SH "if [ -f $sample_bam -a -f $control_bam ]\n";
+	print FREEC_SH "if [ -s $sample_bam -a -s $control_bam ]\n";
     } else {
-	print FREEC_SH "if [ -f $sample_bam ]\n";
+	print FREEC_SH "if [ -s $sample_bam ]\n";
     }
     print FREEC_SH "then\n";
     print FREEC_SH "\techo \"Start FREEC\t\" `date` \"\t $sample_bam \t $control_bam\t\" `uname -n` >> $log_dir/freec.log\n\n";
@@ -291,6 +291,7 @@ sub runFreec {
     print FREEC_SH "cd $freec_out_dir\n";
     print FREEC_SH "\tcat $opt{FREEC_PATH}/assess_significance.R | R --slave --args ".$sample_bam_name."_CNVs ".$sample_bam_name."_ratio.txt\n";
     print FREEC_SH "\tcat $opt{FREEC_PATH}/makeGraph.R | R --slave --args 2 ".$sample_bam_name."_ratio.txt\n";
+    print FREEC_SH "\tcat $opt{IAP_PATH}/scripts/makeKaryotype.R | R --slave --args 2 24 4 500000 ".$sample_bam_name."_ratio.txt\n";
     print FREEC_SH "touch $log_dir/freec.done\n";
     print FREEC_SH "\techo \"End FREEC\t\" `date` \"\t $sample_bam \t $control_bam\t\" `uname -n` >> $log_dir/freec.log\n\n";
     print FREEC_SH "else\n";
@@ -329,7 +330,7 @@ sub runContra {
 
     open CONTRA_SH, ">$bash_file" or die "cannot open file $bash_file \n";
     print CONTRA_SH "#!/bin/bash\n\n";
-    print CONTRA_SH "if [ -f $sample_tumor_bam -a -f $sample_ref_bam ]\n";
+    print CONTRA_SH "if [ -s $sample_tumor_bam -a -s $sample_ref_bam ]\n";
     print CONTRA_SH "then\n";
     print CONTRA_SH "\techo \"Start Contra\t\" `date` \"\t $sample_ref_bam \t $sample_tumor_bam\t\" `uname -n` >> $log_dir/contra.log\n\n";
 
@@ -337,7 +338,7 @@ sub runContra {
     print CONTRA_SH "\t$opt{CONTRA_PATH}/contra.py -s $sample_tumor_bam -c $sample_ref_bam -f $opt{GENOME} -t $opt{CNV_TARGETS} -o $contra_out_dir/ --sampleName $sample_tumor $opt{CONTRA_FLAGS} \n\n";
     print CONTRA_SH "\tcd $contra_out_dir\n";
     # Check contra completed
-    print CONTRA_SH "\tif [ -f $contra_out_dir/table/$sample_tumor*.vcf ]\n";
+    print CONTRA_SH "\tif [ -s $contra_out_dir/table/$sample_tumor*.vcf ]\n";
     print CONTRA_SH "\tthen\n";
     print CONTRA_SH "\t\ttouch $log_dir/contra.done\n";
     print CONTRA_SH "\tfi\n\n";

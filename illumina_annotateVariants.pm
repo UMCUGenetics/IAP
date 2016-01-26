@@ -62,7 +62,7 @@ sub runAnnotateVariants {
 	$command = "java -Xmx".$opt{ANNOTATE_MEM}."g -jar $opt{SNPEFF_PATH}/snpEff.jar -c $opt{SNPEFF_PATH}/snpEff.config $opt{ANNOTATE_DB} -v $invcf $opt{ANNOTATE_FLAGS} > $outvcf\n";
 	$command .= "\t$opt{IGVTOOLS_PATH}/igvtools index $outvcf\n";
 	$command .= "\trm igv.log";
-	print ANNOTATE_SH "if [ -f $invcf ]\n";
+	print ANNOTATE_SH "if [ -s $invcf ]\n";
 	print ANNOTATE_SH "then\n";
 	print ANNOTATE_SH "\t$command\n";
 	print ANNOTATE_SH "else\n";
@@ -78,14 +78,14 @@ sub runAnnotateVariants {
 	$command = "java -Xmx".$opt{ANNOTATE_MEM}."g -jar $opt{SNPEFF_PATH}/SnpSift.jar dbnsfp -v -f $opt{ANNOTATE_FIELDS} -db $opt{ANNOTATE_DBNSFP} $invcf > $outvcf\n";
 	$command .= "\t$opt{IGVTOOLS_PATH}/igvtools index $outvcf\n";
 	$command .= "\trm igv.log";
-	print ANNOTATE_SH "if [ -f $invcf ]\n";
+	print ANNOTATE_SH "if [ -s $invcf ]\n";
 	print ANNOTATE_SH "then\n";
 	print ANNOTATE_SH "\t$command\n";
 	print ANNOTATE_SH "else\n";
 	print ANNOTATE_SH "\techo \"ERROR: $invcf does not exist.\" >&2\n";
 	print ANNOTATE_SH "fi\n\n";
 	if($opt{ANNOTATE_SNPEFF} eq "yes"){
-	    print ANNOTATE_SH "if [ -f $outvcf ]\nthen\n\trm $invcf $invcf.idx \nfi\n\n";
+	    print ANNOTATE_SH "if [ -s $outvcf ]\nthen\n\trm $invcf $invcf.idx \nfi\n\n";
 	}
 	$invcf = $outvcf;
     }
@@ -96,14 +96,14 @@ sub runAnnotateVariants {
 	my $suffix = "_$opt{ANNOTATE_IDNAME}.vcf";
 	$outvcf =~ s/.vcf/$suffix/;
 	$command = "java -Xmx".$opt{ANNOTATE_MEM}."g -jar $opt{GATK_PATH}/GenomeAnalysisTK.jar -T VariantAnnotator -nt $opt{ANNOTATE_THREADS} -R $opt{GENOME} -o $outvcf --variant $invcf --dbsnp $opt{ANNOTATE_IDDB} --alwaysAppendDbsnpId";
-	print ANNOTATE_SH "if [ -f $invcf ]\n";
+	print ANNOTATE_SH "if [ -s $invcf ]\n";
 	print ANNOTATE_SH "then\n";
 	print ANNOTATE_SH "\t$command\n";
 	print ANNOTATE_SH "else\n";
 	print ANNOTATE_SH "\techo \"ERROR: $invcf does not exist.\" >&2\n";
 	print ANNOTATE_SH "fi\n\n";
 	if($opt{ANNOTATE_SNPSIFT} eq "yes" || $opt{ANNOTATE_SNPEFF} eq "yes"){
-	    print ANNOTATE_SH "if [ -f $outvcf ]\nthen\n\trm $invcf $invcf.idx \nfi\n\n";
+	    print ANNOTATE_SH "if [ -s $outvcf ]\nthen\n\trm $invcf $invcf.idx \nfi\n\n";
 	}
 	$invcf = $outvcf;
     }
@@ -116,14 +116,14 @@ sub runAnnotateVariants {
 	$command = "java -Xmx".$opt{ANNOTATE_MEM}."g -jar $opt{SNPEFF_PATH}/SnpSift.jar annotate -tabix -name $opt{ANNOTATE_FREQNAME}_ -info $opt{ANNOTATE_FREQINFO} $opt{ANNOTATE_FREQDB} $invcf > $outvcf \n";
 	$command .= "\t$opt{IGVTOOLS_PATH}/igvtools index $outvcf\n";
 	$command .= "\trm igv.log";
-	print ANNOTATE_SH "if [ -f $invcf ]\n";
+	print ANNOTATE_SH "if [ -s $invcf ]\n";
 	print ANNOTATE_SH "then\n";
 	print ANNOTATE_SH "\t$command\n";
 	print ANNOTATE_SH "else\n";
 	print ANNOTATE_SH "\techo \"ERROR: $invcf does not exist.\" >&2\n";
 	print ANNOTATE_SH "fi\n\n";
 	if($opt{ANNOTATE_SNPSIFT} eq "yes" || $opt{ANNOTATE_SNPEFF} eq "yes" || $opt{ANNOTATE_IDFIELD} eq "yes"){
-	    print ANNOTATE_SH "if [ -f $outvcf ]\nthen\n\trm $invcf $invcf.idx \nfi\n\n";
+	    print ANNOTATE_SH "if [ -s $outvcf ]\nthen\n\trm $invcf $invcf.idx \nfi\n\n";
 	}
 	$invcf = $outvcf;
     }

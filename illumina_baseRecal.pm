@@ -76,7 +76,7 @@ sub runBaseRecalibration {
 	print BASERECAL_SH "cd $opt{OUTPUT_DIR}/$sample/tmp/\n";
 	print BASERECAL_SH "echo \"Start base recalibration\t\" `date` \"\t$inBam\t\" `uname -n` >> ../logs/$sample.log\n\n";
 	
-	print BASERECAL_SH "if [ -f $opt{OUTPUT_DIR}/$sample/mapping/$inBam ]\n";
+	print BASERECAL_SH "if [ -s $opt{OUTPUT_DIR}/$sample/mapping/$inBam ]\n";
 	print BASERECAL_SH "then\n";
 	print BASERECAL_SH "\t$command\n";
 	print BASERECAL_SH "else\n";
