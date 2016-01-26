@@ -348,7 +348,6 @@ sub checkConfig{
 	    if(! $opt{MARKDUP_MEM}){ print "ERROR: No MARKDUP_MEM option found in config files.\n"; $checkFailed = 1; }
 	    if(! $opt{MARKDUP_QUEUE}){ print "ERROR: No MARKDUP_QUEUE option found in config files.\n"; $checkFailed = 1; }
 	    if(! $opt{MARKDUP_TIME}){ print "ERROR: No MARKDUP_TIME option found in config files.\n"; $checkFailed = 1; }
-	    if(! $opt{MARKDUP_TMP}){ print "ERROR: No MARKDUP_TMP option found in config files.\n"; $checkFailed = 1; }
 	}
 	if($opt{MAPPING_MODE} eq 'single'){
 	    if(! $opt{FLAGSTAT_QUEUE}){ print "ERROR: No FLAGSTAT_QUEUE option found in config files.\n"; $checkFailed = 1; }
