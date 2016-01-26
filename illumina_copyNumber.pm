@@ -6,7 +6,7 @@
 ###   - Contra and freec
 ###   - Tow modes: sample_control (CPCT) & sample (WGS only)
 ###
-### Author: R.F.Ernst
+### Author: R.F.Ernst & H.H.D.Kerstens
 ##################################################################################################################################################
 
 package illumina_copyNumber;
@@ -14,6 +14,9 @@ package illumina_copyNumber;
 use strict;
 use POSIX qw(tmpnam);
 use File::Path qw(make_path);
+use lib "$FindBin::Bin"; #locates pipeline directory
+use illumina_sge;
+
 
 sub parseSamples {
     ###
@@ -135,10 +138,11 @@ sub runCopyNumberTools {
 		    print CHECK_SH "fi\n\n";
 		    print CHECK_SH "echo \"End Check\t\" `date` `uname -n` >> $sample_tumor_log_dir/check.log\n";
 		    close CHECK_SH;
+		    my $qsub = &qsubTemplate(\%opt,"CNVCHECK");
 		    if ( @cnv_jobs ){
-			system "qsub -q $opt{CNVCHECK_QUEUE} -m a -M $opt{MAIL} -pe threaded $opt{CNVCHECK_THREADS} -P $opt{CLUSTER_PROJECT} -o $sample_tumor_log_dir -e $sample_tumor_log_dir -N $job_id -hold_jid ".join(",",@cnv_jobs)." $bash_file";
+			system "$qsub -o $sample_tumor_log_dir -e $sample_tumor_log_dir -N $job_id -hold_jid ".join(",",@cnv_jobs)." $bash_file";
 		    } else {
-			system "qsub -q $opt{CNVCHECK_QUEUE} -m a -M $opt{MAIL} -pe threaded $opt{CNVCHECK_THREADS} -P $opt{CLUSTER_PROJECT} -o $sample_tumor_log_dir -e $sample_tumor_log_dir -N $job_id $bash_file";
+			system "$qsub -o $sample_tumor_log_dir -e $sample_tumor_log_dir -N $job_id $bash_file";
 		    }
 		    push(@check_cnv_jobs, $job_id);
 		}
@@ -185,26 +189,26 @@ sub runCopyNumberTools {
 		    my $freec_job = runFreec($sample, $sample_out_dir, $sample_job_dir, $sample_log_dir, $sample_bam, "", \@running_jobs, \%opt);
 		    if($freec_job){push(@cnv_jobs, $freec_job)};
 		}
-		## Check copy number analysis
-		my $job_id = "CHECK_".$sample."_".get_job_id();
-		my $bash_file = $sample_job_dir."/".$job_id.".sh";
+	    ## Check copy number analysis
+	    my $job_id = "CHECK_".$sample."_".get_job_id();
+	    my $bash_file = $sample_job_dir."/".$job_id.".sh";
 
-		open CHECK_SH, ">$bash_file" or die "cannot open file $bash_file \n";
-		print CHECK_SH "#!/bin/bash\n\n";
-		print CHECK_SH "echo \"Start Check\t\" `date` `uname -n` >> $sample_log_dir/check.log\n\n";
-		print CHECK_SH "if [[ -f $sample_log_dir/freec.done ]]\n";
-		print CHECK_SH "then\n";
-		print CHECK_SH "\ttouch $sample_log_dir/$sample.done\n";
-		print CHECK_SH "fi\n\n";
-		print CHECK_SH "echo \"End Check\t\" `date` `uname -n` >> $sample_log_dir/check.log\n";
-		close CHECK_SH;
-	    
-		if ( @cnv_jobs ){
-		    system "qsub -q $opt{CNVCHECK_QUEUE} -m a -M $opt{MAIL} -pe threaded $opt{CNVCHECK_THREADS} -P $opt{CLUSTER_PROJECT} -o $sample_log_dir -e $sample_log_dir -N $job_id -hold_jid ".join(",",@cnv_jobs)." $bash_file";
-		} else {
-		    system "qsub -q $opt{CNVCHECK_QUEUE} -m a -M $opt{MAIL} -pe threaded $opt{CNVCHECK_THREADS} -P $opt{CLUSTER_PROJECT} -o $sample_log_dir -e $sample_log_dir -N $job_id $bash_file";
-		}
-		push(@check_cnv_jobs, $job_id);
+	    open CHECK_SH, ">$bash_file" or die "cannot open file $bash_file \n";
+	    print CHECK_SH "#!/bin/bash\n\n";
+	    print CHECK_SH "echo \"Start Check\t\" `date` `uname -n` >> $sample_log_dir/check.log\n\n";
+	    print CHECK_SH "if [[ -f $sample_log_dir/freec.done ]]\n";
+	    print CHECK_SH "then\n";
+	    print CHECK_SH "\ttouch $sample_log_dir/$sample.done\n";
+	    print CHECK_SH "fi\n\n";
+	    print CHECK_SH "echo \"End Check\t\" `date` `uname -n` >> $sample_log_dir/check.log\n";
+	    close CHECK_SH;
+	    my $qsub = &qsubTemplate(\%opt,"CNVCHECK");
+	    if ( @cnv_jobs ){
+		system "$qsub -o $sample_log_dir -e $sample_log_dir -N $job_id -hold_jid ".join(",",@cnv_jobs)." $bash_file";
+	    } else {
+		system "$qsub -o $sample_log_dir -e $sample_log_dir -N $job_id $bash_file";
+	    }
+	    push(@check_cnv_jobs, $job_id);
 	}
     }
     return \@check_cnv_jobs;
@@ -294,12 +298,12 @@ sub runFreec {
     print FREEC_SH "fi\n";
     
     close FREEC_SH;
-    
+    my $qsub = &qsubTemplate(\%opt,"FREEC");
     ## Run job
     if ( @running_jobs ){
-	system "qsub -q $opt{FREEC_QUEUE} -m a -M $opt{MAIL} -pe threaded $opt{FREEC_THREADS} -R $opt{CLUSTER_RESERVATION} -P $opt{CLUSTER_PROJECT} -o $log_dir -e $log_dir -N $job_id -hold_jid ".join(",",@running_jobs)." $bash_file";
+	system "$qsub -o $log_dir -e $log_dir -N $job_id -hold_jid ".join(",",@running_jobs)." $bash_file";
     } else {
-	system "qsub -q $opt{FREEC_QUEUE} -m a -M $opt{MAIL} -pe threaded $opt{FREEC_THREADS} -R $opt{CLUSTER_RESERVATION} -P $opt{CLUSTER_PROJECT} -o $log_dir -e $log_dir -N $job_id $bash_file";
+	system "$qsub -o $log_dir -e $log_dir -N $job_id $bash_file";
     }
     return $job_id;
 }
@@ -347,10 +351,11 @@ sub runContra {
     close CONTRA_SH;
 
     ## Run job
+    my $qsub = &qsubTemplate(\%opt,"CONTRA");
     if ( @running_jobs ){
-	system "qsub -q $opt{CONTRA_QUEUE} -m a -M $opt{MAIL} -pe threaded $opt{CONTRA_THREADS} -R $opt{CLUSTER_RESERVATION} -P $opt{CLUSTER_PROJECT} -o $log_dir -e $log_dir -N $job_id -hold_jid ".join(",",@running_jobs)." $bash_file";
+	system "$qsub -o $log_dir -e $log_dir -N $job_id -hold_jid ".join(",",@running_jobs)." $bash_file";
     } else {
-	system "qsub -q $opt{CONTRA_QUEUE} -m a -M $opt{MAIL} -pe threaded $opt{CONTRA_THREADS} -R $opt{CLUSTER_RESERVATION} -P $opt{CLUSTER_PROJECT} -o $log_dir -e $log_dir -N $job_id $bash_file";
+	system "$qsub -o $log_dir -e $log_dir -N $job_id $bash_file";
     }
     return $job_id;
 }
@@ -382,10 +387,11 @@ sub runContraVisualization {
     close CONTRAVIS_SH;
 
     ## Run job
+    my $qsub = &qsubTemplate(\%opt,"CONTRAVIS");
     if ( $contra_job ){
-	system "qsub -q $opt{CONTRA_QUEUE} -m a -M $opt{MAIL} -pe threaded $opt{CONTRA_THREADS} -R $opt{CLUSTER_RESERVATION} -P $opt{CLUSTER_PROJECT} -o $log_dir -e $log_dir -N $job_id -hold_jid $contra_job $bash_file";
+	system "$qsub -o $log_dir -e $log_dir -N $job_id -hold_jid $contra_job $bash_file";
     } else {
-	system "qsub -q $opt{CONTRA_QUEUE} -m a -M $opt{MAIL} -pe threaded $opt{CONTRA_THREADS} -R $opt{CLUSTER_RESERVATION} -P $opt{CLUSTER_PROJECT} -o $log_dir -e $log_dir -N $job_id $bash_file";
+	system "$qsub -o $log_dir -e $log_dir -N $job_id $bash_file";
     }
     return $job_id;
 }
