@@ -133,13 +133,14 @@ MAPPING_QUEUE	queue_name
 MAPPING_TIME	estimated runtime
 MAPPING_THREADS	number_of_threads
 MAPPING_MEM	maximum_memory
-MAPPING_MODE	single/batch | submit mapping jobs as one job (batch) or as separate jobs (single)
+MAPPING_SETTINGS	-c 100 -M
 
 MARKDUP_LEVEL	lane/sample/no | Mark duplicates per lane, per sample (merged lanes) or not at all.
 MARKDUP_QUEUE	queue_name
 MARKDUP_TIME	estimated runtime
 MARKDUP_THREADS	number_of_threads
 MARKDUP_MEM	maximum_memory
+MARKDUP_OVERFLOW_LIST_SIZE	Size of the overflow list, for more information see sambamba docs.
 
 #### FLAGSTAT CONFIGURATION ####
 # Used for mapping, realignment and recalibration.
