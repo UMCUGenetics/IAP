@@ -24,8 +24,8 @@ sub runCheck {
     my @runningJobs;
 
     ### Create bash file
-    my $jobID = get_job_id();
-    my $bashFile = "$opt{OUTPUT_DIR}/jobs/check_".get_job_id().".sh";
+    my $jobID = $runName."_".get_job_id();
+    my $bashFile = "$opt{OUTPUT_DIR}/jobs/check_".$jobID.".sh";
     open (BASH,">$bashFile") or die "ERROR: Couldn't create $bashFile\n";
     print BASH "\#!/bin/sh\n . $opt{CLUSTER_PATH}/settings.sh\n\n";
 
