@@ -243,10 +243,10 @@ sub submit_delly {
     $logFile =~ s/.sh$/.out/;
     $errorFile =~ s/jobs/logs/;
     $errorFile =~ s/.sh$/.err/;
-
+    my $omp_num_threads = $opt{DELLY_THREADS} * 2;
     open DELLY_SH , ">$bashFile" or die "cannot open file $bashFile\n $! \n";
     print DELLY_SH "#!/bin/bash\n\n";
-    print DELLY_SH "export OMP_NUM_THREADS=".$opt{DELLY_THREADS}."\n";
+    print DELLY_SH "export OMP_NUM_THREADS=".$omp_num_threads."\n";
     print DELLY_SH "$opt{DELLY_PATH}/delly";
     print DELLY_SH " -t " . $type;
     print DELLY_SH " -g " . $opt{GENOME};
