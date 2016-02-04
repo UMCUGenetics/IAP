@@ -231,6 +231,12 @@ sub runFreec {
 	make_path($freec_out_dir) or die "Couldn't create directory: $freec_out_dir\n";
     }
     
+    ## Parse mappability tracks
+    my @mappabilityTracks;
+    if($opt{FREEC_MAPPABILITY_TRACKS}) {
+	@mappabilityTracks = split('\t', $opt{FREEC_MAPPABILITY_TRACKS});
+    }
+    
     ## Create freec config
     my $freec_config = $freec_out_dir."/freec_config.txt";
     open FREEC_CONFIG, ">$freec_config" or die "cannot open file $freec_config \n";
@@ -245,9 +251,14 @@ sub runFreec {
     print FREEC_CONFIG "telocentromeric=$opt{FREEC_TELOCENTROMERIC}\n";
     print FREEC_CONFIG "BedGraphOutput=TRUE\n";
     print FREEC_CONFIG "outputDir=$freec_out_dir\n";
-    print FREEC_CONFIG "gemMappabilityFile=/hpc/local/CentOS6/cog_bioinf/freec/hg19_mappability_tracks/out100m1_hg19.gem\n";
-    print FREEC_CONFIG "gemMappabilityFile=/hpc/local/CentOS6/cog_bioinf/freec/hg19_mappability_tracks/out100m2_hg19.gem\n";
-    
+
+    ## mappability tracks
+    foreach my $mappabilityTrack (@mappabilityTracks){
+	print FREEC_CONFIG "gemMappabilityFile=$mappabilityTrack\n";
+    }
+    #print FREEC_CONFIG "gemMappabilityFile=/hpc/local/CentOS6/cog_bioinf/freec/hg19_mappability_tracks/out100m1_hg19.gem\n";
+    #print FREEC_CONFIG "gemMappabilityFile=/hpc/local/CentOS6/cog_bioinf/freec/hg19_mappability_tracks/out100m2_hg19.gem\n";
+
     print FREEC_CONFIG "[sample]\n";
     print FREEC_CONFIG "mateFile=$sample_bam\n";
     print FREEC_CONFIG "inputFormat=BAM\n";
@@ -284,11 +295,11 @@ sub runFreec {
     print FREEC_SH "\techo \"Start FREEC\t\" `date` \"\t $sample_bam \t $control_bam\t\" `uname -n` >> $log_dir/freec.log\n\n";
 
     print FREEC_SH "\t$opt{FREEC_PATH}/freec -conf $freec_config\n";
-    print FREEC_SH "cd $freec_out_dir\n";
+    print FREEC_SH "\tcd $freec_out_dir\n";
     print FREEC_SH "\tcat $opt{FREEC_PATH}/assess_significance.R | R --slave --args ".$sample_bam_name."_CNVs ".$sample_bam_name."_ratio.txt\n";
     print FREEC_SH "\tcat $opt{FREEC_PATH}/makeGraph.R | R --slave --args 2 ".$sample_bam_name."_ratio.txt\n";
     print FREEC_SH "\tcat $opt{IAP_PATH}/scripts/makeKaryotype.R | R --slave --args 2 24 4 500000 ".$sample_bam_name."_ratio.txt\n";
-    print FREEC_SH "touch $log_dir/freec.done\n";
+    print FREEC_SH "\ttouch $log_dir/freec.done\n";
     print FREEC_SH "\techo \"End FREEC\t\" `date` \"\t $sample_bam \t $control_bam\t\" `uname -n` >> $log_dir/freec.log\n\n";
     print FREEC_SH "else\n";
     print FREEC_SH "\techo \"ERROR: $sample_bam or $control_bam does not exist.\" >> $log_dir/freec.log\n";
