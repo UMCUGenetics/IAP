@@ -96,7 +96,7 @@ sub runVcfUtils {
 	    print VCFUTILS_SH "cd $opt{OUTPUT_DIR}/tmp/\n";
 	    print VCFUTILS_SH "ln -sd $opt{OUTPUT_DIR}/$runName.ped $opt{OUTPUT_DIR}/$runName.fam\n";
 	    print VCFUTILS_SH "java -Xmx8G -jar $opt{GATK_PATH}/GenomeAnalysisTK.jar -T VariantsToBinaryPed -R $opt{GENOME} -V $opt{OUTPUT_DIR}/$vcf -m $opt{OUTPUT_DIR}/$runName.fam -bed gender_check.bed -bim gender_check.bim -fam gender_check.fam -mgq 20\n";
-	    print VCFUTILS_SH "$opt{PLINK_PATH}/plink -bfile gender_check --check-sex\n";
+	    print VCFUTILS_SH "$opt{PLINK_PATH}/plink -bfile gender_check --check-sex $opt{GENDERCHECK_FEMALE_MAX_F} $opt{GENDERCHECK_MALE_MIN_F}\n";
 	    print VCFUTILS_SH "mv plink.sexcheck $opt{OUTPUT_DIR}/gender_check.out\n";
 	    print VCFUTILS_SH "if [ -s $opt{OUTPUT_DIR}/gender_check.out ]; then\n";
 	    print VCFUTILS_SH "\ttouch $opt{OUTPUT_DIR}/logs/Gender_check.done\n";
