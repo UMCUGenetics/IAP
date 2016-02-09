@@ -75,6 +75,7 @@ sub runRealignment {
 	    (my $flagstat = $bam) =~ s/\.bam/\.flagstat/;
 	    (my $realignedBam = $bam) =~ s/\.bam/\.realigned\.bam/;
 	    (my $realignedBai = $bam) =~ s/\.bam/\.realigned\.bai/;
+	    (my $realignedBamBai = $bam) =~ s/\.bam/\.realigned\.bam\.bai/;
 	    (my $realignedFlagstat = $bam) =~ s/\.bam/\.realigned\.flagstat/;
 	    $opt{BAM_FILES}->{$sample} = $realignedBam;
 	    
@@ -99,6 +100,7 @@ sub runRealignment {
 	    print MERGE_SH "then\n";
 	    print MERGE_SH "\t$opt{SAMBAMBA_PATH}/sambamba merge -t $opt{REALIGNMENT_MERGETHREADS} $opt{OUTPUT_DIR}/$sample/mapping/$realignedBam \`echo \$CHUNKS\` 1>>$opt{OUTPUT_DIR}/$sample/logs/realn_merge.log 2>>$opt{OUTPUT_DIR}/$sample/logs/realn_merge.err\n";
 	    print MERGE_SH "\t$opt{SAMBAMBA_PATH}/sambamba index -t $opt{REALIGNMENT_MERGETHREADS} $opt{OUTPUT_DIR}/$sample/mapping/$realignedBam $opt{OUTPUT_DIR}/$sample/mapping/$realignedBai\n";
+	    print MERGE_SH "\tcp $opt{OUTPUT_DIR}/$sample/mapping/$realignedBai $opt{OUTPUT_DIR}/$sample/mapping/$realignedBamBai\n";
 	    print MERGE_SH "\t$opt{SAMBAMBA_PATH}/sambamba flagstat -t $opt{REALIGNMENT_MERGETHREADS} $opt{OUTPUT_DIR}/$sample/mapping/$realignedBam > $opt{OUTPUT_DIR}/$sample/mapping/$$realignedFlagstat\n\n";
 	    print MERGE_SH "fi\n\n";
 	    print MERGE_SH "if [ -s $opt{OUTPUT_DIR}/$sample/mapping/$flagstat ] && [ -s $opt{OUTPUT_DIR}/$sample/mapping/$realignedFlagstat ]\n";
@@ -155,6 +157,7 @@ sub runRealignment {
 	    (my $flagstat = $bam) =~ s/\.bam/.flagstat/;
 	    (my $realignedBam = $bam) =~ s/\.bam/\.realigned\.bam/;
 	    (my $realignedBai = $bam) =~ s/\.bam/\.realigned\.bai/;
+	    (my $realignedBamBai = $bam) =~ s/\.bam/\.realigned\.bam\.bai/;
 	    (my $realignedFlagstat = $bam) =~ s/\.bam/\.realigned\.flagstat/;
 	    $opt{BAM_FILES}->{$sample} = $realignedBam;
 
@@ -196,7 +199,7 @@ sub runRealignment {
 
 	    print REALIGN_SH "-run -I $opt{OUTPUT_DIR}/$sample/mapping/$bam -jobRunner GridEngine\n";
 	    print REALIGN_SH "else\n";
-	    print REALIGN_SH "echo \"ERROR: $opt{OUTPUT_DIR}/$sample/mapping/$bam does not exist.\" >&2\n";
+	    print REALIGN_SH "\techo \"ERROR: $opt{OUTPUT_DIR}/$sample/mapping/$bam does not exist.\" >&2\n";
 	    print REALIGN_SH "fi\n\n";
 	    
 	    close REALIGN_SH;
@@ -221,6 +224,7 @@ sub runRealignment {
 	    print REALIGNFS_SH "\t$opt{SAMBAMBA_PATH}/sambamba flagstat -t $opt{REALIGNMENT_THREADS} $opt{OUTPUT_DIR}/$sample/tmp/$realignedBam > $opt{OUTPUT_DIR}/$sample/mapping/$realignedFlagstat\n";
 	    print REALIGNFS_SH "\tmv $opt{OUTPUT_DIR}/$sample/tmp/$realignedBam $opt{OUTPUT_DIR}/$sample/mapping/$realignedBam\n";
 	    print REALIGNFS_SH "\tmv $opt{OUTPUT_DIR}/$sample/tmp/$realignedBai $opt{OUTPUT_DIR}/$sample/mapping/$realignedBai\n";
+	    print REALIGNFS_SH "\tcp $opt{OUTPUT_DIR}/$sample/mapping/$realignedBai $opt{OUTPUT_DIR}/$sample/mapping/$realignedBamBai\n";
 	    print REALIGNFS_SH "fi\n\n";
 	    
 	    print REALIGNFS_SH "if [ -s $opt{OUTPUT_DIR}/$sample/mapping/$flagstat ] && [ -s $opt{OUTPUT_DIR}/$sample/mapping/$realignedFlagstat ]\n";

@@ -621,7 +621,10 @@ sub checkConfig{
 	}
 	if(! $opt{VCFUTILS_PHASE}){ print "ERROR: No VCFUTILS_PHASE found in .ini file\n"; $checkFailed = 1; }
 	if(! $opt{VCFUTILS_GENDERCHECK}){ print "ERROR: No VCFUTILS_GENDERCHECK found in .ini file\n"; $checkFailed = 1; }
-	
+	if ( $opt{VCFUTILS_GENDERCHECK} eq "yes" ) {
+	    if(! $opt{GENDERCHECK_FEMALE_MAX_F}){ print "ERROR: No GENDERCHECK_FEMALE_MAX_F found in .ini file\n"; $checkFailed = 1; }
+	    if(! $opt{GENDERCHECK_MALE_MIN_F}){ print "ERROR: No GENDERCHECK_MALE_MIN_F found in .ini file\n"; $checkFailed = 1; }
+	}
 	## Check and copy ped file needed for phasing and gendercheck
 	## Ped file is copied to output_dir to make sure it is accessible on compute nodes
 	if ( $opt{VCFUTILS_GENDERCHECK} eq "yes" || $opt{VCFUTILS_PHASE} eq "yes" ) {
