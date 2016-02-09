@@ -386,11 +386,11 @@ sub runVarscan {
 	close VARSCAN_SH;
 
 	## Run job
-	## Rewrite to new qsub command
+	my $qsub = &qsubJava(\%opt,"VARSCAN");
 	if ( @running_jobs ){
-	    system "qsub -q $opt{VARSCAN_QUEUE} -pe threaded $opt{VARSCAN_THREADS} -R $opt{CLUSTER_RESERVATION} -P $opt{CLUSTER_PROJECT} -m a -M $opt{MAIL} -o $log_dir -e $log_dir -N $job_id -hold_jid ".join(",",@running_jobs)." $bash_file";
+	    system "$qsub -o $log_dir -e $log_dir -N $job_id -hold_jid ".join(",",@running_jobs)." $bash_file";
 	} else {
-	    system "qsub -q $opt{VARSCAN_QUEUE} -pe threaded $opt{VARSCAN_THREADS} -R $opt{CLUSTER_RESERVATION} -P $opt{CLUSTER_PROJECT} -m a -M $opt{MAIL} -o $log_dir -e $log_dir -N $job_id $bash_file";
+	    system "$qsub -o $log_dir -e $log_dir -N $job_id $bash_file";
 	}
 	
 	push(@varscan_jobs,$job_id);
@@ -451,13 +451,11 @@ sub runVarscan {
     close VARSCAN_SH;
 
     ## Run job 
-    ## Rewrite to qsub command!!
-    #my $qsub = &qsubJava(\%opt,"VARSCAN");
-    #system "$qsub -o $log_dir -e $log_dir -N $job_id -hold_jid ".join(",",@running_jobs)." $bash_file";
+    my $qsub = &qsubJava(\%opt,"VARSCAN");
     if ( @varscan_jobs ){
-        system "qsub -q $opt{VARSCAN_QUEUE} -pe threaded $opt{VARSCAN_THREADS} -R $opt{CLUSTER_RESERVATION} -P $opt{CLUSTER_PROJECT} -m a -M $opt{MAIL} -o $log_dir -e $log_dir -N $job_id -hold_jid ".join(",",@varscan_jobs)." $bash_file";
+        system "$qsub -o $log_dir -e $log_dir -N $job_id -hold_jid ".join(",",@varscan_jobs)." $bash_file";
     } else {
-	system "qsub -q $opt{VARSCAN_QUEUE} -pe threaded $opt{VARSCAN_THREADS} -R $opt{CLUSTER_RESERVATION} -P $opt{CLUSTER_PROJECT} -m a -M $opt{MAIL} -o $log_dir -e $log_dir -N $job_id $bash_file";
+	system "$qsub -o $log_dir -e $log_dir -N $job_id $bash_file";
     }
     return $job_id;
 }
@@ -522,11 +520,11 @@ sub runFreeBayes {
 	close FREEBAYES_SH;
 
 	## Run job
-	## Rewrite to qsub command!!
+	my $qsub = &qsubTemplate(\%opt,"FREEBAYES");
 	if ( @running_jobs ){
-	    system "qsub -q $opt{FREEBAYES_QUEUE} -pe threaded $opt{FREEBAYES_THREADS} -R $opt{CLUSTER_RESERVATION} -P $opt{CLUSTER_PROJECT} -m a -M $opt{MAIL} -o $log_dir -e $log_dir -N $job_id -hold_jid ".join(",",@running_jobs)." $bash_file";
+	    system "$qsub -o $log_dir -e $log_dir -N $job_id -hold_jid ".join(",",@running_jobs)." $bash_file";
 	} else {
-	    system "qsub -q $opt{FREEBAYES_QUEUE} -pe threaded $opt{FREEBAYES_THREADS} -R $opt{CLUSTER_RESERVATION} -P $opt{CLUSTER_PROJECT} -m a -M $opt{MAIL} -o $log_dir -e $log_dir -N $job_id $bash_file";
+	    system "$qsub -o $log_dir -e $log_dir -N $job_id $bash_file";
 	}
 	
 	push(@freebayes_jobs,$job_id);
@@ -595,13 +593,11 @@ sub runFreeBayes {
     close FREEBAYES_SH;
 
     ## Run job
-    ## Rewrite to qsub command!!
-    #my $qsub = &qsubTemplate(\%opt,"FREEBAYES");
-    #system "$qsub -o $log_dir -e $log_dir -N $job_id -hold_jid ".join(",",@running_jobs)." $bash_file";
+    my $qsub = &qsubTemplate(\%opt,"FREEBAYES");
     if ( @freebayes_jobs ){
-	system "qsub -q $opt{FREEBAYES_QUEUE} -pe threaded $opt{FREEBAYES_THREADS} -R $opt{CLUSTER_RESERVATION} -P $opt{CLUSTER_PROJECT} -m a -M $opt{MAIL} -o $log_dir -e $log_dir -N $job_id -hold_jid ".join(",",@freebayes_jobs)." $bash_file";
+	system "$qsub -o $log_dir -e $log_dir -N $job_id -hold_jid ".join(",",@freebayes_jobs)." $bash_file";
     } else {
-	system "qsub -q $opt{FREEBAYES_QUEUE} -pe threaded $opt{FREEBAYES_THREADS} -R $opt{CLUSTER_RESERVATION} -P $opt{CLUSTER_PROJECT} -m a -M $opt{MAIL} -o $log_dir -e $log_dir -N $job_id $bash_file";
+	system "$qsub -o $log_dir -e $log_dir -N $job_id $bash_file";
     }
     return $job_id;
 }
@@ -697,10 +693,8 @@ sub runMutect {
     ## Run job
     my $qsub = &qsubJava(\%opt,"MUTECT");
     if ( @running_jobs ){
-	#system "qsub -q $opt{MUTECT_MASTERQUEUE} -m a -M $opt{MAIL} -pe threaded $opt{MUTECT_MASTERTHREADS} -R $opt{CLUSTER_RESERVATION} -P $opt{CLUSTER_PROJECT} -o $log_dir -e $log_dir -N $job_id -hold_jid ".join(",",@running_jobs)." $bash_file";
 	system "$qsub -o $log_dir -e $log_dir -N $job_id -hold_jid ".join(",",@running_jobs)." $bash_file";
     } else {
-	#system "qsub -q $opt{MUTECT_MASTERQUEUE} -m a -M $opt{MAIL} -pe threaded $opt{MUTECT_MASTERTHREADS} -R $opt{CLUSTER_RESERVATION} -P $opt{CLUSTER_PROJECT} -o $log_dir -e $log_dir -N $job_id $bash_file";
 	system "$qsub -o $log_dir -e $log_dir -N $job_id $bash_file";
     }
 
