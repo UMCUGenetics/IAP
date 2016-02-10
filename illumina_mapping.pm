@@ -394,7 +394,7 @@ sub submitMappingJobs{
     }
 
     ### Mark duplicates
-    if($opt{MAPPING_MARKDUP} eq "lane"){
+    if($opt{MARKDUP_LEVEL} eq "lane"){
 	if ((! -e "$opt{OUTPUT_DIR}/$sampleName/mapping/$coreName\_sorted_dedup.bam") || (-z "$opt{OUTPUT_DIR}/$sampleName/mapping/$coreName\_sorted_dedup.bam")) {
 	    open MARKDUP_SH,">$opt{OUTPUT_DIR}/$sampleName/jobs/$markdupJobId.sh" or die "Couldn't create $opt{OUTPUT_DIR}/$sampleName/jobs/$markdupJobId.sh\n";
 	    print MARKDUP_SH "\#!/bin/sh\n\n";
@@ -448,7 +448,7 @@ sub submitMappingJobs{
     print CLEAN_SH "\techo \"ERROR: Either $coreName.flagstat or $coreName\_sorted.flagstat is empty.\" >> $opt{OUTPUT_DIR}/$sampleName/logs/$coreName\_cleanup.err\n";
     print CLEAN_SH "fi\n\n";
     
-    if($opt{MAPPING_MARKDUP} eq "lane"){
+    if($opt{MARKDUP_LEVEL} eq "lane"){
 	print CLEAN_SH "if [ -s $coreName\_sorted.flagstat ] && [ -s $coreName\_sorted_dedup.flagstat ]\n";
 	print CLEAN_SH "then\n";
 	print CLEAN_SH "\tFS1=\`grep -m 1 -P \"\\d+ \" $coreName\_sorted.flagstat | awk '{{split(\$0,columns , \"+\")} print columns[1]}'\`\n";
