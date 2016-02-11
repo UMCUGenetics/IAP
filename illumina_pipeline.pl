@@ -381,13 +381,15 @@ sub checkConfig{
     }
     ## INDELREALIGNMENT
     if($opt{INDELREALIGNMENT} eq "yes"){
-	if(! $opt{REALIGNMENT_MASTERQUEUE}){ print "ERROR: No REALIGNMENT_MASTERQUEUE option found in config files.\n"; $checkFailed = 1; }
-	if(! $opt{REALIGNMENT_MASTERTHREADS}){ print "ERROR: No REALIGNMENT_MASTERTHREADS option found in config files.\n"; $checkFailed = 1; }
+	if(! $opt{REALIGNMENT_MASTER_QUEUE}){ print "ERROR: No REALIGNMENT_MASTER_QUEUE option found in config files.\n"; $checkFailed = 1; }
+	if(! $opt{REALIGNMENT_MASTER_THREADS}){ print "ERROR: No REALIGNMENT_MASTER_THREADS option found in config files.\n"; $checkFailed = 1; }
+	if(! $opt{REALIGNMENT_MASTER_TIME}){ print "ERROR: No REALIGNMENT_MASTER_TIME option found in config files.\n"; $checkFailed = 1; }
+	if(! $opt{REALIGNMENT_MASTER_MEM}){ print "ERROR: No REALIGNMENT_MEM option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{REALIGNMENT_QUEUE}){ print "ERROR: No REALIGNMENT_QUEUE option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{REALIGNMENT_THREADS}){ print "ERROR: No REALIGNMENT_THREADS option found in config files.\n"; $checkFailed = 1; }
-	if(! $opt{REALIGNMENT_MERGETHREADS}){ print "ERROR: No REALIGNMENT_MERGETHREADS option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{REALIGNMENT_MEM}){ print "ERROR: No REALIGNMENT_MEM option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{REALIGNMENT_TIME}){ print "ERROR: No REALIGNMENT_TIME option found in config files.\n"; $checkFailed = 1; }
+	if(! $opt{REALIGNMENT_MERGETHREADS}){ print "ERROR: No REALIGNMENT_MERGETHREADS option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{REALIGNMENT_SCALA}){ print "ERROR: No REALIGNMENT_SCALA option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{REALIGNMENT_SCATTER}){ print "ERROR: No REALIGNMENT_SCATTER option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{REALIGNMENT_MODE}){ print "ERROR: No REALIGNMENT_MODE option found in config files.\n"; $checkFailed = 1; }
@@ -399,8 +401,10 @@ sub checkConfig{
     }
     ## BASEQUALITYRECAL
     if($opt{BASEQUALITYRECAL} eq "yes"){
-	if(! $opt{BASERECALIBRATION_MASTERQUEUE}){ print "ERROR: No BASERECALIBRATION_MASTERQUEUE option found in config files.\n"; $checkFailed = 1; }
-	if(! $opt{BASERECALIBRATION_MASTERTHREADS}){ print "ERROR: No BASERECALIBRATION_MASTERTHREADS option found in config files.\n"; $checkFailed = 1; }
+	if(! $opt{BASERECALIBRATION_MASTER_QUEUE}){ print "ERROR: No BASERECALIBRATION_MASTER_QUEUE option found in config files.\n"; $checkFailed = 1; }
+	if(! $opt{BASERECALIBRATION_MASTER_TIME}){ print "ERROR: No BASERECALIBRATION_MASTER_TIME option found in config files.\n"; $checkFailed = 1; }
+	if(! $opt{BASERECALIBRATION_MASTER_THREADS}){ print "ERROR: No BASERECALIBRATION_MASTER_THREADS option found in config files.\n"; $checkFailed = 1; }
+	if(! $opt{BASERECALIBRATION_MASTER_MEM}){ print "ERROR: No BASERECALIBRATION_MASTER_MEM option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{BASERECALIBRATION_QUEUE}){ print "ERROR: No BASERECALIBRATION_QUEUE option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{BASERECALIBRATION_THREADS}){ print "ERROR: No BASERECALIBRATION_THREADS option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{BASERECALIBRATION_MEM}){ print "ERROR: No BASERECALIBRATION_MEM option found in config files.\n"; $checkFailed = 1; }
@@ -415,8 +419,10 @@ sub checkConfig{
     }
     ## VARIANT_CALLING
     if($opt{VARIANT_CALLING} eq "yes"){
-	if(! $opt{CALLING_MASTERQUEUE}){ print "ERROR: No CALLING_MASTERQUEUE option found in config files.\n"; $checkFailed = 1; }
-	if(! $opt{CALLING_MASTERTHREADS}){ print "ERROR: No CALLING_MASTERTHREADS option found in config files.\n"; $checkFailed = 1; }
+	if(! $opt{CALLING_MASTER_QUEUE}){ print "ERROR: No CALLING_MASTER_QUEUE option found in config files.\n"; $checkFailed = 1; }
+	if(! $opt{CALLING_MASTER_TIME}){ print "ERROR: No CALLING_MASTER_TIME option found in config files.\n"; $checkFailed = 1; }
+	if(! $opt{CALLING_MASTER_THREADS}){ print "ERROR: No CALLING_MASTER_THREADS option found in config files.\n"; $checkFailed = 1; }
+	if(! $opt{CALLING_MASTER_MEM}){ print "ERROR: No CALLING_MASTER_MEM option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{CALLING_QUEUE}){ print "ERROR: No CALLING_QUEUE option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{CALLING_THREADS}){ print "ERROR: No CALLING_THREADS option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{CALLING_MEM}){ print "ERROR: No CALLING_MEM option found in config files.\n"; $checkFailed = 1; }
@@ -435,8 +441,10 @@ sub checkConfig{
     }
     ## FILTER_VARIANTS
     if($opt{FILTER_VARIANTS} eq "yes"){
-	if(! $opt{FILTER_MASTERQUEUE}){ print "ERROR: No FILTER_MASTERQUEUE option found in config files.\n"; $checkFailed = 1; }
-	if(! $opt{FILTER_MASTERTHREADS}){ print "ERROR: No FILTER_MASTERTHREADS option found in config files.\n"; $checkFailed = 1; }
+	if(! $opt{FILTER_MASTER_QUEUE}){ print "ERROR: No FILTER_MASTER_QUEUE option found in config files.\n"; $checkFailed = 1; }
+	if(! $opt{FILTER_MASTER_TIME}){ print "ERROR: No FILTER_MASTER_TIME option found in config files.\n"; $checkFailed = 1; }
+	if(! $opt{FILTER_MASTER_THREADS}){ print "ERROR: No FILTER_MASTER_THREADS option found in config files.\n"; $checkFailed = 1; }
+	if(! $opt{FILTER_MASTER_MEM}){ print "ERROR: No FILTER_MASTER_MEM option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{FILTER_QUEUE}){ print "ERROR: No FILTER_QUEUE option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{FILTER_THREADS}){ print "ERROR: No FILTER_THREADS option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{FILTER_MEM}){ print "ERROR: No FILTER_MEM option found in config files.\n"; $checkFailed = 1; }

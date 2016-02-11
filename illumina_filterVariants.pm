@@ -33,8 +33,7 @@ sub runFilterVariants {
     }
 
     ### Build Queue command
-    my $javaMem = $opt{FILTER_MASTERTHREADS} * $opt{FILTER_MEM};
-    my $command = "java -Xmx".$javaMem."G -Xms".$opt{FILTER_MEM}."G -jar $opt{QUEUE_PATH}/Queue.jar ";
+    my $command = "java -Xmx".$opt{FILTER_MASTER_MEM}."G -jar $opt{QUEUE_PATH}/Queue.jar ";
     my $jobNative = &jobNative(\%opt,"FILTER");
     $command .= "-jobQueue $opt{FILTER_QUEUE} -jobNative \"$jobNative\" -jobRunner GridEngine -jobReport $opt{OUTPUT_DIR}/logs/VariantFilter.jobReport.txt ";
 
@@ -124,7 +123,7 @@ sub runFilterVariants {
     }
 
     ### Start main bash script
-    my $qsub = &qsubJava(\%opt,"FILTER");
+    my $qsub = &qsubJava(\%opt,"FILTER_MASTER");
     if (@runningJobs){
 	system "$qsub -o $logDir/VariantFilter_$runName.out -e $logDir/VariantFilter_$runName.err -N $jobID -hold_jid ".join(",",@runningJobs)." $bashFile";
     } else {

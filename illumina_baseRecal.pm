@@ -42,8 +42,7 @@ sub runBaseRecalibration {
 	}
 	
 	### Build Queue command
-	my $javaMem = $opt{BASERECALIBRATION_MASTERTHREADS} * $opt{BASERECALIBRATION_MEM};
-	my $command = "java -Xmx".$javaMem."G -Xms".$opt{BASERECALIBRATION_MEM}."G -jar $opt{QUEUE_PATH}/Queue.jar ";
+	my $command = "java -Xmx".$opt{BASERECALIBRATION_MASTER_MEM}."G -jar $opt{QUEUE_PATH}/Queue.jar ";
 	# cluster options
 	my $jobNative = &jobNative(\%opt,"BASERECALIBRATION");
 	$command .= "-jobQueue $opt{BASERECALIBRATION_QUEUE} -jobNative \"$jobNative\" -jobRunner GridEngine -jobReport $opt{OUTPUT_DIR}/$sample/logs/BaseRecalibration.jobReport.txt "; #Queue options
@@ -69,7 +68,7 @@ sub runBaseRecalibration {
 	my $jobID = "BR_".$sample."_".get_job_id();
 	my $bashFile = $opt{OUTPUT_DIR}."/".$sample."/jobs/".$jobID.".sh";
 	my $logDir = $opt{OUTPUT_DIR}."/".$sample."/logs";
-	my $qsub = &qsubJava(\%opt,"BASERECALIBRATION");
+	my $qsub = &qsubJava(\%opt,"BASERECALIBRATION_MASTER");
 
 	open BASERECAL_SH, ">$bashFile" or die "cannot open file $bashFile \n";
 	print BASERECAL_SH "#!/bin/bash\n\n";
