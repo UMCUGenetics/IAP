@@ -41,7 +41,7 @@ sub runVariantCalling {
     
     ### Build Queue command
     my $jobNative = &jobNative(\%opt,"CALLING");
-    my $command = "java -Djava.io.tmpdir=$opt{OUTPUT_DIR}/tmp/ -Xmx".$opt{CALLING_MASTER_MEM}."G -jar $opt{QUEUE_PATH}/Queue.jar ";
+    my $command = "java -Xmx".$opt{CALLING_MASTER_MEM}."G -jar $opt{QUEUE_PATH}/Queue.jar ";
     $command .= "-jobQueue $opt{CALLING_QUEUE} -jobNative \"$jobNative\" -jobRunner GridEngine -jobReport $opt{OUTPUT_DIR}/logs/VariantCaller.jobReport.txt -memLimit $opt{CALLING_MEM} "; #Queue options
 
     ### Add caller and UG specific settings
@@ -101,6 +101,7 @@ sub runVariantCalling {
     }
     print CALLING_SH "]\n";
     print CALLING_SH "then\n";
+    print CALLING_SH "\texport _JAVA_OPTIONS+=\" -Djava.io.tmpdir=$opt{OUTPUT_DIR}/tmp\"\n";
     print CALLING_SH "\t$command\n";
     print CALLING_SH "else\n";
     print CALLING_SH "\techo \"ERROR: One or more input bam files do not exist.\" >&2\n";

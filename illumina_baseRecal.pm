@@ -78,6 +78,7 @@ sub runBaseRecalibration {
 	
 	print BASERECAL_SH "if [ -s $opt{OUTPUT_DIR}/$sample/mapping/$inBam ]\n";
 	print BASERECAL_SH "then\n";
+	print BASERECAL_SH "\texport _JAVA_OPTIONS+=\" -Djava.io.tmpdir=$opt{OUTPUT_DIR}/$sample/tmp\"\n";
 	print BASERECAL_SH "\t$command\n";
 	print BASERECAL_SH "else\n";
 	print BASERECAL_SH "\techo \"ERROR: $opt{OUTPUT_DIR}/$sample/mapping/$inBam does not exist.\" >&2\n";

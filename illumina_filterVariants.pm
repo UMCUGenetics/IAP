@@ -87,6 +87,7 @@ sub runFilterVariants {
     
     print FILTER_SH "if [ -s $opt{OUTPUT_DIR}/$runName\.raw_variants.vcf ]\n";
     print FILTER_SH "then\n";
+    print FILTER_SH "\texport _JAVA_OPTIONS+=\" -Djava.io.tmpdir=$opt{OUTPUT_DIR}/tmp\"\n";
     print FILTER_SH "\t$command\n";
     print FILTER_SH "else\n";
     print FILTER_SH "\techo \"ERROR: $runName\.raw_variants.vcf does not exist.\" >&2\n";
