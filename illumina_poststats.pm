@@ -77,7 +77,7 @@ sub runPostStats {
 	
 	## Setup ExonCallCov
 	if ( $opt{EXONCALLCOV} eq "yes" ){
-	    $command = "python $opt{EXONCALLCOV_PATH} -b $opt{EXONCALLCOV_BED} -n $opt{EXONCALLCOV_ENS} -p $opt{EXONCALLCOV_PREF} -l $opt{EXONCALLCOV_PANEL}";
+	    $command = "python $opt{EXONCALLCOV_PATH} --queue $opt{EXONCALLCOV_QUEUE}} -a $opt{EXONCALLCOV_TIME} -c $opt{EXONCALLCOV_MEM} -b $opt{EXONCALLCOV_BED} -n $opt{EXONCALLCOV_ENS} -p $opt{EXONCALLCOV_PREF} -l $opt{EXONCALLCOV_PANEL}";
 	    print PS_SH "$command\n";
 	}
 	

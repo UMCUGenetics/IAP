@@ -372,6 +372,9 @@ sub checkConfig{
 	if( $opt{POSTSTATS_BAITS} && ! -e $opt{POSTSTATS_BAITS}){ print "ERROR: $opt{POSTSTATS_BAITS} does Not exist\n"; $checkFailed = 1; }
 	if(! $opt{EXONCALLCOV}){ print "ERROR: No EXONCALLCOV option found in config files.\n"; $checkFailed = 1; }
 	if( $opt{EXONCALLCOV} eq "yes"){
+	    if(! $opt{EXONCALLCOV_QUEUE}){ print "ERROR: No EXONCALLCOV_QUEUE option found in config files.\n"; $checkFailed = 1; }
+	    if(! $opt{EXONCALLCOV_TIME}){ print "ERROR: No EXONCALLCOV_TIME option found in config files.\n"; $checkFailed = 1; }
+	    if(! $opt{EXONCALLCOV_MEM}){ print "ERROR: No EXONCALLCOV_MEM option found in config files.\n"; $checkFailed = 1; }
 	    if(! $opt{EXONCALLCOV_PATH}){ print "ERROR: No EXONCALLCOV_PATH option found in config files.\n"; $checkFailed = 1; }
 	    if(! $opt{EXONCALLCOV_BED}){ print "ERROR: No EXONCALLCOV_BED option found in config files.\n"; $checkFailed = 1; }
 	    if(! $opt{EXONCALLCOV_PREF}){ print "ERROR: No EXONCALLCOV_PREF option found in config files.\n"; $checkFailed = 1; }
@@ -544,6 +547,7 @@ sub checkConfig{
 	    if(! $opt{CONTRA_PATH}){ print "ERROR: No CONTRA_PATH option found in config files.\n"; $checkFailed = 1; }
 	    if(! $opt{CONTRA_QUEUE}){ print "ERROR: No CONTRA_QUEUE option found in config files.\n"; $checkFailed = 1; }
 	    if(! $opt{CONTRA_THREADS}){ print "ERROR: No CONTRA_THREADS option found in config files.\n"; $checkFailed = 1; }
+	    if(! $opt{CONTRA_MEM}){ print "ERROR: No CONTRA_MEM option found in config files.\n"; $checkFailed = 1; }
 	    if(! $opt{CNV_TARGETS}){ print "ERROR: No CNV_TARGETS option found in config files.\n"; $checkFailed = 1; }
 	    if(! $opt{CONTRA_FLAGS}){ print "ERROR: No CONTRA_FLAGS option found in config files.\n"; $checkFailed = 1; }
 	    if(! $opt{CONTRA_VISUALIZATION}){ print "ERROR: No CONTRA_VISUALIZATION option found in config files.\n"; $checkFailed = 1; }
@@ -649,10 +653,14 @@ sub checkConfig{
     }
     ## NIPT
     if($opt{NIPT} eq "yes"){
+	if(! $opt{NIPT_MASTER_QUEUE}){ print "ERROR: No NIPT_MASTER_QUEUE found in .ini file\n"; $checkFailed = 1; }
+	if(! $opt{NIPT_MASTER_TIME}){ print "ERROR: No NIPT_MASTER_TIME found in .ini file\n"; $checkFailed = 1; }
+	if(! $opt{NIPT_MASTER_THREADS}){ print "ERROR: No NIPT_MASTER_TRHEADS found in .ini file\n"; $checkFailed = 1; }
+	if(! $opt{NIPT_MASTER_MEM}){ print "ERROR: No NIPT_MASTER_MEM found in .ini file\n"; $checkFailed = 1; }
 	if(! $opt{NIPT_QUEUE}){ print "ERROR: No NIPT_QUEUE found in .ini file\n"; $checkFailed = 1; }
+	if(! $opt{NIPT_TIME}){ print "ERROR: No NIPT_TIME found in .ini file\n"; $checkFailed = 1; }
 	if(! $opt{NIPT_THREADS}){ print "ERROR: No NIPT_THREADS found in .ini file\n"; $checkFailed = 1; }
 	if(! $opt{NIPT_MEM}){ print "ERROR: No NIPT_MEM found in .ini file\n"; $checkFailed = 1; }
-	if(! $opt{NIPT_TIME}){ print "ERROR: No NIPT_TIME found in .ini file\n"; $checkFailed = 1; }
 	if(! $opt{CHROMATE_PATH}){ print "ERROR: No CHROMATE_PATH found in .ini file\n"; $checkFailed = 1; }
 	if(! $opt{NIPT_REFERENCESET}){ print "ERROR: No NIPT_REFERENCESET found in .ini file\n"; $checkFailed = 1; }
     }
