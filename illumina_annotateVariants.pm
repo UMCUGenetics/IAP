@@ -140,7 +140,7 @@ sub runAnnotateVariants {
     }
 
     ### Start main bash script
-    my $qsub = &qsubTemplate(\%opt,"ANNOTATE");
+    my $qsub = &qsubJava(\%opt,"ANNOTATE");
     if (@runningJobs){
 	system "$qsub -o $logDir/VariantAnnotation_$runName.out -e $logDir/VariantAnnotation_$runName.err -N $jobID -hold_jid ".join(",",@runningJobs)." $bashFile";
     } else {
