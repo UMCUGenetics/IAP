@@ -149,7 +149,7 @@ sub runSomaticVariantCallers {
 		# Merge vcfs
 		my $invcf;
 		my $outvcf = "$sample_tumor_out_dir/$sample_tumor_name\_merged_somatics.vcf";
-		print MERGE_SH "java -Xmx6G -jar $opt{GATK_PATH}/GenomeAnalysisTK.jar -T CombineVariants -R $opt{GENOME} -o $outvcf --genotypemergeoption uniquify ";
+		print MERGE_SH "java -Xmx".$opt{SOMVARMERGE_MEM}."G -jar $opt{GATK_PATH}/GenomeAnalysisTK.jar -T CombineVariants -R $opt{GENOME} -o $outvcf --genotypemergeoption uniquify ";
 		if($opt{SOMVAR_STRELKA} eq "yes"){ print MERGE_SH "-V:strelka $sample_tumor_out_dir/strelka/passed.somatic.merged.vcf "; }
 		if($opt{SOMVAR_VARSCAN} eq "yes"){ print MERGE_SH "-V:varscan $sample_tumor_out_dir/varscan/$sample_tumor_name.merged.Somatic.hc.vcf "; }
 		if($opt{SOMVAR_FREEBAYES} eq "yes"){ print MERGE_SH "-V:freebayes $sample_tumor_out_dir/freebayes/$sample_tumor_name\_somatic_filtered.vcf "; }
@@ -159,7 +159,7 @@ sub runSomaticVariantCallers {
 		if($opt{SOMVAR_TARGETS}){
 		    $invcf = $outvcf;
 		    $outvcf = "$sample_tumor_out_dir/$sample_tumor_name\_filtered_merged_somatics.vcf";
-		    print MERGE_SH "\n\njava -Xmx6G -jar $opt{GATK_PATH}/GenomeAnalysisTK.jar -T SelectVariants -R $opt{GENOME} -L $opt{SOMVAR_TARGETS} -V $invcf -o $outvcf\n";
+		    print MERGE_SH "\n\njava -Xmx".$opt{SOMVARMERGE_MEM}."G -jar $opt{GATK_PATH}/GenomeAnalysisTK.jar -T SelectVariants -R $opt{GENOME} -L $opt{SOMVAR_TARGETS} -V $invcf -o $outvcf\n";
 		    print MERGE_SH "rm $invcf*";
 		}
 
@@ -168,20 +168,20 @@ sub runSomaticVariantCallers {
 		    $invcf = $outvcf;
 		    my $preAnnotateVCF = $invcf;
 		    $outvcf =~ s/.vcf/_snpEff.vcf/;
-		    print MERGE_SH "\n\njava -Xmx6G -jar $opt{SNPEFF_PATH}/snpEff.jar -c $opt{SNPEFF_PATH}/snpEff.config $opt{ANNOTATE_DB} -v $invcf $opt{ANNOTATE_FLAGS} > $outvcf\n";
+		    print MERGE_SH "\n\njava -Xmx".$opt{SOMVARMERGE_MEM}."G -jar $opt{SNPEFF_PATH}/snpEff.jar -c $opt{SNPEFF_PATH}/snpEff.config $opt{ANNOTATE_DB} -v $invcf $opt{ANNOTATE_FLAGS} > $outvcf\n";
 		
 		    ## dbsnp
 		    $invcf = $outvcf;
 		    my $suffix = "_dbSNP.vcf";
 		    $outvcf =~ s/.vcf/$suffix/;
-		    print MERGE_SH "java -Xmx6G -jar $opt{GATK_PATH}/GenomeAnalysisTK.jar -T VariantAnnotator -nt $opt{SOMVARMERGE_THREADS} -R $opt{GENOME} -o $outvcf --variant $invcf --dbsnp $opt{CALLING_DBSNP} --alwaysAppendDbsnpId\n";
+		    print MERGE_SH "java -Xmx".$opt{SOMVARMERGE_MEM}."G -jar $opt{GATK_PATH}/GenomeAnalysisTK.jar -T VariantAnnotator -nt $opt{SOMVARMERGE_THREADS} -R $opt{GENOME} -o $outvcf --variant $invcf --dbsnp $opt{CALLING_DBSNP} --alwaysAppendDbsnpId\n";
 		    print MERGE_SH "if [ -s $outvcf ]\nthen\n\trm $invcf $invcf.idx \nfi\n";
 		
 		    ## cosmic
 		    $invcf = $outvcf;
 		    $suffix = "_$opt{ANNOTATE_IDNAME}.vcf";
 		    $outvcf =~ s/.vcf/$suffix/;
-		    print MERGE_SH "java -Xmx6G -jar $opt{GATK_PATH}/GenomeAnalysisTK.jar -T VariantAnnotator -nt $opt{SOMVARMERGE_THREADS} -R $opt{GENOME} -o $outvcf --variant $invcf --dbsnp $opt{ANNOTATE_IDDB} --alwaysAppendDbsnpId\n";
+		    print MERGE_SH "java -Xmx".$opt{SOMVARMERGE_MEM}."G -jar $opt{GATK_PATH}/GenomeAnalysisTK.jar -T VariantAnnotator -nt $opt{SOMVARMERGE_THREADS} -R $opt{GENOME} -o $outvcf --variant $invcf --dbsnp $opt{ANNOTATE_IDDB} --alwaysAppendDbsnpId\n";
 		    print MERGE_SH "if [ -s $outvcf ]\nthen\n\trm $invcf $invcf.idx \nfi\n";
 		
 		    ## Check annotated vcf using the last position
@@ -246,7 +246,7 @@ sub runStrelka {
     # Check strelka completed
     print STRELKA_SH "\tif [ -f $strelka_out_dir/task.complete ]\n";
     print STRELKA_SH "\tthen\n";
-    print STRELKA_SH "\t\tjava -Xmx6G -jar $opt{GATK_PATH}/GenomeAnalysisTK.jar -T CombineVariants -R $opt{GENOME} --genotypemergeoption unsorted -o passed.somatic.merged.vcf -V results/passed.somatic.snvs.vcf -V results/passed.somatic.indels.vcf \n";
+    print STRELKA_SH "\t\tjava -Xmx".$opt{STRELKA_MEM}."G -jar $opt{GATK_PATH}/GenomeAnalysisTK.jar -T CombineVariants -R $opt{GENOME} --genotypemergeoption unsorted -o passed.somatic.merged.vcf -V results/passed.somatic.snvs.vcf -V results/passed.somatic.indels.vcf \n";
     print STRELKA_SH "\t\tperl -p -e 's/\\t([A-Z][A-Z]:)/\\tGT:\$1/g' passed.somatic.merged.vcf | perl -p -e 's/(:T[UO]R?)\\t/\$1\\t0\\/0:/g' | perl -p -e 's/(:\\d+,\\d+)\\t/\$1\\t0\\/1:/g' | perl -p -e 's/(#CHROM.*)/##StrelkaGATKCompatibility=Added GT fields to strelka calls for gatk compatibility.\\n\$1/g' > temp.vcf\n";
     print STRELKA_SH "\t\tmv temp.vcf passed.somatic.merged.vcf\n";
     print STRELKA_SH "\t\trm -r chromosomes/ \n";
@@ -261,7 +261,7 @@ sub runStrelka {
     close STRELKA_SH;
 
     ## Run job
-    my $qsub = &qsubTemplate(\%opt,"STRELKA");
+    my $qsub = &qsubJava(\%opt,"STRELKA");
     if ( @running_jobs ){
 	system "$qsub -o $log_dir -e $log_dir -N $job_id -hold_jid ".join(",",@running_jobs)." $bash_file";
     } else {
@@ -378,7 +378,7 @@ sub runVarscan {
 	print VARSCAN_SH "then\n";
 
 	print VARSCAN_SH "\techo \"Start Varscan\t\" `date` \"\t $chr \t $sample_ref_pileup \t $sample_tumor_pileup\t\" `uname -n` >> $log_dir/varscan.log\n";
-	print VARSCAN_SH "\tjava -Xmx12g -jar $opt{VARSCAN_PATH} somatic <($opt{TABIX_PATH}/tabix $sample_ref_pileup $chr) <($opt{TABIX_PATH}/tabix $sample_tumor_pileup $chr) $output_name $opt{VARSCAN_SETTINGS} --output-vcf 1\n\n";
+	print VARSCAN_SH "\tjava -Xmx".$opt{VARSCAN_MEM}."G -jar $opt{VARSCAN_PATH} somatic <($opt{TABIX_PATH}/tabix $sample_ref_pileup $chr) <($opt{TABIX_PATH}/tabix $sample_tumor_pileup $chr) $output_name $opt{VARSCAN_SETTINGS} --output-vcf 1\n\n";
 	print VARSCAN_SH "\techo \"End Varscan\t\" `date` \"\t $chr $sample_ref_pileup \t $sample_tumor_pileup\t\" `uname -n` >> $log_dir/varscan.log\n";
 	print VARSCAN_SH "else\n";
 	print VARSCAN_SH "\techo \"ERROR: $sample_tumor_pileup or $sample_ref_pileup does not exist.\" >&2\n";
@@ -498,7 +498,7 @@ sub runFreeBayes {
 	my $mv_command;
 	# Filter vcf on target
 	if($opt{SOMVAR_TARGETS}){
-	    $sort_uniq_filter_command .= "\n\tjava -Xmx6G -jar $opt{GATK_PATH}/GenomeAnalysisTK.jar -T SelectVariants -R $opt{GENOME} -L $opt{SOMVAR_TARGETS} -V $freebayes_out_dir/$output_name.sorted_uniq.vcf -o $freebayes_out_dir/$output_name.sorted_uniq_targetfilter.vcf\n";
+	    $sort_uniq_filter_command .= "\n\tjava -Xmx".$opt{FREEBAYES_MEM}."G -jar $opt{GATK_PATH}/GenomeAnalysisTK.jar -T SelectVariants -R $opt{GENOME} -L $opt{SOMVAR_TARGETS} -V $freebayes_out_dir/$output_name.sorted_uniq.vcf -o $freebayes_out_dir/$output_name.sorted_uniq_targetfilter.vcf\n";
 	    $mv_command = "mv $freebayes_out_dir/$output_name.sorted_uniq_targetfilter.vcf $freebayes_out_dir/$output_name.vcf";
 	} else {
 	    $mv_command = "mv $freebayes_out_dir/$output_name.sorted_uniq.vcf $freebayes_out_dir/$output_name.vcf";
@@ -520,7 +520,7 @@ sub runFreeBayes {
 	close FREEBAYES_SH;
 
 	## Run job
-	my $qsub = &qsubTemplate(\%opt,"FREEBAYES");
+	my $qsub = &qsubJava(\%opt,"FREEBAYES");
 	if ( @running_jobs ){
 	    system "$qsub -o $log_dir -e $log_dir -N $job_id -hold_jid ".join(",",@running_jobs)." $bash_file";
 	} else {
