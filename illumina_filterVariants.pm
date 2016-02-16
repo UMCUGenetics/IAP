@@ -33,7 +33,7 @@ sub runFilterVariants {
     }
 
     ### Build Queue command
-    my $command = "java -Xmx".$opt{FILTER_MASTER_MEM}."G -jar $opt{QUEUE_PATH}/Queue.jar ";
+    my $command = "java -Xmx".$opt{FILTER_MASTER_MEM}."G -Djava.io.tmpdir=$opt{OUTPUT_DIR}/tmp -jar $opt{QUEUE_PATH}/Queue.jar ";
     my $jobNative = &jobNative(\%opt,"FILTER");
     $command .= "-jobQueue $opt{FILTER_QUEUE} -jobNative \"$jobNative\" -jobRunner GridEngine -jobReport $opt{OUTPUT_DIR}/logs/VariantFilter.jobReport.txt ";
 
@@ -87,7 +87,6 @@ sub runFilterVariants {
     
     print FILTER_SH "if [ -s $opt{OUTPUT_DIR}/$runName\.raw_variants.vcf ]\n";
     print FILTER_SH "then\n";
-    print FILTER_SH "\texport _JAVA_OPTIONS+=\" -Djava.io.tmpdir=$opt{OUTPUT_DIR}/tmp\"\n";
     print FILTER_SH "\t$command\n";
     print FILTER_SH "else\n";
     print FILTER_SH "\techo \"ERROR: $runName\.raw_variants.vcf does not exist.\" >&2\n";
