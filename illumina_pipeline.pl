@@ -387,7 +387,7 @@ sub checkConfig{
 	if(! $opt{REALIGNMENT_MASTER_QUEUE}){ print "ERROR: No REALIGNMENT_MASTER_QUEUE option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{REALIGNMENT_MASTER_THREADS}){ print "ERROR: No REALIGNMENT_MASTER_THREADS option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{REALIGNMENT_MASTER_TIME}){ print "ERROR: No REALIGNMENT_MASTER_TIME option found in config files.\n"; $checkFailed = 1; }
-	if(! $opt{REALIGNMENT_MASTER_MEM}){ print "ERROR: No REALIGNMENT_MEM option found in config files.\n"; $checkFailed = 1; }
+	if(! $opt{REALIGNMENT_MASTER_MEM}){ print "ERROR: No REALIGNMENT_MASTER_MEM option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{REALIGNMENT_QUEUE}){ print "ERROR: No REALIGNMENT_QUEUE option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{REALIGNMENT_THREADS}){ print "ERROR: No REALIGNMENT_THREADS option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{REALIGNMENT_MEM}){ print "ERROR: No REALIGNMENT_MEM option found in config files.\n"; $checkFailed = 1; }
@@ -574,10 +574,13 @@ sub checkConfig{
     if($opt{SV_CALLING} eq "yes"){
 	if(! $opt{DELLY_PATH}){ print "ERROR: No DELLY_PATH option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{DELLY_QUEUE}){ print "ERROR: No DELLY_QUEUE option found in config files.\n"; $checkFailed = 1; }
-	if(! $opt{DELLY_MERGE_QUEUE}){ print "ERROR: No DELLY_MERGE_QUEUE option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{DELLY_THREADS}){ print "ERROR: No DELLY_THREADS option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{DELLY_MEM}){ print "ERROR: No DELLY_MEM option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{DELLY_TIME}){ print "ERROR: No DELLY_TIME option found in config files.\n"; $checkFailed = 1; }
+	if(! $opt{DELLY_MERGE_QUEUE}){ print "ERROR: No DELLY_MERGE_QUEUE option found in config files.\n"; $checkFailed = 1; }
+	if(! $opt{DELLY_MERGE_TIME}){ print "ERROR: No DELLY_MERGE_TIME option found in config files.\n"; $checkFailed = 1; }
+	if(! $opt{DELLY_MERGE_THREADS}){ print "ERROR: No DELLY_MERGE_THREADS option found in config files.\n"; $checkFailed = 1; }
+	if(! $opt{DELLY_MERGE_MEM}){ print "ERROR: No DELLY_MERGE_MEM option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{DELLY_SVTYPE}){ print "ERROR: No DELLY_SVTYPE option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{DELLY_SPLIT}){ print "ERROR: No DELLY_SPLIT option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{DELLY_MAPQUAL}){ print "ERROR: No DELLY_MAPQUAL option found in config files.\n"; $checkFailed = 1; }
