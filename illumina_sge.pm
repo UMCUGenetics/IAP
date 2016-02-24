@@ -16,9 +16,7 @@ BEGIN {
 
     our @EXPORT = qw (
         &qsubTemplate
-        &qsubMemThreads
         &qsubJava
-        &qsubJavaMaster
         &jobNative
    );
 }
@@ -41,19 +39,6 @@ sub qsubTemplate(@){
     my $qsub = &generic($opt,$function)." -m a -M ".$$opt{MAIL}." -R ".$$opt{CLUSTER_RESERVATION}." -l h_vmem=".$$opt{$function."_MEM"}."G";
     return ($qsub)
 }
-sub qsubMemThreads(@){
-    my ($opt,$function)=@_;
-    my $h_vmem= ($$opt{$function."_MEM"} * $$opt{$function."_THREADS"})."G";
-    my $qsub = &generic($opt,$function)." -m a -M ".$$opt{MAIL}." -R ".$$opt{CLUSTER_RESERVATION}." -l h_vmem=".$h_vmem;
-    return ($qsub)
-}
-
-sub qsubJavaMaster(@){
-    my ($opt,$function)=@_;
-    my $h_vmem = (4 + $$opt{$function."_MASTERTHREADS"} * $$opt{$function."_MEM"})."G";
-    my $qsub = &generic($opt,$function)." -m a -M ".$$opt{MAIL}." -R ".$$opt{CLUSTER_RESERVATION}." -l h_vmem=".$h_vmem;
-    return ($qsub)
-}
 
 sub qsubJava(@){
     my ($opt,$function)=@_;
@@ -62,10 +47,9 @@ sub qsubJava(@){
     return ($qsub)
 }
 
-
 sub jobNative(@){
     my ($opt,$function)=@_;
-    my $h_vmem = (4 + $$opt{$function."_MASTERTHREADS"} * $$opt{$function."_MEM"})."G";
+    my $h_vmem = (4 + $$opt{$function."_MEM"})."G";
     my $qsub = &generic($opt,$function).",h_vmem=".$h_vmem;
     $qsub=~s/^qsub//;
     return ($qsub)

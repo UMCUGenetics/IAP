@@ -76,6 +76,7 @@ class HardFilter extends QScript {
 	val selectINDEL = new SelectVariants with HF_Arguments
 	selectINDEL.V = rawVCF
 	selectINDEL.selectType :+= Type.INDEL
+	selectINDEL.selectType :+= Type.MIXED
 	selectINDEL.out = qscript.out + ".raw_indels.vcf"
 
 	val INDELfilter = new VariantFiltration with HF_Arguments

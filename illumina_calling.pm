@@ -40,11 +40,9 @@ sub runVariantCalling {
     }
     
     ### Build Queue command
-    my $javaMem = $opt{CALLING_MASTERTHREADS} * $opt{CALLING_MEM};
-    my $javaJobMem = $opt{CALLING_THREADS} * $opt{CALLING_MEM};
     my $jobNative = &jobNative(\%opt,"CALLING");
-    my $command = "java -Djava.io.tmpdir=$opt{OUTPUT_DIR}/tmp/ -Xmx".$javaMem."G -Xms".$opt{CALLING_MEM}."G -jar $opt{QUEUE_PATH}/Queue.jar ";
-    $command .= "-jobQueue $opt{CALLING_QUEUE} -jobNative \"$jobNative\" -jobRunner GridEngine -jobReport $opt{OUTPUT_DIR}/logs/VariantCaller.jobReport.txt -memLimit $javaJobMem "; #Queue options
+    my $command = "java -Xmx".$opt{CALLING_MASTER_MEM}."G -Djava.io.tmpdir=$opt{OUTPUT_DIR}/tmp -jar $opt{QUEUE_PATH}/Queue.jar ";
+    $command .= "-jobQueue $opt{CALLING_QUEUE} -jobNative \"$jobNative\" -jobRunner GridEngine -jobReport $opt{OUTPUT_DIR}/logs/VariantCaller.jobReport.txt -memLimit $opt{CALLING_MEM} "; #Queue options
 
     ### Add caller and UG specific settings
     $command .= "-S $opt{CALLING_SCALA} ";
@@ -122,7 +120,7 @@ sub runVariantCalling {
     print CALLING_SH "echo \"Finished variant caller\t\" `date` \"\t\" `uname -n` >> $opt{OUTPUT_DIR}/logs/$runName.log\n";
     
     #Start main bash script
-    my $qsub = &qsubJavaMaster(\%opt,"CALLING");
+    my $qsub = &qsubJava(\%opt,"CALLING_MASTER");
     if (@runningJobs){
 	system "$qsub -o $logDir/VariantCaller_$runName.out -e $logDir/VariantCaller_$runName.err -N $jobID -hold_jid ".join(",",@runningJobs)." $bashFile";
     } else {

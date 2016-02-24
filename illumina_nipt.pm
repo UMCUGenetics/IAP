@@ -41,6 +41,9 @@ sub runNipt {
 	$command .= "-d $opt{NIPT_REFERENCESET} ";
 	$command .= "-x $opt{OUTPUT_DIR}/ ";
 	
+	# qsub options
+	$command .= "-q $opt{NIPT_QUEUE} -c $opt{NIPT_TIME} -t $opt{NIPT_THREADS} -m $opt{NIPT_MEM} ";
+	
 	my $bashFile = $opt{OUTPUT_DIR}."/jobs/".$jobID.".sh";
 	my $logDir = $opt{OUTPUT_DIR}."/logs";
         
@@ -51,7 +54,7 @@ sub runNipt {
 	print NIPT_SH "$command\n";
 	close NIPT_SH;
 	
-	my $qsub = &qsubTemplate(\%opt,"NIPT");
+	my $qsub = &qsubTemplate(\%opt,"NIPT_MASTER");
 	if (@runningJobs){
 	    system "$qsub -o $logDir/NIPT_$runName.out -e $logDir/NIPT_$runName.err -N $jobID -hold_jid ".join(",",@runningJobs)." $bashFile";
 	} else {

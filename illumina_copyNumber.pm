@@ -399,7 +399,7 @@ sub runContraVisualization {
     close CONTRAVIS_SH;
 
     ## Run job
-    my $qsub = &qsubTemplate(\%opt,"CONTRAVIS");
+    my $qsub = &qsubTemplate(\%opt,"CONTRA");
     if ( $contra_job ){
 	system "$qsub -o $log_dir -e $log_dir -N $job_id -hold_jid $contra_job $bash_file";
     } else {
