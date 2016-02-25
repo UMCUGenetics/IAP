@@ -113,6 +113,7 @@ VARIANT_CALLING	yes/no
 SOMATIC_VARIANTS	yes/no
 SV_CALLING	yes/no
 COPY_NUMBER	yes/no
+BAF	yes/no
 FILTER_VARIANTS	yes/no
 ANNOTATE_VARIANTS	yes/no
 VCF_UTILS	yes/no
@@ -342,6 +343,15 @@ FREEC_PLOIDY	2 | Ploidy (number of chromosomes) per sample.
 FREEC_WINDOW	1000 | explicit window size (higher priority than coefficientOfVariation )
 FREEC_TELOCENTROMERIC	50000 | length of pre-telomeric and pre-centromeric regions: Control-FREEC will not output small CNAs and LOH found within these regions (they are likely to be false because of mappability/genome assembly issues)
 50000 for human/mouse genomes.
+
+### B ALLELE FREQUENCY CLUSTER CONFIGURATION####
+BAF_QUEUE	queue_name
+BAF_TIME	estimated runtime
+BAF_THREADS	number_of_threads
+BAF_MEM	maximum_memory
+BIOVCF_PATH	/path/to/biovcf/bin
+BAF_SNPS	/path/to/CytoScanHD/CytoScanHD_hg19_SNPs_sorted.bed
+BAF_PLOTSCRIPT	/path/to/IAP/scripts/makeBAFplot.R
 
 ####VARIANT ANNOTATION CONFIGURATION####
 ANNOTATE_QUEUE	queue_name
