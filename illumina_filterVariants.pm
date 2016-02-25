@@ -44,7 +44,14 @@ sub runFilterVariants {
     if ($opt{FILTER_MODE} eq "SNP" || $opt{FILTER_MODE} eq "BOTH") {
 	my @SNPFilterNames = split("\t",$opt{FILTER_SNPNAME});
 	my @SNPFilterExprs = split("\t",$opt{FILTER_SNPEXPR});
-
+	my @snpTypes = split(",",$opt{FILTER_SNPTYPES});
+	
+	## Add SNP Types
+	foreach my $snpType (@snpTypes){
+	    $command.= "-snpType $snpType ";
+	}
+	
+	## SNP Filter Settings
 	if (scalar(@SNPFilterNames) ne scalar(@SNPFilterExprs)) {
 	    die "FILTER_SNPNAME and FILTER_SNPEXPR do not have the same length.";
 	}
@@ -59,7 +66,13 @@ sub runFilterVariants {
     if ($opt{FILTER_MODE} eq "INDEL" || $opt{FILTER_MODE} eq "BOTH") {
 	my @INDELFilterNames = split("\t",$opt{FILTER_INDELNAME});
 	my @INDELFilterExprs = split("\t",$opt{FILTER_INDELEXPR});
-
+	my @indelTypes = split(",",$opt{FILTER_INDELTYPES});
+	
+	## Add SNP Types
+	foreach my $indelType (@indelTypes){
+	    $command.= "-indelType $indelType ";
+	}
+	
 	if (scalar(@INDELFilterNames) ne scalar(@INDELFilterExprs)) {
 	    die "FILTER_INDELNAME and FILTER_INDELEXPR do not have the same length.";
 	}

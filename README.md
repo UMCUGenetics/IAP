@@ -224,6 +224,8 @@ FILTER_MEM	maximum_memory
 FILTER_SCATTER	10
 FILTER_SCALA	QScripts/HardFilter.scala
 FILTER_MODE	BOTH/SNP/INDEL | Filter all variants, only snps or only indels.
+FILTER_SNPTYPES	SNP/NO_VARIATION/MNP
+FILTER_INDELTYPES	INDEL/MIXED
 FILTER_SNPNAME	LowQualityDepth	MappingQuality	StrandBias	HaplotypeScoreHigh	MQRankSumLow	ReadPosRankSumLow | SNP filter names
 FILTER_SNPEXPR	QD < 2.0	MQ < 40.0	FS > 60.0	HaplotypeScore > 13.0	MQRankSum < -12.5	ReadPosRankSum < -8.0 | SNP filters
 FILTER_INDELNAME	LowQualityDepth	StrandBias	ReadPosRankSumLow | Indel filter names
