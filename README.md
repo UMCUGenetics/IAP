@@ -260,7 +260,6 @@ VARSCAN_POSTSETTINGS	-max-normal-freq 0.02 --p-value 0.05 | Varscan post setting
 ## Freebayes
 SOMVAR_FREEBAYES	yes/no
 FREEBAYES_PATH	/path/to/freebayes/bin
-VCFSAMPLEDIFF_PATH	/path/to/vcflib/bin
 BIOVCF_PATH	/path/to/biovcf/
 VCFLIB_PATH /path/to/vcflib/
 FREEBAYES_QUEUE	queue_name
