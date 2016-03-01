@@ -12,6 +12,8 @@ package illumina_check;
 use strict;
 use POSIX qw(tmpnam);
 use FindBin;
+use lib "$FindBin::Bin"; #locates pipeline directory
+use illumina_sge;
 
 sub runCheck {
     ### 
@@ -24,8 +26,8 @@ sub runCheck {
     my @runningJobs;
 
     ### Create bash file
-    my $jobID = get_job_id();
-    my $bashFile = "$opt{OUTPUT_DIR}/jobs/check_".get_job_id().".sh";
+    my $jobID = $runName."_".get_job_id();
+    my $bashFile = "$opt{OUTPUT_DIR}/jobs/check_".$jobID.".sh";
     open (BASH,">$bashFile") or die "ERROR: Couldn't create $bashFile\n";
     print BASH "\#!/bin/sh\n . $opt{CLUSTER_PATH}/settings.sh\n\n";
 
@@ -234,8 +236,7 @@ sub runCheck {
     ### Pipeline done
     print BASH "else\n";
     print BASH "\techo \"The pipeline completed successfully. The md5sum file will be created.\">>$logFile\n";
-    print BASH "\tmail -s \"IAP DONE $runName\" \"$opt{MAIL}\" < $logFile\n";
-    
+
     # Remove all tmp folders and empty logs except .done files if pipeline completed successfully
     print BASH "\trm -r $opt{OUTPUT_DIR}/tmp\n";
     print BASH "\trm -r $opt{OUTPUT_DIR}/*/tmp\n";
@@ -244,13 +245,16 @@ sub runCheck {
     print BASH "\tfind $opt{OUTPUT_DIR}/somaticVariants/*/logs -size 0 -not -name \"*.done\" -delete\n";
     if($opt{INDELREALIGNMENT} eq "yes"){
 	foreach my $sample (@{$opt{SAMPLES}}){
-	    if($opt{MAPPING_MARKDUP} eq "sample" || $opt{MAPPING_MARKDUP} eq "lane"){
+	    if($opt{MARKDUP_LEVEL} eq "sample" || $opt{MARKDUP_LEVEL} eq "lane"){
 		print BASH "\trm $opt{OUTPUT_DIR}/$sample/mapping/$sample\_dedup.ba*\n";
 	    } else {
 		print BASH "\trm $opt{OUTPUT_DIR}/$sample/mapping/$sample.ba*\n";
 	    }
 	}
     }
+    # Send email.
+    print BASH "\tmail -s \"IAP DONE $runName\" \"$opt{MAIL}\" < $logFile\n";
+    
     # Create md5sum.txt
     print BASH "\n\tcd $opt{OUTPUT_DIR}\n";
     print BASH "\tfind . -type f \\( ! -iname \"md5sum.txt\" \\) -exec md5sum \"{}\" \\; > md5sum.txt\n";
@@ -261,10 +265,11 @@ sub runCheck {
     print BASH "sleep 5s \n";
 
     #Start main bash script
+    my $qsub = &qsubTemplate(\%opt,"CHECKING");
     if (@runningJobs){
-	system "qsub -q $opt{CHECKING_QUEUE} -m as -M $opt{MAIL} -pe threaded $opt{CHECKING_THREADS} -P $opt{CLUSTER_PROJECT} -o /dev/null -e /dev/null -N check_$jobID -hold_jid ".join(",",@runningJobs)." $bashFile";
+	system "$qsub -o /dev/null -e /dev/null -N check_$jobID -hold_jid ".join(",",@runningJobs)." $bashFile";
     } else {
-	system "qsub -q $opt{CHECKING_QUEUE} -m as -M $opt{MAIL} -pe threaded $opt{CHECKING_THREADS} -P $opt{CLUSTER_PROJECT} -o /dev/null -e /dev/null -N check_$jobID $bashFile";
+	system "$qsub -o /dev/null -e /dev/null -N check_$jobID $bashFile";
     }
 }
 

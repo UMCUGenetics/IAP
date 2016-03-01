@@ -1,5 +1,5 @@
 ## IAP
-Illumina variant calling pipeline. 
+Illumina analysis pipeline.
 
 ## Download
 Seperate releases can be downloaded here: https://github.com/CuppenResearch/IAP/releases or use git clone:
@@ -17,6 +17,9 @@ perl illumina_createConfig.pl
 ```bash
 perl illumina_createConfig.pl -i <filename.ini> -o </path/to/output_dir> (-f /path/to/fastq_dir OR -b /path/to/bam_dir OR -v /path/to/vcfFile.vcf) -m your@mail.com
 ```
+in which fastq files in /path/to/fastq_dir have extension R[12]_fastq.gz and bamfiles in /path/to/bam_dir have extension .bam
+naming convention: sampleName_flowcellID_index_lane_tag_R[12].fastq.gz
+
 #### Run pipeline
 ```bash
 perl illumina_pipeline.pl /path/to/output_dir/settings.config>
@@ -121,34 +124,58 @@ GENOME	/path/to/genome.fasta
 
 #### PRESTATS CLUSTER CONFIGURATION ####
 PRESTATS_QUEUE	queue_name 
+PRESTATS_TIME	estimated runtime
 PRESTATS_THREADS	number_of_threads
 PRESTATS_MEM	maximum_memory 
 
 #### MAPPING CLUSTER CONFIGURATION ####
 MAPPING_QUEUE	queue_name
+MAPPING_TIME	estimated runtime
 MAPPING_THREADS	number_of_threads
 MAPPING_MEM	maximum_memory
-MAPPING_MODE	single/batch | submit mapping jobs as one job (batch) or as separate jobs (single)
-MAPPING_MARKDUP	lane/sample/no | Mark duplicates per lane, per sample (merged lanes) or not at all. 
+MAPPING_SETTINGS	-c 100 -M
+
+MARKDUP_LEVEL	lane/sample/no | Mark duplicates per lane, per sample (merged lanes) or not at all.
+MARKDUP_QUEUE	queue_name
+MARKDUP_TIME	estimated runtime
+MARKDUP_THREADS	number_of_threads
+MARKDUP_MEM	maximum_memory
+MARKDUP_OVERFLOW_LIST_SIZE	Size of the overflow list, for more information see sambamba docs.
 
 #### FLAGSTAT CONFIGURATION ####
 # Used for mapping, realignment and recalibration.
 FLAGSTAT_QUEUE	queue_name
 FLAGSTAT_THREADS	number_of_threads
+FLAGSTAT_TIME		estimated runtime
+FLAGSTAT_MEM		maximum_memory
 
 #### POSTSTATS CLUSTER CONFIGURATION ####
 POSTSTATS_QUEUE	queue_name
+POSTSTATS_TIME	estimated runtime
 POSTSTATS_THREADS	number_of_threads
 POSTSTATS_MEM	maximum_memory
 POSTSTATS_COVERAGECAP	250 | Coverage cap only used when no target file is supplied (wgs)
 POSTSTATS_TARGETS	/path/to/targets.bed | Targets bed file must be compatible with picard
 POSTSTATS_BAITS	/path/to/baits.bed | Baits bed file must be compatible with picard
 
+EXONCALLCOV	yes/no
+EXONCALLCOV_QUEUE	queue_name
+EXONCALLCOV_TIME	estimated runtime
+EXONCALLCOV_MEM	off or maximum_memory
+EXONCALLCOV_PATH	/path/to/exoncov.py
+EXONCALLCOV_BED	/path/to/bed
+EXONCALLCOV_PREF	/path/to/Preferred_transcript_list.txt
+EXONCALLCOV_PANEL	path/to/gpanels.txt
+EXONCALLCOV_ENS	/path/to/NM_ENSEMBL_HGNC.txt
+
 #### REALIGNMENT CLUSTER CONFIGURATION ####
-REALIGNMENT_MASTERQUEUE	queue_name
-REALIGNMENT_MASTERTHREADS	number_of_threads
+REALIGNMENT_MASTER_QUEUE	queue_name
+REALIGNMENT_MASTER_TIME	estimated runtime
+REALIGNMENT_MASTER_THREADS	number_of_threads
+REALIGNMENT_MASTER_MEM	maximum_memory
 REALIGNMENT_QUEUE	queue_name
 REALIGNMENT_THREADS	number_of_threads
+REALIGNMENT_TIME	estimated runtime
 REALIGNMENT_MERGETHREADS	number_of_threads
 REALIGNMENT_MEM	maximum_memory
 REALIGNMENT_SCALA	QScripts/IndelRealigner.scala
@@ -157,9 +184,12 @@ REALIGNMENT_MODE	single/multi | multi or single sample realignment mode
 REALIGNMENT_KNOWN	GATK_bundle/1000G_phase1.indels.b37.vcf	GATK_bundle/Mills_and_1000G_gold_standard.indels.b37.vcf | common indel files supplied by gatk
 
 ####RECALIBRATION CLUSTER CONFIGURATION####
-BASERECALIBRATION_MASTERQUEUE	queue_name
-BASERECALIBRATION_MASTERTHREADS	number_of_threads
+BASERECALIBRATION_MASTER_QUEUE	queue_name
+BASERECALIBRATION_MASTER_TIME	estimated runtime
+BASERECALIBRATION_MASTER_THREADS	number_of_threads
+BASERECALIBRATION_MASTER_MEM	maximum_memory
 BASERECALIBRATION_QUEUE	queue_name
+BASERECALIBRATION_TIME	estimated runtime
 BASERECALIBRATION_THREADS	number_of_threads
 BASERECALIBRATION_MEM	maximum_memory
 BASERECALIBRATION_SCALA	QScripts/BaseRecalibrator.scala
@@ -170,6 +200,7 @@ BASERECALIBRATION_KNOWN	GATK_bundle/1000G_phase1.indels.b37.vcf	GATK_bundle/dbsn
 CALLING_MASTERQUEUE	queue_name
 CALLING_MASTERTHREADS	number_of_threads
 CALLING_QUEUE	queue_name
+CALLING_TIME	estimated runtime
 CALLING_THREADS	number_of_threads
 CALLING_MEM	maximum_memory
 CALLING_SCATTER	number_of_scatters
@@ -187,11 +218,14 @@ CALLING_UGMODE	BOTH | Optional, only used when calling with unified genotyper.
 FILTER_MASTERQUEUE	queue_name
 FILTER_MASTERTHREADS	number_of_threads
 FILTER_QUEUE	queue_name
+FILTER_TIME	estimated runtime
 FILTER_THREADS	number_of_threads
 FILTER_MEM	maximum_memory
 FILTER_SCATTER	10
 FILTER_SCALA	QScripts/HardFilter.scala
 FILTER_MODE	BOTH/SNP/INDEL | Filter all variants, only snps or only indels.
+FILTER_SNPTYPES	SNP/NO_VARIATION/MNP
+FILTER_INDELTYPES	INDEL/MIXED
 FILTER_SNPNAME	LowQualityDepth	MappingQuality	StrandBias	HaplotypeScoreHigh	MQRankSumLow	ReadPosRankSumLow | SNP filter names
 FILTER_SNPEXPR	QD < 2.0	MQ < 40.0	FS > 60.0	HaplotypeScore > 13.0	MQRankSum < -12.5	ReadPosRankSum < -8.0 | SNP filters
 FILTER_INDELNAME	LowQualityDepth	StrandBias	ReadPosRankSumLow | Indel filter names
@@ -208,25 +242,30 @@ SOMVAR_STRELKA	yes/no
 STRELKA_PATH	/path/to/strelka
 STRELKA_INI	/path/to/strelka/strelka_config_bwa_exome.ini
 STRELKA_QUEUE	queue_name
+STRELKA_TIME	estimated runtime
 STRELKA_THREADS	number_of_threads
+STRELKA_MEM	maximum_memory
 
 ## Varscan
 SOMVAR_VARSCAN	yes/no
 VARSCAN_PATH	/path/to/varscan.jar
 TABIX_PATH /path/to/tabix/
 VARSCAN_QUEUE	queue_name
+VARSCAN_TIME	estimated runtime
 VARSCAN_THREADS	number_of_threads
+VARSCAN_MEM	maximum_memory
 VARSCAN_SETTINGS	--min-coverage 20 --min-var-freq 0.1 --tumor-purity 0.8 | Varscan settings
 VARSCAN_POSTSETTINGS	-max-normal-freq 0.02 --p-value 0.05 | Varscan post settings
 
 ## Freebayes
 SOMVAR_FREEBAYES	yes/no
 FREEBAYES_PATH	/path/to/freebayes/bin
-VCFSAMPLEDIFF_PATH	/path/to/vcflib/bin
 BIOVCF_PATH	/path/to/biovcf/
 VCFLIB_PATH /path/to/vcflib/
 FREEBAYES_QUEUE	queue_name
+FREEBAYES_TIME	estimated runtime
 FREEBAYES_THREADS	number_of_threads
+FREEBAYES_MEM	maximum_memory
 FREEBAYES_SETTINGS	-C 3 --pooled-discrete --genotype-qualities --min-coverage 5 --no-mnps --no-complex | Freebayes settings
 FREEBAYES_SOMATICFILTER	--filter 'r.tumor.dp>=20 and r.normal.dp>=20 and r.info.ssc>=20 and qual>=10' --sfilter 's.gq>=15' | biovcf somatic filter settings
 FREEBAYES_GERMLINEFILTER	--filter 'r.tumor.dp>=20 and r.normal.dp>=20 and qual>=10' --sfilter 's.gq>=15' | biovcf germline filter settings
@@ -236,6 +275,7 @@ SOMVAR_MUTECT	yes/no
 MUTECT_PATH	/path/to/mutect/
 MUTECT_MEM	maximum_memory
 MUTECT_QUEUE	queue_name
+MUTECT_TIME	estimated runtime
 MUTECT_THREADS	number_of_threads
 MUTECT_COSMIC	/path/to/CosmicCodingMuts_v72.vcf.gz
 #MUTECT_SCALA	IAP/QScripts/Mutect.scala
@@ -245,13 +285,20 @@ MUTECT_COSMIC	/path/to/CosmicCodingMuts_v72.vcf.gz
 
 ## Merge vcfs
 SOMVARMERGE_QUEUE	queue_name
+SOMVARMERGE_TIME	estimated runtime
 SOMVARMERGE_THREADS	number_of_threads
+SOMVARMERGE_MEM	maximum_memory
 
 #### SV Calling -  DELLY CONFIGURATION####
 DELLY_PATH	/path/to/delly_v0.6.7
 DELLY_QUEUE	queue_name
-DELLY_MERGE_QUEUE	queue_name
+DELLY_TIME	estimated runtime
 DELLY_THREADS	number_of_threads
+DELLY_MEM	maximum_memory
+DELLY_MERGE_QUEUE	queue_name
+DELLY_MERGE_TIME	estimated runtime
+DELLY_MERGE_MEM	maximum_memory
+DELLY_MERGE_THREADS	number_of_threads
 
 DELLY_SVTYPE	DEL	DUP	INV	TRA
 DELLY_SPLIT	no/yes	no/yes	no/yes	yes/no
@@ -263,7 +310,9 @@ DELLY_GENO_QUAL	5
 
 ####COPY NUMBER VARIANTION CONFIGURATION####
 CNVCHECK_QUEUE	queue_name
+CNVCHECK_TIME	estimated runtime
 CNVCHECK_THREADS	number_of_threads
+CNVCHECK_MEM	maximum_memory
 CNV_MODE	sample_control
 CNV_TARGETS	/path/to/target.bed | Optional, use for targeted data e.g. exome.
 CNV_REGEX	(CPCT\d{8})([TR][IVX]*$) | Used for tumor / control sample parsing, should follow this patern: (<sample_match>)(<origin_match>)
@@ -272,6 +321,8 @@ CNV_REGEX	(CPCT\d{8})([TR][IVX]*$) | Used for tumor / control sample parsing, sh
 CNV_CONTRA	yes/no
 CONTRA_THREADS	number_of_threads
 CONTRA_QUEUE	queue_name
+CONTRA_TIME	estimated runtime
+CONTRA_MEM	maximum_memory
 CONTRA_PATH	/hpc/local/CentOS6/cog_bioinf/CONTRA.v2.0.6/
 CONTRA_FLAGS	--nomultimapped --largeDeletion --plot
 
@@ -283,6 +334,8 @@ CONTRA_PLOTDESIGN	wes
 CNV_FREEC	yes/no
 FREEC_THREADS	number_of_threads
 FREEC_QUEUE	queue_name
+FREEC_TIME	estimated runtime
+FREEC_MEM	maximum_memory
 FREEC_PATH	/path/to/freec
 FREEC_CHRLENFILE	/path/to/genome.len
 FREEC_CHRFILES	/path/to/chr_files
@@ -293,6 +346,7 @@ FREEC_TELOCENTROMERIC	50000 | length of pre-telomeric and pre-centromeric region
 
 ####VARIANT ANNOTATION CONFIGURATION####
 ANNOTATE_QUEUE	queue_name
+ANNOTATE_TIME	estimated runtime
 ANNOTATE_THREADS	number_of_threads
 ANNOTATE_MEM	maximum_memory
 ## SnpEff
@@ -315,6 +369,7 @@ ANNOTATE_IDDB	/path/to/id.vcf
 
 ####VCF UTILS CONFIUGARTION#####
 VCFUTILS_QUEUE	queue_name
+VCFUTILS_TIME	estimated runtime
 VCFUTILS_THREADS	number_of_threads
 VCFUTILS_MEM	maximum_memory
 VCFUTILS_KINSHIP	yes/no
@@ -328,10 +383,17 @@ PED	/path/to/ped_file_folder/
 CHROMATE_PATH	/path/to/chromate.py
 NIPT_REFERENCESET	/path/to/reference_set/
 NIPT_QUEUE	queue_name
+NIPT_TIME	estimated runtime
+NIPT_MEM	mmaximum_memory
 NIPT_THREADS	number_of_threads
+NIPT_MASTER_QUEUE	queue_name
+NIPT_MASTER_TIME	estimated runtime
+NIPT_MASTER_MEM	maximum_memory
+NIPT_MASTER_THREADS	number_of_threads
 
 ####CHECKING CLUSTER CONFIGURATION####
 CHECKING_QUEUE	queue_name
+CHECKING_TIME	estimated runtime
 CHECKING_THREADS	number_of_threads
 
 ```
