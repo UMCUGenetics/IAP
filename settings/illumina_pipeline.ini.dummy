@@ -134,6 +134,8 @@ FILTER_MEM	4
 FILTER_SCATTER	10
 FILTER_SCALA	QScripts/HardFilter.scala
 FILTER_MODE	BOTH
+FILTER_SNPTYPES	SNP,NO_VARIATION
+FILTER_INDELTYPES	INDEL,MIXED
 FILTER_SNPNAME	LowQualityDepth	MappingQuality	StrandBias	HaplotypeScoreHigh	MQRankSumLow	ReadPosRankSumLow
 FILTER_SNPEXPR	QD < 2.0	MQ < 40.0	FS > 60.0	HaplotypeScore > 13.0	MQRankSum < -12.5	ReadPosRankSum < -8.0
 FILTER_INDELNAME	LowQualityDepth	StrandBias	ReadPosRankSumLow
