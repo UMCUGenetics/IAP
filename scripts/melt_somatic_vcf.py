@@ -20,7 +20,7 @@ def melt_somatic_vcf(vcf_file, remove_filtered):
                 line = line.strip('\n')
 
                 if line.startswith('##'):
-                    '''Print original vcf header'''
+                    '''Print original vcf meta-information lines '''
                     print line
                     continue
 
@@ -43,6 +43,12 @@ def melt_somatic_vcf(vcf_file, remove_filtered):
 
                     # sample name == file_name
                     sample_name = vcf_file.split('.')[0]
+
+                    ## Add meta-information lines with melter info to vcf
+                    print "##source=IAP/scripts/melt_somatic_vcf.py"
+                    print "##INFO=<ID=CC,Number=1,Type=Integer,Description=\"Number of somatic variant callers with call.\">"
+
+                    ## print header
                     print "{header}\t{sample}".format(
                         header = '\t'.join(header[:9]),
                         sample = sample_name
@@ -53,6 +59,7 @@ def melt_somatic_vcf(vcf_file, remove_filtered):
                     variant = line.split('\t')
                     variant_gt_format = variant[8].split(':')
                     variant_calls = variant[9:]
+                    caller_count = 0
 
                     #Skip variants with a filter flag other than PASS.
                     if remove_filtered:
@@ -70,7 +77,7 @@ def melt_somatic_vcf(vcf_file, remove_filtered):
                             continue
 
                         variant_call = variant_calls[tumor_sample_index].split(':')
-
+                        caller_count += 1
                         #Variant DP, field is the same per caller
                         variant_dp.append(float(variant_call[dp_index]))
 
@@ -136,8 +143,9 @@ def melt_somatic_vcf(vcf_file, remove_filtered):
                         allele_ad = [ad for ad in allele if ad is not None]
                         variant_ad.append(str(int(round(sum(allele_ad)/len(allele_ad)))))
 
-                    print "{var_data}\t{gt_format}\t{gt}:{ad}:{dp}".format(
+                    print "{var_data};CC={cc}\t{gt_format}\t{gt}:{ad}:{dp}".format(
                         var_data = "\t".join(variant[:8]),
+                        cc = caller_count,
                         gt_format = "GT:AD:DP",
                         gt = "0/1",
                         ad = ','.join(variant_ad),
