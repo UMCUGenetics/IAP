@@ -31,6 +31,7 @@ use illumina_somaticVariants;
 use illumina_copyNumber;
 use illumina_structuralVariants;
 use illumina_baf;
+use illumina_callableLoci;
 use illumina_annotateVariants;
 use illumina_vcfutils;
 use illumina_nipt;
@@ -163,11 +164,19 @@ if(! $opt{VCF} ){
 	my $sv_jobs = illumina_structuralVariants::runDelly(\%opt);
 	$opt{RUNNING_JOBS}->{'sv'} = $sv_jobs;
     }
+    ### BAF
     if($opt{BAF} eq "yes"){
 	print "\n###SCHEDULING BAF Analysis###\n";
 	my $baf_jobs = illumina_baf::runBAF(\%opt);
 	$opt{RUNNING_JOBS}->{'baf'} = $baf_jobs;
     }
+    ### CALLABLE LOCI
+    if($opt{CALLABLE_LOCI} eq "yes"){
+	print "\n###SCHEDULING CALLABLE LOCI Analysis###\n";
+	my $callable_loci_jobs = illumina_callableLoci::runCallableLoci(\%opt);
+	$opt{RUNNING_JOBS}->{'callable_loci'} = $callable_loci_jobs;
+    }
+    
     ### GATK
     if($opt{VARIANT_CALLING} eq "yes"){
 	print "\n###SCHEDULING VARIANT CALLING####\n";
@@ -321,6 +330,7 @@ sub checkConfig{
     if(! $opt{COPY_NUMBER}){ print "ERROR: No COPY_NUMBER option found in config files. \n"; $checkFailed = 1; }
     if(! $opt{SV_CALLING}){ print "ERROR: No SV_CALLING option found in config files. \n"; $checkFailed = 1; }
     if(! $opt{BAF}){ print "ERROR: No BAF option found in config files. \n"; $checkFailed = 1; }
+    if(! $opt{CALLABLE_LOCI}){ print "ERROR: No CALLABLE_LOCI option found in config files. \n"; $checkFailed = 1; }
     if(! $opt{ANNOTATE_VARIANTS}){ print "ERROR: No ANNOTATE_VARIANTS option found in config files. \n"; $checkFailed = 1; }
     if(! $opt{VCF_UTILS}){ print "ERROR: No VCF_UTILS option found in config files. \n"; $checkFailed = 1; }
     if(! $opt{NIPT}){ print "ERROR: No NIPT option found in config files. \n"; $checkFailed = 1; }
@@ -606,6 +616,17 @@ sub checkConfig{
 	if(! $opt{BIOVCF_PATH}){ print "ERROR: No BIOVCF_PATH option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{BAF_SNPS}){ print "ERROR: No BAF_SNPS option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{BAF_PLOTSCRIPT}){ print "ERROR: No BAF_PLOTSCRIPT option found in config files.\n"; $checkFailed = 1; }
+    }
+    if($opt{CALLABLE_LOCI} eq "yes"){
+	if(! $opt{CALLABLE_LOCI_QUEUE}){ print "ERROR: No CALLABLE_LOCI_QUEUE option found in config files.\n"; $checkFailed = 1; }
+	if(! $opt{CALLABLE_LOCI_THREADS}){ print "ERROR: No CALLABLE_LOCI_THREADS option found in config files.\n"; $checkFailed = 1; }
+	if(! $opt{CALLABLE_LOCI_MEM}){ print "ERROR: No CALLABLE_LOCI_MEM option found in config files.\n"; $checkFailed = 1; }
+	if(! $opt{CALLABLE_LOCI_TIME}){ print "ERROR: No CALLABLE_LOCI_TIME option found in config files.\n"; $checkFailed = 1; }
+	if(! $opt{CALLABLE_LOCI_BASEQUALITY}){ print "ERROR: No CALLABLE_LOCI_BASEQUALITY option found in config files.\n"; $checkFailed = 1; }
+	if(! $opt{CALLABLE_LOCI_MAPQUALITY}){ print "ERROR: No CALLABLE_LOCI_MAPQUALITY option found in config files.\n"; $checkFailed = 1; }
+	if(! $opt{CALLABLE_LOCI_DEPTH}){ print "ERROR: No CALLABLE_LOCI_DEPTH option found in config files.\n"; $checkFailed = 1; }
+	if(! $opt{CALLABLE_LOCI_DEPTHLOWMAPQ}){ print "ERROR: No CALLABLE_LOCI_DEPTHLOWMAPQ option found in config files.\n"; $checkFailed = 1; }
+	
     }
     ## ANNOTATE_VARIANTS
     if($opt{ANNOTATE_VARIANTS} eq "yes"){
