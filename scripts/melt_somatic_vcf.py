@@ -8,8 +8,9 @@ Supported somatic callers: Freebayes, Mutect, Strelka and Varscan.
 
 import argparse
 from itertools import izip_longest
+import re
 
-def melt_somatic_vcf(vcf_file, remove_filtered):
+def melt_somatic_vcf(vcf_file, remove_filtered, tumor_sample):
     try:
         f = open(vcf_file, 'r')
     except IOError:
@@ -32,9 +33,9 @@ def melt_somatic_vcf(vcf_file, remove_filtered):
                     # Find tumor samples index
                     tumor_samples_index = {}
                     for index, sample in enumerate(samples):
-                        if 'T.freebayes' in sample:
+                	if '{0}.freebayes'.format(tumor_sample) == sample:
                             tumor_samples_index['freebayes'] = index
-                        elif 'T.mutect' in sample:
+                        elif '{0}.mutect'.format(tumor_sample) == sample:
                             tumor_samples_index['mutect'] = index
                         elif 'TUMOR.strelka' == sample:
                             tumor_samples_index['strelka'] = index
@@ -159,6 +160,7 @@ if __name__ == "__main__":
 
     required_named = parser.add_argument_group('required named arguments')
     required_named.add_argument('-v', '--vcf_file', help='path/to/file.vcf', required=True)
+    required_named.add_argument('-t', '--tumor_sample', help='Tumor sample name', required=True)
 
     args = parser.parse_args()
-    melt_somatic_vcf(args.vcf_file, args.remove_filtered)
+    melt_somatic_vcf(args.vcf_file, args.remove_filtered, args.tumor_sample)

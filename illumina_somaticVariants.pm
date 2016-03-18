@@ -83,10 +83,14 @@ sub runSomaticVariantCallers {
 		## Create output, log and job directories
 		my $sample_tumor_name = "$sample_ref\_$sample_tumor";
 		my $sample_tumor_out_dir = "$opt{OUTPUT_DIR}/somaticVariants/$sample_tumor_name";
+		my $sample_tumor_tmp_dir = "$sample_tumor_out_dir/tmp/";
 		my $sample_tumor_log_dir = "$sample_tumor_out_dir/logs/";
 		my $sample_tumor_job_dir = "$sample_tumor_out_dir/jobs/";
 		if(! -e $sample_tumor_out_dir){
 		    make_path($sample_tumor_out_dir) or die "Couldn't create directory:  $sample_tumor_out_dir\n";
+		}
+		if(! -e $sample_tumor_tmp_dir){
+		    make_path($sample_tumor_tmp_dir) or die "Couldn't create directory: $sample_tumor_tmp_dir\n";
 		}
 		if(! -e $sample_tumor_job_dir){
 		    make_path($sample_tumor_job_dir) or die "Couldn't create directory: $sample_tumor_job_dir\n";
@@ -149,17 +153,18 @@ sub runSomaticVariantCallers {
 		# Merge vcfs
 		my $invcf;
 		my $outvcf = "$sample_tumor_out_dir/$sample_tumor_name\_merged_somatics.vcf";
-		print MERGE_SH "java -Xmx".$opt{SOMVARMERGE_MEM}."G -jar $opt{GATK_PATH}/GenomeAnalysisTK.jar -T CombineVariants -R $opt{GENOME} -o $outvcf --genotypemergeoption uniquify ";
+		print MERGE_SH "java -Xmx".$opt{SOMVARMERGE_MEM}."G -Djava.io.tmpdir=$sample_tumor_tmp_dir -jar $opt{GATK_PATH}/GenomeAnalysisTK.jar -T CombineVariants -R $opt{GENOME} -o $outvcf --genotypemergeoption uniquify ";
 		if($opt{SOMVAR_STRELKA} eq "yes"){ print MERGE_SH "-V:strelka $sample_tumor_out_dir/strelka/passed.somatic.merged.vcf "; }
 		if($opt{SOMVAR_VARSCAN} eq "yes"){ print MERGE_SH "-V:varscan $sample_tumor_out_dir/varscan/$sample_tumor_name.merged.Somatic.hc.vcf "; }
 		if($opt{SOMVAR_FREEBAYES} eq "yes"){ print MERGE_SH "-V:freebayes $sample_tumor_out_dir/freebayes/$sample_tumor_name\_somatic_filtered.vcf "; }
 		if($opt{SOMVAR_MUTECT} eq "yes"){ print MERGE_SH "-V:mutect $sample_tumor_out_dir/mutect/$sample_tumor_name\_mutect_passed.vcf ";}
+		print MERGE_SH "\n\n";
 
 		# Filter vcf on target
 		if($opt{SOMVAR_TARGETS}){
 		    $invcf = $outvcf;
 		    $outvcf = "$sample_tumor_out_dir/$sample_tumor_name\_filtered_merged_somatics.vcf";
-		    print MERGE_SH "\n\njava -Xmx".$opt{SOMVARMERGE_MEM}."G -jar $opt{GATK_PATH}/GenomeAnalysisTK.jar -T SelectVariants -R $opt{GENOME} -L $opt{SOMVAR_TARGETS} -V $invcf -o $outvcf\n";
+		    print MERGE_SH "java -Xmx".$opt{SOMVARMERGE_MEM}."G -Djava.io.tmpdir=$sample_tumor_tmp_dir -jar $opt{GATK_PATH}/GenomeAnalysisTK.jar -T SelectVariants -R $opt{GENOME} -L $opt{SOMVAR_TARGETS} -V $invcf -o $outvcf\n";
 		    print MERGE_SH "rm $invcf*\n\n";
 		}
 		my $preAnnotateVCF = $outvcf;
@@ -167,13 +172,13 @@ sub runSomaticVariantCallers {
 		if($opt{SOMVAR_ANNOTATE} eq "yes"){
 		    $invcf = $outvcf;
 		    $outvcf =~ s/.vcf/_snpEff.vcf/;
-		    print MERGE_SH "java -Xmx".$opt{SOMVARMERGE_MEM}."G -jar $opt{SNPEFF_PATH}/snpEff.jar -c $opt{SNPEFF_PATH}/snpEff.config $opt{ANNOTATE_DB} -v $invcf $opt{ANNOTATE_FLAGS} > $outvcf\n";
+		    print MERGE_SH "java -Xmx".$opt{SOMVARMERGE_MEM}."G -Djava.io.tmpdir=$sample_tumor_tmp_dir -jar $opt{SNPEFF_PATH}/snpEff.jar -c $opt{SNPEFF_PATH}/snpEff.config $opt{ANNOTATE_DB} -v $invcf $opt{ANNOTATE_FLAGS} > $outvcf\n";
 		
 		    ## dbsnp
 		    $invcf = $outvcf;
 		    my $suffix = "_dbSNP.vcf";
 		    $outvcf =~ s/.vcf/$suffix/;
-		    print MERGE_SH "java -Xmx".$opt{SOMVARMERGE_MEM}."G -jar $opt{GATK_PATH}/GenomeAnalysisTK.jar -T VariantAnnotator -nt $opt{SOMVARMERGE_THREADS} -R $opt{GENOME} -o $outvcf --variant $invcf --dbsnp $opt{CALLING_DBSNP} --alwaysAppendDbsnpId\n";
+		    print MERGE_SH "java -Xmx".$opt{SOMVARMERGE_MEM}."G -Djava.io.tmpdir=$sample_tumor_tmp_dir -jar $opt{GATK_PATH}/GenomeAnalysisTK.jar -T VariantAnnotator -nt $opt{SOMVARMERGE_THREADS} -R $opt{GENOME} -o $outvcf --variant $invcf --dbsnp $opt{CALLING_DBSNP} --alwaysAppendDbsnpId\n";
 		    print MERGE_SH "if [ -s $outvcf ]\n";
 		    print MERGE_SH "then\n";
 		    print MERGE_SH "\trm $invcf $invcf.idx\n";
@@ -183,7 +188,7 @@ sub runSomaticVariantCallers {
 		    $invcf = $outvcf;
 		    $suffix = "_$opt{ANNOTATE_IDNAME}.vcf";
 		    $outvcf =~ s/.vcf/$suffix/;
-		    print MERGE_SH "java -Xmx".$opt{SOMVARMERGE_MEM}."G -jar $opt{GATK_PATH}/GenomeAnalysisTK.jar -T VariantAnnotator -nt $opt{SOMVARMERGE_THREADS} -R $opt{GENOME} -o $outvcf --variant $invcf --dbsnp $opt{ANNOTATE_IDDB} --alwaysAppendDbsnpId\n";
+		    print MERGE_SH "java -Xmx".$opt{SOMVARMERGE_MEM}."G -Djava.io.tmpdir=$sample_tumor_tmp_dir -jar $opt{GATK_PATH}/GenomeAnalysisTK.jar -T VariantAnnotator -nt $opt{SOMVARMERGE_THREADS} -R $opt{GENOME} -o $outvcf --variant $invcf --dbsnp $opt{ANNOTATE_IDDB} --alwaysAppendDbsnpId\n";
 		    print MERGE_SH "if [ -s $outvcf ]\n";
 		    print MERGE_SH "then\n";
 		    print MERGE_SH "\trm $invcf $invcf.idx\n";
@@ -194,7 +199,7 @@ sub runSomaticVariantCallers {
 		$invcf = $outvcf;
 		my $suffix = "_melted.vcf";
 		$outvcf =~ s/.vcf/$suffix/;
-		print MERGE_SH "python $opt{IAP_PATH}/scripts/melt_somatic_vcf.py -v $invcf > $outvcf\n\n";
+		print MERGE_SH "python $opt{IAP_PATH}/scripts/melt_somatic_vcf.py -t $sample_tumor -v $invcf > $outvcf\n\n";
 
 		## Check output files
 		print MERGE_SH "if [ \"\$(tail -n 1 $preAnnotateVCF | cut -f 1,2)\" = \"\$(tail -n 1 $outvcf | cut -f 1,2)\" -a -s $preAnnotateVCF -a -s $outvcf ]\n";
@@ -469,12 +474,15 @@ sub runFreeBayes {
     my @running_jobs = @{$running_jobs};
     my %opt = %{$opt};
     my $freebayes_out_dir = "$out_dir/freebayes";
-
-    ## Create output dir
+    my $freebayes_tmp_dir = "$out_dir/freebayes/tmp";
+    ## Create output & tmp dir
     if(! -e $freebayes_out_dir){
 	make_path($freebayes_out_dir) or die "Couldn't create directory: $freebayes_out_dir\n";
     }
-
+    if(! -e $freebayes_tmp_dir){
+	make_path($freebayes_tmp_dir) or die "Couldn't create directory: $freebayes_tmp_dir\n";
+    }
+    
     ## Skip freebayes if .done file exist
     if (-e "$log_dir/freebayes.done"){
 	print "WARNING: $log_dir/freebayes.done exists, skipping \n";
@@ -498,7 +506,7 @@ sub runFreeBayes {
 	$freebayes_command .= "$opt{FREEBAYES_SETTINGS} $sample_ref_bam $sample_tumor_bam > $freebayes_out_dir/$output_name.vcf";
 
 	## Sort vcf, remove duplicate lines and filter on target
-	my $sort_uniq_filter_command = "$opt{VCFTOOLS_PATH}/vcf-sort -c $freebayes_out_dir/$output_name.vcf | $opt{VCFLIB_PATH}/vcfuniq > $freebayes_out_dir/$output_name.sorted_uniq.vcf";
+	my $sort_uniq_filter_command = "$opt{VCFTOOLS_PATH}/vcf-sort -c -t $freebayes_tmp_dir $freebayes_out_dir/$output_name.vcf | $opt{VCFLIB_PATH}/vcfuniq > $freebayes_out_dir/$output_name.sorted_uniq.vcf";
 	my $mv_command;
 	# Filter vcf on target
 	if($opt{SOMVAR_TARGETS}){
@@ -541,7 +549,7 @@ sub runFreeBayes {
     # Setup test, concat and rm of chr chunks
     my $file_test = "if [ -s $sample_ref_bam -a -s $sample_tumor_bam ";
     my $concat_command = "$opt{VCFTOOLS_PATH}/vcf-concat ";
-    my $rm_command = "rm ";
+    my $rm_command = "rm -r $freebayes_tmp_dir ";
     foreach my $chr (@chrs){
 	my $snp_output = $sample_tumor_name."_".$chr;
 	$file_test .= "-a -s $snp_output\.vcf ";
@@ -579,8 +587,8 @@ sub runFreeBayes {
     print FREEBAYES_SH "\trm $freebayes_out_dir/$sample_tumor_name\_VTannot.vcf\n\n";
 
     # Filter
-    print FREEBAYES_SH "\tcat $freebayes_out_dir/$sample_tumor_name\_somatic.vcf | $opt{BIOVCF_PATH}/bio-vcf $opt{FREEBAYES_SOMATICFILTER} > $freebayes_out_dir/$sample_tumor_name\_somatic_filtered.vcf\n";
-    print FREEBAYES_SH "\tcat $freebayes_out_dir/$sample_tumor_name\_germline.vcf | $opt{BIOVCF_PATH}/bio-vcf $opt{FREEBAYES_GERMLINEFILTER} > $freebayes_out_dir/$sample_tumor_name\_germline_filtered.vcf\n\n";
+    print FREEBAYES_SH "\tcat $freebayes_out_dir/$sample_tumor_name\_somatic.vcf | java -Xmx".$opt{FREEBAYES_MEM}."G -jar $opt{SNPEFF_PATH}/SnpSift.jar filter \"$opt{FREEBAYES_SOMATICFILTER}\" > $freebayes_out_dir/$sample_tumor_name\_somatic_filtered.vcf\n";
+    print FREEBAYES_SH "\tcat $freebayes_out_dir/$sample_tumor_name\_germline.vcf | java -Xmx".$opt{FREEBAYES_MEM}."G -jar $opt{SNPEFF_PATH}/SnpSift.jar filter \"$opt{FREEBAYES_GERMLINEFILTER}\" > $freebayes_out_dir/$sample_tumor_name\_germline_filtered.vcf\n\n";
     
     #Check freebayes completed
     print FREEBAYES_SH "\tif [ -s $freebayes_out_dir/$sample_tumor_name\_somatic_filtered.vcf -a -s $freebayes_out_dir/$sample_tumor_name\_germline_filtered.vcf ]\n";
@@ -597,7 +605,7 @@ sub runFreeBayes {
     close FREEBAYES_SH;
 
     ## Run job
-    my $qsub = &qsubTemplate(\%opt,"FREEBAYES");
+    my $qsub = &qsubJava(\%opt,"FREEBAYES");
     if ( @freebayes_jobs ){
 	system "$qsub -o $log_dir -e $log_dir -N $job_id -hold_jid ".join(",",@freebayes_jobs)." $bash_file";
     } else {
