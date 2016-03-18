@@ -82,6 +82,18 @@ sub runCheck {
 		print BASH "\tfailed=true\n";
 		print BASH "fi\n";
 	    }
+	    if($opt{BAF} eq "yes"){
+		$doneFile = $opt{OUTPUT_DIR}."/$sample/logs/BAF_$sample.done";
+		print BASH "if [ -f $doneFile ]; then\n";
+		print BASH "\techo \"\t BAF analysis: done \" >>$logFile\n";
+		print BASH "else\n";
+		print BASH "\techo \"\t BAF analysis: failed \">>$logFile\n";
+		print BASH "\tfailed=true\n";
+		print BASH "fi\n";
+		if ( $opt{RUNNING_JOBS}->{'baf'} ){
+		    push( @runningJobs, @{$opt{RUNNING_JOBS}->{'baf'}} );
+		}
+	    }
 	    print BASH "echo \"\">>$logFile\n\n"; ## empty line between samples
 	}
 	## Running jobs

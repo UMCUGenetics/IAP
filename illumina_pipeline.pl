@@ -30,6 +30,7 @@ use illumina_filterVariants;
 use illumina_somaticVariants;
 use illumina_copyNumber;
 use illumina_structuralVariants;
+use illumina_baf;
 use illumina_annotateVariants;
 use illumina_vcfutils;
 use illumina_nipt;
@@ -161,6 +162,11 @@ if(! $opt{VCF} ){
 	print "\n###SCHEDULING SV CALLING####\n";
 	my $sv_jobs = illumina_structuralVariants::runDelly(\%opt);
 	$opt{RUNNING_JOBS}->{'sv'} = $sv_jobs;
+    }
+    if($opt{BAF} eq "yes"){
+	print "\n###SCHEDULING BAF Analysis###\n";
+	my $baf_jobs = illumina_baf::runBAF(\%opt);
+	$opt{RUNNING_JOBS}->{'baf'} = $baf_jobs;
     }
     ### GATK
     if($opt{VARIANT_CALLING} eq "yes"){
@@ -314,6 +320,7 @@ sub checkConfig{
     if(! $opt{SOMATIC_VARIANTS}){ print "ERROR: No SOMATIC_VARIANTS option found in config files. \n"; $checkFailed = 1; }
     if(! $opt{COPY_NUMBER}){ print "ERROR: No COPY_NUMBER option found in config files. \n"; $checkFailed = 1; }
     if(! $opt{SV_CALLING}){ print "ERROR: No SV_CALLING option found in config files. \n"; $checkFailed = 1; }
+    if(! $opt{BAF}){ print "ERROR: No BAF option found in config files. \n"; $checkFailed = 1; }
     if(! $opt{ANNOTATE_VARIANTS}){ print "ERROR: No ANNOTATE_VARIANTS option found in config files. \n"; $checkFailed = 1; }
     if(! $opt{VCF_UTILS}){ print "ERROR: No VCF_UTILS option found in config files. \n"; $checkFailed = 1; }
     if(! $opt{NIPT}){ print "ERROR: No NIPT option found in config files. \n"; $checkFailed = 1; }
@@ -323,7 +330,7 @@ sub checkConfig{
     if(! $opt{GENOME}){ print "ERROR: No GENOME option found in config files.\n"; $checkFailed = 1; }
     elsif(! -e $opt{GENOME}){ print"ERROR: $opt{GENOME} does Not exist\n"}
     if(! $opt{SAMBAMBA_PATH}){ print "ERROR: No SAMBAMBA_PATH option found in config files.\n"; $checkFailed = 1; }
-    if(! $opt{QUEUE_PATH}){ print "ERROR: No PICARD_PATH option found in config files.\n"; $checkFailed = 1; }
+    if(! $opt{QUEUE_PATH}){ print "ERROR: No QUEUE_PATH option found in config files.\n"; $checkFailed = 1; }
     ## PRESTATS
     if($opt{PRESTATS} eq "yes"){
 	if(! $opt{FASTQC_PATH}){ print "ERROR: No FASTQC_PATH option found in config files.\n"; $checkFailed = 1; }
@@ -589,6 +596,16 @@ sub checkConfig{
 	if(! $opt{DELLY_FLANK}){ print "ERROR: No DELLY_FLANK option found in config files.\n"; $checkFailed = 1; }
 	#if(! $opt{DELLY_VCF_GENO}){ print "ERROR: No DELLY_VCF_GENO option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{DELLY_GENO_QUAL}){ print "ERROR: No DELLY_GENO_QUA option found in config files.\n"; $checkFailed = 1; }
+    }
+    ##BAF Analysis
+    if($opt{BAF} eq "yes"){
+	if(! $opt{BAF_QUEUE}){ print "ERROR: No BAF_QUEUE option found in config files.\n"; $checkFailed = 1; }
+	if(! $opt{BAF_THREADS}){ print "ERROR: No BAF_THREADS option found in config files.\n"; $checkFailed = 1; }
+	if(! $opt{BAF_MEM}){ print "ERROR: No BAF_MEM option found in config files.\n"; $checkFailed = 1; }
+	if(! $opt{BAF_TIME}){ print "ERROR: No BAF_TIME option found in config files.\n"; $checkFailed = 1; }
+	if(! $opt{BIOVCF_PATH}){ print "ERROR: No BIOVCF_PATH option found in config files.\n"; $checkFailed = 1; }
+	if(! $opt{BAF_SNPS}){ print "ERROR: No BAF_SNPS option found in config files.\n"; $checkFailed = 1; }
+	if(! $opt{BAF_PLOTSCRIPT}){ print "ERROR: No BAF_PLOTSCRIPT option found in config files.\n"; $checkFailed = 1; }
     }
     ## ANNOTATE_VARIANTS
     if($opt{ANNOTATE_VARIANTS} eq "yes"){
