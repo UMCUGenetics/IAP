@@ -17,8 +17,9 @@ perl illumina_createConfig.pl
 ```bash
 perl illumina_createConfig.pl -i <filename.ini> -o </path/to/output_dir> (-f /path/to/fastq_dir OR -b /path/to/bam_dir OR -v /path/to/vcfFile.vcf) -m your@mail.com
 ```
-in which fastq files in /path/to/fastq_dir have extension R[12]_fastq.gz and bamfiles in /path/to/bam_dir have extension .bam
-naming convention: sampleName_flowcellID_index_lane_tag_R[12].fastq.gz
+Input file naming convention:
+- Fastq: sample_flowcell_index_lane_R[12]_tag.fastq.gz
+- Bam: sample.bam
 
 #### Run pipeline
 ```bash
