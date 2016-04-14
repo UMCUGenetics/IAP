@@ -41,13 +41,16 @@ sub runCheck {
     my $version = `git --git-dir $FindBin::Bin/.git describe --tags`;
     print BASH "echo \"Pipeline version: $version \" >>$logFile\n\n";
     print BASH "echo \"\">>$logFile\n\n"; ## empty line between samples
-
-    ### Check sample steps
-    foreach my $sample (@{$opt{SAMPLES}}){
-	if(! $opt{VCF}) {
-	    print BASH "echo \"Sample: $sample\" >>$logFile\n";
-	    if($opt{PRESTATS} eq "yes" && ! $opt{BAM}){
-		$doneFile = $opt{OUTPUT_DIR}."/$sample/logs/PreStats_$sample.done";
+    
+    ### Check fastq steps
+    if( $opt{FASTQ} ){
+	foreach my $fastq_file (keys %{$opt{FASTQ}}){
+	    my $coreName = (split("/", $fastq_file))[-1];
+	    $coreName =~ s/\.fastq.gz//;
+	    my ($sampleName) = split("_", $coreName);
+	    print BASH "echo \"Fastq: $sampleName - $coreName\" >>$logFile\n";
+	    if($opt{PRESTATS} eq "yes" ){
+		$doneFile = $opt{OUTPUT_DIR}."/$sampleName/logs/PreStats_$coreName.done";
 		print BASH "if [ -f $doneFile ]; then\n";
 		print BASH "\techo \"\t PreStats: done \" >>$logFile\n";
 		print BASH "else\n";
@@ -55,6 +58,18 @@ sub runCheck {
 		print BASH "\tfailed=true\n";
 		print BASH "fi\n";
 	    }
+	}
+	if ( $opt{RUNNING_JOBS}->{'preStats'} ){
+	    push( @runningJobs, @{$opt{RUNNING_JOBS}->{'preStats'}} );
+	}
+    }
+
+    print BASH "echo \"\" >>$logFile\n";
+
+    ### Check sample steps
+    foreach my $sample (@{$opt{SAMPLES}}){
+	if(! $opt{VCF}) {
+	    print BASH "echo \"Sample: $sample\" >>$logFile\n";
 	    if($opt{MAPPING} eq "yes" && ! $opt{BAM}){
 		$doneFile = $opt{OUTPUT_DIR}."/$sample/logs/Mapping_$sample.done";
 		print BASH "if [ -f $doneFile ]; then\n";
