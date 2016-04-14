@@ -6,6 +6,7 @@ Melts / merges somatic vcf files coming from the IAP.
 Supported somatic callers: Freebayes, Mutect, Strelka and Varscan.
 """
 
+import sys
 import argparse
 from itertools import izip_longest
 import re
@@ -14,16 +15,15 @@ def melt_somatic_vcf(vcf_file, remove_filtered, tumor_sample):
     try:
         f = open(vcf_file, 'r')
     except IOError:
-        print "Can't open vcf file: {0}".format(vcf_file)
+        sys.exit("Error: Can't open vcf file: {0}".format(vcf_file))
     else:
         with f:
+	    vcf_header = []
             for line in f:
                 line = line.strip('\n')
-
                 if line.startswith('##'):
                     '''Print original vcf meta-information lines '''
-                    print line
-                    continue
+                    vcf_header.append(line)
 
                 elif line.startswith("#CHROM"):
                     '''Parse samples and print new header'''
@@ -42,14 +42,16 @@ def melt_somatic_vcf(vcf_file, remove_filtered, tumor_sample):
                         elif 'TUMOR.varscan' == sample:
                             tumor_samples_index['varscan'] = index
 
-                    # sample name == file_name
-                    sample_name = vcf_file.split('.')[0]
+                    if len(samples)/2 != len(tumor_samples_index.keys()):
+                	sys.exit("Error: Found {0} sample somatic variant caller combinations, expected {1}. Please check tumor_sample name.".format(len(tumor_samples_index.keys()),len(samples)/2))
 
-                    ## Add meta-information lines with melter info to vcf
+                    # sample name == file_name
+                    sample_name = vcf_file.split('/')[-1].split('.')[0]
+
+                    ## print header lines and Add meta-information lines with melter info to vcf
+                    print "\n".join(vcf_header)
                     print "##source=IAP/scripts/melt_somatic_vcf.py"
                     print "##INFO=<ID=CC,Number=1,Type=Integer,Description=\"Number of somatic variant callers with call.\">"
-
-                    ## print header
                     print "{header}\t{sample}".format(
                         header = '\t'.join(header[:9]),
                         sample = sample_name
@@ -137,7 +139,7 @@ def melt_somatic_vcf(vcf_file, remove_filtered, tumor_sample):
                                 #strelka_example.vcf:##FORMAT=<ID=TAR,Number=2,Type=Integer,Description="Reads strongly supporting alternate allele for tiers 1,2"> REFERENCE!!!
                                 #strelka_example.vcf:##FORMAT=<ID=TIR,Number=2,Type=Integer,Description="Reads strongly supporting indel allele for tiers 1,2">
 
-                    '''Calculate mean dp and ad'''
+                    #Calculate mean dp and ad
                     variant_dp = int(round(sum(variant_dp)/len(variant_dp)))
                     ad_callers = izip_longest(freebayes_ad, mutect_ad, varscan_ad, strelka_ad)
                     for allele in ad_callers:
