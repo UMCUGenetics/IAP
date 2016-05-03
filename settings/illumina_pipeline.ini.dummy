@@ -39,6 +39,12 @@ QUEUE_RETRY	yes
 ####GENOME SETTINGS####
 GENOME	/hpc/cog_bioinf/GENOMES/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta
 
+####SOMATIC SAMPLE REGEX####
+SOMATIC_REGEX	(CPCT\d{8})([TR][IVX]*$)
+### SOMATIC_REGEX should follow this patern: (<sample_match>)(<origin_match>)
+# R = reference 
+# T = tumor
+
 ####PRESTATS CLUSTER CONFIGURATION####
 PRESTATS_QUEUE	all.q
 PRESTATS_TIME	2:0:0
@@ -146,8 +152,6 @@ FILTER_CLUSTERWINDOWSIZE	35
 
 ####SOMATIC VARIANT CONFIGURATION####
 SOMVAR_TARGETS	/hpc/cog_bioinf/GENOMES/Homo_sapiens.GRCh37.GATK.illumina/sorted_Homo_sapiens.GRCh37.74_nopseudo_noRNA_CDS_20bpflanks.bed
-SOMVAR_REGEX	(CPCT\d{8})([TR][IVX]*$)
-### SOMVAR_REGEX should follow this patern: (<sample_match>)(<origin_match>)
 
 ## Strelka
 SOMVAR_STRELKA	yes
@@ -207,8 +211,6 @@ CNVCHECK_TIME	2:0:0
 CNVCHECK_THREADS	1
 CNV_MODE	sample_control
 CNV_TARGETS	/hpc/cog_bioinf/data/ies/DESIGNS/sureselect/catalog_designs/SS_all_exon_v5/annotated_S04380110_Covered_genenames.bed
-CNV_REGEX	(CPCT\d{8})([TR][IVX]*$)
-### CNV_REGEX should follow this patern: (<sample_match>)(<origin_match>)
 
 ## Contra
 CNV_CONTRA	yes
@@ -235,7 +237,10 @@ FREEC_WINDOW	1000
 FREEC_TELOCENTROMERIC	50000
 FREEC_MAPPABILITY_TRACKS	/hpc/local/CentOS6/cog_bioinf/freec/hg19_mappability_tracks/out100m1_hg19.gem	/hpc/local/CentOS6/cog_bioinf/freec/hg19_mappability_tracks/out100m2_hg19.gem
 
-#### SV Calling -  DELLY CONFIGURATION####
+#### SV Calling CONFIGURATION####
+
+## DELLY
+SV_DELLY	no
 DELLY_PATH	/hpc/cog_bioinf/common_scripts/delly_v0.6.7
 DELLY_QUEUE	all.q
 DELLY_TIME	2:0:0
@@ -251,6 +256,14 @@ DELLY_FLANK	13
 DELLY_VCF_GENO	
 DELLY_GENO_QUAL	5
 
+## MANTA
+SV_MANTA	yes
+MANTA_PATH	/hpc/local/CentOS7/cog_bioinf/manta_0.29.5/bin
+MANTA_QUEUE	all.q
+MANTA_TIME	4:0:0
+MANTA_THREADS	8
+MANTA_MEM	10
+
 #### B ALLELE FREQUENCY CLUSTER CONFIGURATION####
 BAF_QUEUE	all.q
 BAF_TIME	2:0:0
@@ -261,28 +274,6 @@ BAF_SNPS	/hpc/cog_bioinf/common_dbs/CytoScanHD/CytoScanHD_hg19_SNPs_sorted.bed
 BAF_PLOTSCRIPT	/path/to/IAP/scripts/makeBAFplot.R
 
 #### CALLABLE LOCI CLUSTER CONFIGURATION ####
-CALLABLE_LOCI	yes
-CALLABLE_LOCI_QUEUE	all.q
-CALLABLE_LOCI_TIME	12:0:0
-CALLABLE_LOCI_THREADS	1
-CALLABLE_LOCI_MEM	10
-## HAPLOTYPE CALLER SETTINGS
-CALLABLE_LOCI_BASEQUALITY	10
-CALLABLE_LOCI_MAPQUALITY	10
-CALLABLE_LOCI_DEPTH	20
-CALLABLE_LOCI_DEPTHLOWMAPQ	20
-
-CALLABLE_LOCI	yes
-CALLABLE_LOCI_QUEUE	all.q
-CALLABLE_LOCI_TIME	12:0:0
-CALLABLE_LOCI_THREADS	1
-CALLABLE_LOCI_MEM	10
-## HAPLOTYPE CALLER SETTINGS
-CALLABLE_LOCI_BASEQUALITY	10
-CALLABLE_LOCI_MAPQUALITY	10
-CALLABLE_LOCI_DEPTH	20
-CALLABLE_LOCI_DEPTHLOWMAPQ	20
-
 CALLABLE_LOCI	yes
 CALLABLE_LOCI_QUEUE	all.q
 CALLABLE_LOCI_TIME	12:0:0

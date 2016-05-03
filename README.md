@@ -53,6 +53,7 @@ perl illumina_pipeline.pl /path/to/output_dir/settings.config>
 - [Tabix](http://www.htslib.org/doc/tabix.html)
 - [vcflib](https://github.com/ekg/vcflib)
 - [delly](https://github.com/tobiasrausch/delly/)
+- [manta](https://github.com/Illumina/manta)
 - [plink](http://pngu.mgh.harvard.edu/~purcell/plink/)
 - [king](http://people.virginia.edu/~wc9c/KING/)
 
@@ -124,6 +125,13 @@ CHECKING	yes/no
 
 #### GENOME SETTINGS ####
 GENOME	/path/to/genome.fasta
+
+####SOMATIC SAMPLE REGEX####
+## Only required for somatic variant calling, copy number and structural variant analysis
+SOMATIC_REGEX	(CPCT\d{8})([TR][IVX]*$)
+### SOMATIC_REGEX should follow this patern: (<sample_match>)(<origin_match>)
+# R = reference
+# T = tumor
 
 #### PRESTATS CLUSTER CONFIGURATION ####
 PRESTATS_QUEUE	queue_name 
@@ -238,7 +246,6 @@ FILTER_CLUSTERWINDOWSIZE	35 | Optional, The window size (in bases) in which to e
 
 ####SOMATIC VARIANT CONFIGURATION####
 SOMVAR_TARGETS	/path/to/target.bed | Optional, use for targeted data e.g. exome.
-SOMVAR_REGEX	(CPCT\d{8})([TR][IVX]*$) | Used for tumor / control sample parsing, should follow this patern: (<sample_match>)(<origin_match>)
 
 ## Strelka
 SOMVAR_STRELKA	yes/no
@@ -292,7 +299,18 @@ SOMVARMERGE_TIME	estimated runtime
 SOMVARMERGE_THREADS	number_of_threads
 SOMVARMERGE_MEM	maximum_memory
 
-#### SV Calling -  DELLY CONFIGURATION####
+#### SV Calling CONFIGURATION####
+
+##MANTA
+SV_MANTA	yes/no
+MANTA_PATH	/path/to/manta/bin
+MANTA_QUEUE	queue_name
+MANTA_TIME	estimated runtime
+MANTA_THREADS	number_of_threads
+MANTA_MEM	maximum_memory
+
+##DELLY
+SV_DELLY	no/yes
 DELLY_PATH	/path/to/delly_v0.6.7
 DELLY_QUEUE	queue_name
 DELLY_TIME	estimated runtime
@@ -318,7 +336,6 @@ CNVCHECK_THREADS	number_of_threads
 CNVCHECK_MEM	maximum_memory
 CNV_MODE	sample_control
 CNV_TARGETS	/path/to/target.bed | Optional, use for targeted data e.g. exome.
-CNV_REGEX	(CPCT\d{8})([TR][IVX]*$) | Used for tumor / control sample parsing, should follow this patern: (<sample_match>)(<origin_match>)
 
 ## Contra
 CNV_CONTRA	yes/no
