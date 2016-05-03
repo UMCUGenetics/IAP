@@ -218,16 +218,45 @@ sub runCheck {
     }
     if($opt{SV_CALLING} eq "yes" && ! $opt{VCF}){
 	print BASH "echo \"SV calling:\" >>$logFile\n";
-	# per sv type done file check
-	my @svTypes = split/\t/, $opt{DELLY_SVTYPE};
-	foreach my $type (@svTypes){
-	    my $done_file = "$opt{OUTPUT_DIR}/DELLY/logs/DELLY_$type.done"; 
-	    print BASH "if [ -f $done_file ]; then\n";
-	    print BASH "\techo \"\t $type: done \" >>$logFile\n";
-	    print BASH "else\n";
-	    print BASH "\techo \"\t $type: failed \">>$logFile\n";
-	    print BASH "\tfailed=true\n";
-	    print BASH "fi\n";
+	if($opt{SV_DELLY} eq "yes"){
+	    # per sv type done file check
+	    my @svTypes = split/\t/, $opt{DELLY_SVTYPE};
+	    foreach my $type (@svTypes){
+		my $done_file = "$opt{OUTPUT_DIR}/structuralVariants/delly/logs/DELLY_$type.done"; 
+		print BASH "if [ -f $done_file ]; then\n";
+		print BASH "\techo \"\t Delly $type: done \" >>$logFile\n";
+		print BASH "else\n";
+		print BASH "\techo \"\t Delly $type: failed \">>$logFile\n";
+		print BASH "\tfailed=true\n";
+		print BASH "fi\n";
+	    }
+	}
+	if($opt{SV_MANTA} eq "yes"){
+	    # Check single samples
+	    foreach my $sample (@single_samples){
+		my $done_file = "$opt{OUTPUT_DIR}/structuralVariants/manta/logs/SV_Manta_$sample.done";
+		print BASH "if [ -f $done_file ]; then\n";
+		print BASH "\techo \"\t Manta $sample: done \" >>$logFile\n";
+		print BASH "else\n";
+		print BASH "\techo \"\t Manta $sample: failed \">>$logFile\n";
+		print BASH "\tfailed=true\n";
+		print BASH "fi\n";
+	    }
+	    # Check somatic samples
+	    foreach my $sample (keys(%{$opt{SOMATIC_SAMPLES}})){
+		foreach my $sample_tumor (@{$opt{SOMATIC_SAMPLES}{$sample}{'tumor'}}){
+		    foreach my $sample_ref (@{$opt{SOMATIC_SAMPLES}{$sample}{'ref'}}){
+			my $sample_tumor_name = "$sample_ref\_$sample_tumor";
+			my $done_file = "$opt{OUTPUT_DIR}/structuralVariants/manta/logs/SV_Manta_$sample_tumor_name.done";
+			print BASH "if [ -f $done_file ]; then\n";
+			print BASH "\techo \"\t Manta $sample_tumor_name: done \" >>$logFile\n";
+			print BASH "else\n";
+			print BASH "\techo \"\t Manta $sample_tumor_name: failed \">>$logFile\n";
+			print BASH "\tfailed=true\n";
+			print BASH "fi\n";
+		    }
+		}
+	    }
 	}
 	if ( $opt{RUNNING_JOBS}->{'sv'} ){
 	    push( @runningJobs, @{$opt{RUNNING_JOBS}->{'sv'}} );
@@ -293,7 +322,7 @@ sub runCheck {
 	}
     }
     if($opt{SOMATIC_VARIANTS} eq "yes" && $opt{SOMVAR_VARSCAN} eq "yes"){
-	foreach my $sample (@{$opt{SAMPLES}}){
+	foreach my $sample (@{$opt{SOMATIC_SAMPLES_UNIQ}}){
 		print BASH "\trm $opt{OUTPUT_DIR}/$sample/mapping/$sample*.pileup.gz\n";
 		print BASH "\trm $opt{OUTPUT_DIR}/$sample/mapping/$sample*.pileup.gz.tbi\n";
 	}

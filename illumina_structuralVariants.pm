@@ -2,7 +2,7 @@
 
 ##################################################################
 ### illumina_structuralVariants.pm
-### - Run structural variant caller Delly
+### - Run structural variant callers Delly and Manta
 ###
 ### Author: R.F.Ernst , M. van Roosmalen ,H.H.D.Kerstens
 ##################################################################
@@ -15,30 +15,173 @@ use File::Path qw(make_path);
 use lib "$FindBin::Bin"; #locates pipeline directory
 use illumina_sge;
 
-my @runningJobs;
-my @sampleBams;
-my ($delly_out_dir, $delly_log_dir, $delly_job_dir, $delly_tmp_dir);
-my %opt;
+sub runStructuralVariantCallers {
+    ###
+    # Run structural variant callers
+    ###
+    my $configuration = shift;
+    my %opt = %{$configuration};
+    my @sv_jobs;
+    my @sv_samples;
+
+    if($opt{SV_DELLY} eq "yes"){
+	my $delly_jobs = runDelly(\%opt);
+	push(@sv_jobs, @{$delly_jobs});
+    }
+    
+    if($opt{SV_MANTA} eq "yes"){
+	my $manta_jobs = runManta(\%opt);
+	push(@sv_jobs, @{$manta_jobs});
+    }
+    return(\@sv_jobs);
+}
+
+sub runManta {
+    ###
+    # Run structural variant caller Manta
+    ###
+    my $configuration = shift;
+    my %opt = %{$configuration};
+    my @manta_jobs;
+    my %somatic_samples = %{$opt{SOMATIC_SAMPLES}};
+    my @single_samples = @{$opt{SINGLE_SAMPLES}};
+    
+    ### Run single samples
+    foreach my $sample (@single_samples){
+	# Setup output, log and job directories.
+	my $manta_out_dir = "$opt{OUTPUT_DIR}/structuralVariants/manta/$sample/";
+	my $manta_log_dir = "$opt{OUTPUT_DIR}/structuralVariants/manta/logs/";
+	my $manta_job_dir = "$opt{OUTPUT_DIR}/structuralVariants/manta/jobs/";
+
+	if(! -e $manta_out_dir){make_path($manta_out_dir) or die "Couldn't create directory: $manta_out_dir\n"}
+	if(! -e $manta_log_dir){make_path($manta_log_dir) or die "Couldn't create directory: $manta_log_dir\n"}
+	if(! -e $manta_job_dir){make_path($manta_job_dir) or die "Couldn't create directory: $manta_job_dir\n"}
+	
+	# Skip Manta if .done file exists
+	if (-e "$manta_log_dir/SV_Manta_$sample.done"){
+	    print "WARNING: $manta_log_dir/SV_Manta_$sample.done exists, skipping \n";
+	} else {
+	    # Store running jobs
+	    my @running_jobs;
+	    if (@{$opt{RUNNING_JOBS}->{$sample}}){ push(@running_jobs, @{$opt{RUNNING_JOBS}->{$sample}}) }
+
+	    # Setup manta commands
+	    my $sample_bam = "$opt{OUTPUT_DIR}/$sample/mapping/$opt{BAM_FILES}->{$sample}";
+	    my $config_manta = "$opt{MANTA_PATH}/configManta.py --referenceFasta $opt{GENOME} --runDir $manta_out_dir --bam $sample_bam ";
+	    my $run_manta = "$manta_out_dir/runWorkflow.py -m local -j $opt{MANTA_THREADS} ";
+	    
+	    # Create manta bash script
+	    my $job_id = "SV_MANTA_$sample\_".get_job_id();
+	    my $bashFile = $manta_job_dir.$job_id.".sh";
+    
+	    open MANTA_SH, ">$bashFile" or die "cannot open file $bashFile \n";
+	    print MANTA_SH "#!/bin/bash\n\n";
+	    print MANTA_SH "bash $opt{CLUSTER_PATH}/settings.sh\n\n";
+	    print MANTA_SH "cd $opt{OUTPUT_DIR}\n\n";
+
+	    print MANTA_SH "$config_manta\n";
+	    print MANTA_SH "$run_manta\n\n";
+
+	    print MANTA_SH "if [ -s $manta_out_dir/results/variants/diploidSV.vcf.gz.tbi ]\n";
+	    print MANTA_SH "then\n";
+	    print MANTA_SH "\ttouch $manta_log_dir/SV_Manta_$sample.done\n";
+	    print MANTA_SH "fi\n";
+    
+	    my $qsub = &qsubTemplate(\%opt,"MANTA");
+	    if (@running_jobs){
+		system "$qsub -o $manta_log_dir/$job_id.out -e $manta_log_dir/$job_id.err -N $job_id -hold_jid ".join(",",@running_jobs)." $bashFile";
+	    } else {
+		system "$qsub -o $manta_log_dir/$job_id.out -e $manta_log_dir/$job_id.err -N $job_id $bashFile";
+	    }
+	    push(@manta_jobs, $job_id);
+	}
+    }
+    
+    ### Run somatic samples
+    foreach my $sample (keys %somatic_samples){
+	foreach my $sample_tumor (@{$somatic_samples{$sample}{'tumor'}}){
+	    foreach my $sample_ref (@{$somatic_samples{$sample}{'ref'}}){
+		# Setup output, log and job directories.
+		my $sample_tumor_name = "$sample_ref\_$sample_tumor";
+		my $manta_out_dir = "$opt{OUTPUT_DIR}/structuralVariants/manta/$sample_tumor_name/";
+		my $manta_log_dir = "$opt{OUTPUT_DIR}/structuralVariants/manta/logs/";
+		my $manta_job_dir = "$opt{OUTPUT_DIR}/structuralVariants/manta/jobs/";
+
+		if(! -e $manta_out_dir){make_path($manta_out_dir) or die "Couldn't create directory: $manta_out_dir\n"}
+		if(! -e $manta_log_dir){make_path($manta_log_dir) or die "Couldn't create directory: $manta_log_dir\n"}
+		if(! -e $manta_job_dir){make_path($manta_job_dir) or die "Couldn't create directory: $manta_job_dir\n"}
+		
+		# Skip Manta if .done file exists
+		if (-e "$manta_log_dir/SV_MANTA_$sample_tumor_name.done"){
+		    print "WARNING: $manta_log_dir/SV_MANTA_$sample_tumor_name.done exists, skipping \n";
+		} else {
+		    #Store running jobs
+		    my @running_jobs;
+		    if (@{$opt{RUNNING_JOBS}->{$sample_tumor}}){ push(@running_jobs, @{$opt{RUNNING_JOBS}->{$sample_tumor}}) }
+		    if (@{$opt{RUNNING_JOBS}->{$sample_ref}}){ push(@running_jobs, @{$opt{RUNNING_JOBS}->{$sample_ref}}) }
+		
+		    # Setup manta commands
+		    my $ref_bam = "$opt{OUTPUT_DIR}/$sample_ref/mapping/$opt{BAM_FILES}->{$sample_ref}";
+		    my $tumor_bam = "$opt{OUTPUT_DIR}/$sample_tumor/mapping/$opt{BAM_FILES}->{$sample_tumor}";
+		    my $config_manta = "$opt{MANTA_PATH}/configManta.py --referenceFasta $opt{GENOME} --runDir $manta_out_dir --normalBam $ref_bam --tumorBam $tumor_bam ";
+		    my $run_manta = "$manta_out_dir/runWorkflow.py -m local -j $opt{MANTA_THREADS} ";
+		
+		    # Create manta bash script
+		    my $job_id = "SV_MANTA_$sample_tumor_name\_".get_job_id();
+		    my $bashFile = $manta_job_dir.$job_id.".sh";
+
+		    open MANTA_SH, ">$bashFile" or die "cannot open file $bashFile \n";
+		    print MANTA_SH "#!/bin/bash\n\n";
+		    print MANTA_SH "bash $opt{CLUSTER_PATH}/settings.sh\n\n";
+		    print MANTA_SH "cd $opt{OUTPUT_DIR}\n\n";
+
+		    print MANTA_SH "$config_manta\n";
+		    print MANTA_SH "$run_manta\n\n";
+
+		    print MANTA_SH "if [ -s $manta_out_dir/results/variants/diploidSV.vcf.gz.tbi -a -s $manta_out_dir/results/variants/somaticSV.vcf.gz.tbi ]\n";
+		    print MANTA_SH "then\n";
+		    print MANTA_SH "\ttouch $manta_log_dir/SV_MANTA_$sample_tumor_name.done\n";
+		    print MANTA_SH "fi\n";
+    
+		    my $qsub = &qsubTemplate(\%opt,"MANTA");
+		    if (@running_jobs){
+			system "$qsub -o $manta_log_dir/$job_id.out -e $manta_log_dir/$job_id.err -N $job_id -hold_jid ".join(",",@running_jobs)." $bashFile";
+		    } else {
+			system "$qsub -o $manta_log_dir/$job_id.out -e $manta_log_dir/$job_id.err -N $job_id $bashFile";
+		    }
+		    push(@manta_jobs, $job_id);
+		}
+	    }
+	}
+    }
+    return(\@manta_jobs);
+}
 
 sub runDelly {
+    ## Former globals?? # Probably breaks code....
+    my @runningJobs;
+    my @sampleBams;
+    my ($delly_out_dir, $delly_log_dir, $delly_job_dir, $delly_tmp_dir);
+    my %opt;
+
     ###
     # Run structural variant caller Delly
     ###
     my $configuration = shift;
     %opt = %{$configuration};
     my $runName = (split("/", $opt{OUTPUT_DIR}))[-1];
-    my $jobID = "SV_".get_job_id();
+    my $jobID = "SV_DELLY_".get_job_id();
     my $qsub = &qsubTemplate(\%opt,"DELLY_MERGE");
 
 
-    # Skip sv calling if .done file exists
-    if (-e "$opt{OUTPUT_DIR}/logs/StructuralVariants.done"){
-	print "WARNING: $opt{OUTPUT_DIR}/logs/StructuralVariants.done exists, skipping \n";
+    # Skip Delly if .done file exists
+    if (-e "$opt{OUTPUT_DIR}/logs/SV_DELLY.done"){
+	print "WARNING: $opt{OUTPUT_DIR}/logs/SV_DELLY.done exists, skipping \n";
 	return \%opt;
     }
 
     # Create output, log, job and tmp directories.
-    $delly_out_dir = "$opt{OUTPUT_DIR}/DELLY/";
+    $delly_out_dir = "$opt{OUTPUT_DIR}/structuralVariants/delly/";
     $delly_log_dir = "$delly_out_dir/logs/";
     $delly_job_dir = "$delly_out_dir/jobs/";
     $delly_tmp_dir = "$delly_out_dir/tmp/";
@@ -79,10 +222,10 @@ sub runDelly {
 
 	# Split per chromosome
 	if ($svSplit[$i] eq "yes") {
-	    get_chrs_from_dict(\%chrs) unless scalar(keys %chrs);
+	    get_chrs_from_dict(\%chrs,\%opt) unless scalar(keys %chrs);
 	    my ( $jobIDs_chunks, $logFiles );
-	    ( $jobIDs_chunks, $logFiles ) = create_interchromosomal_chunks(\@sampleBams, \%chrs, $type) if $type eq "TRA";
-	    ( $jobIDs_chunks, $logFiles ) = create_intrachromosomal_chunks(\@sampleBams, \%chrs, $type) if $type =~ /DEL|DUP|INV/;
+	    ( $jobIDs_chunks, $logFiles ) = create_interchromosomal_chunks(\@sampleBams, \%chrs, $type, $delly_tmp_dir, $delly_job_dir, $delly_log_dir, \@runningJobs) if $type eq "TRA";
+	    ( $jobIDs_chunks, $logFiles ) = create_intrachromosomal_chunks(\@sampleBams, \%chrs, $type, $delly_tmp_dir, $delly_job_dir, $delly_log_dir, \@runningJobs) if $type =~ /DEL|DUP|INV/;
 
 	    # Translocation jobs
 	    if ($type eq "TRA") {
@@ -183,7 +326,7 @@ sub runDelly {
 	    $logFile =~ s/jobs/logs/;
 	    $logFile =~ s/.sh$/.out/;
 
-	    submit_delly($dellyFile, $jobID, $type, "", "$delly_tmp_dir/$runName\_$type.vcf");
+	    submit_delly($dellyFile, $jobID, $type, "", "$delly_tmp_dir/$runName\_$type.vcf", \%opt, \@runningJobs, \@sampleBams);
 	    # Translocation jobs
 	    if ($type eq "TRA") {
 		    my $jobID2 = "CONVERT_".get_job_id();
@@ -238,8 +381,11 @@ sub runDelly {
 
 ### Submit delly jobs
 sub submit_delly {
-    my ($bashFile, $jobID, $type, $excludeFile, $vcfFile) = @_;
+    my ($bashFile, $jobID, $type, $excludeFile, $vcfFile, $config, $jobs, $bams) = @_;
     my ($logFile, $errorFile) = ($bashFile, $bashFile);
+    my %opt = %{$config};
+    my @runningJobs = @{$jobs};
+    my @sampleBams = @{$bams};
     $logFile =~ s/jobs/logs/;
     $logFile =~ s/.sh$/.out/;
     $errorFile =~ s/jobs/logs/;
@@ -271,7 +417,8 @@ sub submit_delly {
 
 ### Create inter chromosomal chunks
 sub create_interchromosomal_chunks {
-    my ($bams, $chrs, $type) = @_;
+    my ($bams, $chrs, $type, $delly_tmp_dir, $delly_job_dir, $delly_log_dir, $jobs) = @_;
+    my @runningJobs = @{$jobs};
     my @jobIDs;
     my @logFiles;
     open VCF_FILES, ">$delly_tmp_dir/$type\_vcf_files.txt";
@@ -293,7 +440,7 @@ sub create_interchromosomal_chunks {
 	    my $jobID = "DELLY_".get_job_id();
 	    my $dellyFile = "$delly_job_dir/$type\_$chr1\_$chr2\_".$jobID.".sh";
 	    push @jobIDs, $jobID;
-	    my ( $logFile ) = submit_delly($dellyFile, $jobID, $type, $excludeFile, $vcfFile);
+	    my ( $logFile ) = submit_delly($dellyFile, $jobID, $type, $excludeFile, $vcfFile, \@runningJobs, $bams);
 	    push @logFiles, $logFile;
 	}
     }
@@ -303,7 +450,8 @@ sub create_interchromosomal_chunks {
 
 ### Create intra chromosomal chunks
 sub create_intrachromosomal_chunks {
-    my ($bams, $chrs, $type) = @_;
+    my ($bams, $chrs, $type, $delly_tmp_dir, $delly_job_dir, $delly_log_dir, $jobs) = @_;
+    my @runningJobs = @{$jobs};
     my @jobIDs;
     my @logFiles;
     open VCF_FILES, ">$delly_tmp_dir/$type\_vcf_files.txt";
@@ -324,7 +472,7 @@ sub create_intrachromosomal_chunks {
 	my $jobID = "DELLY_".get_job_id();
 	my $dellyFile = "$delly_job_dir/$type\_$chr\_".$jobID.".sh";
 	push @jobIDs, $jobID;
-	my ( $logFile ) = submit_delly($dellyFile, $jobID, $type, $excludeFile, $vcfFile);
+	my ( $logFile ) = submit_delly($dellyFile, $jobID, $type, $excludeFile, $vcfFile, \@runningJobs, $bams);
 	push @logFiles, $logFile;
     }
     close VCF_FILES;
@@ -333,7 +481,9 @@ sub create_intrachromosomal_chunks {
 
 ### Get chromosomes from genome.dict
 sub get_chrs_from_dict {
-    my ($chrs) = @_;
+    my ($chrs, $config) = @_;
+    my %chrs = %{$chrs};
+    my %opt = %{$config};
     my $dictFile = $opt{GENOME};
     $dictFile =~ s/.fasta$/.dict/;
     open DICT, $dictFile;
