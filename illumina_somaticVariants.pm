@@ -17,48 +17,6 @@ use File::Path qw(make_path);
 use lib "$FindBin::Bin"; #locates pipeline directory
 use illumina_sge;
 
-sub parseSamples {
-    ###
-    # Parse sample names
-    # Expects CPCT samples (CPCT........T/R)
-    ###
-    my $configuration = shift;
-    my %opt = %{$configuration};
-    my %somatic_samples;
-    my @pileupJobs;
-
-    foreach my $sample (@{$opt{SAMPLES}}){
-	# Parse cpct samples based on regular expression defining two groups, sample name and sample origin.
-	my ($cpct_name,$origin) = ($sample =~ /$opt{SOMVAR_REGEX}/);
-
-	if ( (! $cpct_name) || (! $origin) ){
-	    print "WARNING: $sample is not passing somatic samplename parsing, skipping \n\n";
-	    next;
-	# Run pileup for varscan
-	} else {
-	    if($opt{SOMVAR_VARSCAN} eq "yes"){
-		print "Creating pileup for: $sample\n";
-		my $pileup_job = runPileup($sample, \%opt);
-		push(@pileupJobs, $pileup_job);
-	    }
-	}
-	
-	# Reference sample
-	if ($origin =~ m/R.*/){
-	    push(@{$somatic_samples{$cpct_name}{"ref"}},$sample);
-	}
-
-	# Tumor samples
-	elsif ($origin =~ m/T.*/){
-	    push(@{$somatic_samples{$cpct_name}{"tumor"}},$sample);
-	}
-    }
-
-    $opt{SOMATIC_SAMPLES} = {%somatic_samples};
-    $opt{RUNNING_JOBS}->{'pileup'} = \@pileupJobs;
-    return \%opt;
-}
-
 ### Run and merge
 sub runSomaticVariantCallers {
     ###
@@ -68,14 +26,24 @@ sub runSomaticVariantCallers {
     my $configuration = shift;
     my %opt = %{$configuration};
     my @merge_somvar_jobs;
+    my @pileup_jobs;
+
+    ### Submit pileup jobs for somatic samples if varscan == yes
+    if($opt{SOMVAR_VARSCAN} eq "yes"){
+	foreach my $sample (@{$opt{SOMATIC_SAMPLES_UNIQ}}){
+	    my $pileup_job = runPileup($sample, \%opt);
+	    push(@pileup_jobs, $pileup_job);
+	}
+    }
+    
     ### Loop over tumor samples
     foreach my $sample (keys(%{$opt{SOMATIC_SAMPLES}})){
 
 	# Check correct sample ref
-	if (! $opt{SOMATIC_SAMPLES}{$sample}{'ref'}){
-	    print "WARNING: No ref sample for $sample, skipping \n";
-	    next;
-	}
+	#if (! $opt{SOMATIC_SAMPLES}{$sample}{'ref'}){
+	#    print "WARNING: No ref sample for $sample, skipping \n";
+	#    next;
+	#}
 
 	foreach my $sample_tumor (@{$opt{SOMATIC_SAMPLES}{$sample}{'tumor'}}){
 	    foreach my $sample_ref (@{$opt{SOMATIC_SAMPLES}{$sample}{'ref'}}){
@@ -127,7 +95,7 @@ sub runSomaticVariantCallers {
 		}
 		if($opt{SOMVAR_VARSCAN} eq "yes"){
 		    print "\n###SCHEDULING VARSCAN####\n";
-		    my $varscan_job = runVarscan($sample_tumor, $sample_tumor_name, $sample_tumor_out_dir, $sample_tumor_job_dir, $sample_tumor_log_dir, $sample_tumor_bam, $sample_ref_bam, \@running_jobs, \%opt);
+		    my $varscan_job = runVarscan($sample_tumor, $sample_tumor_name, $sample_tumor_out_dir, $sample_tumor_job_dir, $sample_tumor_log_dir, $sample_tumor_bam, $sample_ref_bam, \@running_jobs, \%opt, \@pileup_jobs);
 		    if($varscan_job){push(@somvar_jobs, $varscan_job)};
 		}
 		if($opt{SOMVAR_FREEBAYES} eq "yes"){
@@ -346,10 +314,12 @@ sub runPileup {
 }
 
 sub runVarscan {
-    my ($sample_tumor, $sample_tumor_name, $out_dir, $job_dir, $log_dir, $sample_tumor_bam, $sample_ref_bam, $running_jobs, $opt) = (@_);
+    my ($sample_tumor, $sample_tumor_name, $out_dir, $job_dir, $log_dir, $sample_tumor_bam, $sample_ref_bam, $running_jobs, $opt, $pileup_jobs) = (@_);
     my %opt = %{$opt};
     my @running_jobs = @{$running_jobs};
-    push(@running_jobs, @{$opt{RUNNING_JOBS}->{'pileup'}});
+    my @pileup_jobs = @{$pileup_jobs};
+    push(@running_jobs, @pileup_jobs);
+
     my $varscan_out_dir = "$out_dir/varscan";
     (my $sample_tumor_pileup = $sample_tumor_bam) =~ s/\.bam/\.pileup\.gz/;
     (my $sample_ref_pileup = $sample_ref_bam) =~ s/\.bam/\.pileup\.gz/;

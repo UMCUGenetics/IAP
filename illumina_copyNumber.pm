@@ -17,39 +17,6 @@ use File::Path qw(make_path);
 use lib "$FindBin::Bin"; #locates pipeline directory
 use illumina_sge;
 
-
-sub parseSamples {
-    ###
-    # Parse samples names used in sample_control mode
-    # Expects CPCT samples (CPCT........T/R)
-    ###
-    my $configuration = shift;
-    my %opt = %{$configuration};
-    my %somatic_samples;
-
-    foreach my $sample (@{$opt{SAMPLES}}){
-	# Parse cpct samples based on expected naming
-	my ($cpct_name,$origin) = ($sample =~ /$opt{CNV_REGEX}/);
-	if ( (! $cpct_name) || (! $origin) ){
-	    print "WARNING: $sample is not passing copy number samplename parsing, skipping \n\n";
-	    next;
-	}
-	
-	# Reference sample
-	if ($origin =~ m/R.*/){
-	    push(@{$somatic_samples{$cpct_name}{"ref"}},$sample);
-	}
-
-	# Tumor samples
-	elsif ($origin =~ m/T.*/){
-	    push(@{$somatic_samples{$cpct_name}{"tumor"}},$sample);
-	}
-    }
-
-    $opt{SOMATIC_SAMPLES} = {%somatic_samples};
-    return \%opt;
-}
-
 sub runCopyNumberTools {
     ### 
     # Run copy number tools and check completion
@@ -63,11 +30,6 @@ sub runCopyNumberTools {
 	### Loop over somatic samples
 	foreach my $sample (keys(%{$opt{SOMATIC_SAMPLES}})){
 
-	    # Check correct sample ref
-	    if (! $opt{SOMATIC_SAMPLES}{$sample}{'ref'}){
-		print "WARNING: No ref sample for $sample, skipping \n";
-		next;
-	    }
 	    ### Loop over tumor samples for each somatic sample (multiple tumor samples possible)
 	    foreach my $sample_tumor (@{$opt{SOMATIC_SAMPLES}{$sample}{'tumor'}}){
 		foreach my $sample_ref (@{$opt{SOMATIC_SAMPLES}{$sample}{'ref'}}){
