@@ -233,8 +233,8 @@ sub runCheck {
 	}
 	if($opt{SV_MANTA} eq "yes"){
 	    # Check single samples
-	    foreach my $sample (@single_samples){
-		my $done_file = "$opt{OUTPUT_DIR}/structuralVariants/manta/logs/SV_Manta_$sample.done";
+	    foreach my $sample (@{$opt{SINGLE_SAMPLES}}){
+		my $done_file = "$opt{OUTPUT_DIR}/structuralVariants/manta/logs/SV_MANTA_$sample.done";
 		print BASH "if [ -f $done_file ]; then\n";
 		print BASH "\techo \"\t Manta $sample: done \" >>$logFile\n";
 		print BASH "else\n";
@@ -247,7 +247,7 @@ sub runCheck {
 		foreach my $sample_tumor (@{$opt{SOMATIC_SAMPLES}{$sample}{'tumor'}}){
 		    foreach my $sample_ref (@{$opt{SOMATIC_SAMPLES}{$sample}{'ref'}}){
 			my $sample_tumor_name = "$sample_ref\_$sample_tumor";
-			my $done_file = "$opt{OUTPUT_DIR}/structuralVariants/manta/logs/SV_Manta_$sample_tumor_name.done";
+			my $done_file = "$opt{OUTPUT_DIR}/structuralVariants/manta/logs/SV_MANTA_$sample_tumor_name.done";
 			print BASH "if [ -f $done_file ]; then\n";
 			print BASH "\techo \"\t Manta $sample_tumor_name: done \" >>$logFile\n";
 			print BASH "else\n";

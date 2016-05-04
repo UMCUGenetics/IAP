@@ -58,8 +58,8 @@ sub runManta {
 	if(! -e $manta_job_dir){make_path($manta_job_dir) or die "Couldn't create directory: $manta_job_dir\n"}
 	
 	# Skip Manta if .done file exists
-	if (-e "$manta_log_dir/SV_Manta_$sample.done"){
-	    print "WARNING: $manta_log_dir/SV_Manta_$sample.done exists, skipping \n";
+	if (-e "$manta_log_dir/SV_MANTA_$sample.done"){
+	    print "WARNING: $manta_log_dir/SV_MMANTA_$sample.done exists, skipping \n";
 	} else {
 	    # Store running jobs
 	    my @running_jobs;
@@ -84,7 +84,7 @@ sub runManta {
 
 	    print MANTA_SH "if [ -s $manta_out_dir/results/variants/diploidSV.vcf.gz.tbi ]\n";
 	    print MANTA_SH "then\n";
-	    print MANTA_SH "\ttouch $manta_log_dir/SV_Manta_$sample.done\n";
+	    print MANTA_SH "\ttouch $manta_log_dir/SV_MANTA_$sample.done\n";
 	    print MANTA_SH "fi\n";
     
 	    my $qsub = &qsubTemplate(\%opt,"MANTA");
