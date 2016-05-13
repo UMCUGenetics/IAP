@@ -154,35 +154,35 @@ sub runMapping {
 	
 	if($opt{MARKDUP_LEVEL} eq "lane"){
 	    if(scalar(@bamList) > 1){
-		print MERGE_SH "\t$opt{SAMBAMBA_PATH}/sambamba merge -t $opt{MAPPING_THREADS} mapping/$sample\_dedup.bam ".join(" ",@bamList)."\n";
+		print MERGE_SH "\t$opt{SAMBAMBA_PATH}/sambamba merge -t $opt{MAPPING_THREADS} mapping/$sample\_dedup.tmp.bam ".join(" ",@bamList)."\n";
 	    } else {
-		print MERGE_SH "\tmv $bamList[0] mapping/$sample\_dedup.bam\n";
+		print MERGE_SH "\tmv $bamList[0] mapping/$sample\_dedup.tmp.bam\n";
 	    }
-	    print MERGE_SH "\t$opt{SAMBAMBA_PATH}/sambamba index -t $opt{MAPPING_THREADS} mapping/$sample\_dedup.bam mapping/$sample\_dedup.bai\n";
-	    print MERGE_SH "\t$opt{SAMBAMBA_PATH}/sambamba flagstat -t $opt{MAPPING_THREADS} mapping/$sample\_dedup.bam > mapping/$sample\_dedup.flagstat\n";
+	    print MERGE_SH "\t$opt{SAMBAMBA_PATH}/sambamba index -t $opt{MAPPING_THREADS} mapping/$sample\_dedup.tmp.bam mapping/$sample\_dedup.tmp.bai\n";
+	    print MERGE_SH "\t$opt{SAMBAMBA_PATH}/sambamba flagstat -t $opt{MAPPING_THREADS} mapping/$sample\_dedup.tmp.bam > mapping/$sample\_dedup.flagstat\n";
 	
 	} elsif($opt{MARKDUP_LEVEL} eq "sample") {
 	    ### Use markdup to merge and markdup in one step, since sambamba v0.5.8
 	    print MERGE_SH "\techo \"Start markdup\t\" `date` \"\t$sample.bam\t\" `uname -n` >> $opt{OUTPUT_DIR}/$sample/logs/$sample.log\n";
 	    print MERGE_SH "ulimit -n 4096\n";
 	    ### Centos7 hpc: Use $TMPDIR as tmpdir variable.
-	    print MERGE_SH "\t$opt{SAMBAMBA_PATH}/sambamba markdup --tmpdir=$opt{OUTPUT_DIR}/$sample/tmp/ --overflow-list-size=$opt{MARKDUP_OVERFLOW_LIST_SIZE} -t $opt{MARKDUP_THREADS} ".join(" ",@bamList)." mapping/$sample\_dedup.bam\n";
-	    print MERGE_SH "\t$opt{SAMBAMBA_PATH}/sambamba index -t $opt{MARKDUP_THREADS} mapping/$sample\_dedup.bam mapping/$sample\_dedup.bai\n";
+	    print MERGE_SH "\t$opt{SAMBAMBA_PATH}/sambamba markdup --tmpdir=$opt{OUTPUT_DIR}/$sample/tmp/ --overflow-list-size=$opt{MARKDUP_OVERFLOW_LIST_SIZE} -t $opt{MARKDUP_THREADS} ".join(" ",@bamList)." mapping/$sample\_dedup.tmp.bam\n";
+	    print MERGE_SH "\t$opt{SAMBAMBA_PATH}/sambamba index -t $opt{MARKDUP_THREADS} mapping/$sample\_dedup.tmp.bam mapping/$sample\_dedup.bai\n";
 	    ### compute resource efficient alternative
 	    #print MERGE_SH "module load sambamcram/biobambam\n"
 	    #print MERGE_SH "bammerge level=0 tmpfile=\$TMPDIR/",$sample,"merge I=",join(" I=",@bamList)," |bammarkduplicates2 tmpfile=\$TMPDIR/",$sample;
 	    #print MERGE_SH "mark markthreads=",$opt{MARKDUP_THREADS}," index=1 M=mapping/",$sample,"_metrics.txt O=mapping/",$sample,"_dedup.bam\n";
-	    print MERGE_SH "\t$opt{SAMBAMBA_PATH}/sambamba flagstat -t $opt{MARKDUP_THREADS} mapping/$sample\_dedup.bam > mapping/$sample\_dedup.flagstat\n";
+	    print MERGE_SH "\t$opt{SAMBAMBA_PATH}/sambamba flagstat -t $opt{MARKDUP_THREADS} mapping/$sample\_dedup.tmp.bam > mapping/$sample\_dedup.flagstat\n";
 	    print MERGE_SH "\techo \"End markdup\t\" `date` \"\t$sample.bam\t\" `uname -n` >> $opt{OUTPUT_DIR}/$sample/logs/$sample.log\n";
 	
 	} elsif($opt{MARKDUP_LEVEL} eq "no") {
 	    if(scalar(@bamList) > 1){
-		print MERGE_SH "\t$opt{SAMBAMBA_PATH}/sambamba merge -t $opt{MARKDUP_THREADS} mapping/$sample.bam ".join(" ",@bamList)."\n";
+		print MERGE_SH "\t$opt{SAMBAMBA_PATH}/sambamba merge -t $opt{MARKDUP_THREADS} mapping/$sample.tmp.bam ".join(" ",@bamList)."\n";
 	    } else {
-		print MERGE_SH "\tmv $bamList[0] mapping/$sample.bam\n";
+		print MERGE_SH "\tmv $bamList[0] mapping/$sample.tmp.bam\n";
 	    }
-	    print MERGE_SH "\t$opt{SAMBAMBA_PATH}/sambamba index -t $opt{MARKDUP_THREADS} mapping/$sample.bam mapping/$sample.bai\n";
-	    print MERGE_SH "\t$opt{SAMBAMBA_PATH}/sambamba flagstat -t $opt{MARKDUP_THREADS} mapping/$sample.bam > mapping/$sample.flagstat\n";
+	    print MERGE_SH "\t$opt{SAMBAMBA_PATH}/sambamba index -t $opt{MARKDUP_THREADS} mapping/$sample.tmp.bam mapping/$sample.tmp.bai\n";
+	    print MERGE_SH "\t$opt{SAMBAMBA_PATH}/sambamba flagstat -t $opt{MARKDUP_THREADS} mapping/$sample.tmp.bam > mapping/$sample.flagstat\n";
 	}
 	
 	print MERGE_SH "fi\n\n";
@@ -204,7 +204,10 @@ sub runMapping {
 	    print MERGE_SH "\tFS1=\`grep -m 1 -P \"\\d+ \" mapping/$sample\_dedup.flagstat | awk '{{split(\$0,columns , \"+\")} print columns[1]}'\`\n";
 	    print MERGE_SH "\tif [ \$FS1 -eq \$TOTALREADS ]\n";
 	    print MERGE_SH "\tthen\n";
-    	    print MERGE_SH "\t\tfor i in \$( find \$PWD/mapping -name '*sorted_dedup.bam')\n";
+	    print MERGE_SH "\t\tmv mapping/$sample\_dedup.tmp.bam mapping/$sample\_dedup.bam\n";
+	    print MERGE_SH "\t\tmv mapping/$sample\_dedup.tmp.bai mapping/$sample\_dedup.bai\n";
+	    print MERGE_SH "\t\tmv mapping/$sample\_dedup.tmp.bam.bai mapping/$sample\_dedup.bam.bai\n";
+    	    print MERGE_SH "\t\tfor i in \$( find \$PWD/mapping -name '*sorted_dedup.ba*')\n";
     	    print MERGE_SH "\t\tdo\n";
     	    print MERGE_SH "\t\t\trm \$i\n";
     	    print MERGE_SH "\t\tdone\n";
@@ -222,7 +225,10 @@ sub runMapping {
 	    print MERGE_SH "\tthen\n";
 	    print MERGE_SH "\t\trm mapping/$sample.bam 2> /dev/null\n";
 	    print MERGE_SH "\t\trm mapping/$sample.bai 2> /dev/null\n";
-    	    print MERGE_SH "\t\tfor i in \$( find \$PWD/mapping -name '*sorted.bam')\n";
+	    print MERGE_SH "\t\tmv mapping/$sample\_dedup.tmp.bam mapping/$sample\_dedup.bam\n";
+	    print MERGE_SH "\t\tmv mapping/$sample\_dedup.tmp.bai mapping/$sample\_dedup.bai\n";
+	    print MERGE_SH "\t\tmv mapping/$sample\_dedup.tmp.bam.bai mapping/$sample\_dedup.bam.bai\n";
+    	    print MERGE_SH "\t\tfor i in \$( find \$PWD/mapping -name '*sorted.ba*')\n";
     	    print MERGE_SH "\t\tdo\n";
     	    print MERGE_SH "\t\t\trm \$i\n";
     	    print MERGE_SH "\t\tdone\n";
@@ -238,7 +244,10 @@ sub runMapping {
 	    print MERGE_SH "\tFS1=\`grep -m 1 -P \"\\d+ \" mapping/$sample.flagstat | awk '{{split(\$0,columns , \"+\")} print columns[1]}'\`\n";
 	    print MERGE_SH "\tif [ \$FS1 -eq \$TOTALREADS ]\n";
 	    print MERGE_SH "\tthen\n";
-    	    print MERGE_SH "\t\tfor i in \$( find \$PWD/mapping -name '*sorted.bam')\n";
+	    print MERGE_SH "\t\tmv mapping/$sample.tmp.bam mapping/$sample.bam\n";
+	    print MERGE_SH "\t\tmv mapping/$sample.tmp.bai mapping/$sample.bai\n";
+	    print MERGE_SH "\t\tmv mapping/$sample.tmp.bam.bai mapping/$sample.bam.bai\n";
+    	    print MERGE_SH "\t\tfor i in \$( find \$PWD/mapping -name '*sorted.ba*')\n";
     	    print MERGE_SH "\t\tdo\n";
     	    print MERGE_SH "\t\t\trm \$i\n";
     	    print MERGE_SH "\t\tdone\n";
@@ -350,7 +359,7 @@ sub submitMappingJobs{
 	print SORT_SH "\#!/bin/sh\n\n";
 	print SORT_SH "cd $opt{OUTPUT_DIR}/$sampleName/mapping \n";
 	print SORT_SH "echo \"Start sort\t\" `date` \"\t$coreName\t\" `uname -n` >> $opt{OUTPUT_DIR}/$sampleName/logs/$sampleName.log\n";
-	print SORT_SH "$opt{SAMBAMBA_PATH}/sambamba sort --tmpdir=$opt{OUTPUT_DIR}/$sampleName/tmp/ -m $opt{MAPPING_MEM}GB -t $opt{MAPPING_THREADS} -o $coreName\_sorted.bam $coreName.bam\n";
+	print SORT_SH "$opt{SAMBAMBA_PATH}/sambamba sort --tmpdir=$opt{OUTPUT_DIR}/$sampleName/tmp/ -m $opt{MAPPING_MEM}GB -t $opt{MAPPING_THREADS} -o $coreName\_sorted.tmp.bam $coreName.bam\n";
 	print SORT_SH "echo \"End sort\t\" `date` \"\t$coreName\t\" `uname -n` >> $opt{OUTPUT_DIR}/$sampleName/logs/$sampleName.log\n";
 	close SORT_SH;
 
@@ -366,7 +375,7 @@ sub submitMappingJobs{
 	print FS2_SH "\#!/bin/sh\n\n";
 	print FS2_SH "cd $opt{OUTPUT_DIR}/$sampleName/mapping \n";
 	print FS2_SH "echo \"Start flagstat\t \" `date` \"\t$coreName\_sorted.bam\t\" `uname -n` >> $opt{OUTPUT_DIR}/$sampleName/logs/$sampleName.log\n";
-	print FS2_SH "$opt{SAMBAMBA_PATH}/sambamba flagstat -t $opt{FLAGSTAT_THREADS} $coreName\_sorted.bam > $coreName\_sorted.flagstat\n";
+	print FS2_SH "$opt{SAMBAMBA_PATH}/sambamba flagstat -t $opt{FLAGSTAT_THREADS} $coreName\_sorted.tmp.bam > $coreName\_sorted.flagstat\n";
 	print FS2_SH "echo \"End flagstat\t \" `date` \"\t$coreName\_sorted.bam\t\" `uname -n` >> $opt{OUTPUT_DIR}/$sampleName/logs/$sampleName.log\n\n";
 	close FS2_SH;
 
@@ -382,7 +391,7 @@ sub submitMappingJobs{
 	print INDEX_SH "\#!/bin/sh\n\n";
 	print INDEX_SH "cd $opt{OUTPUT_DIR}/$sampleName/mapping \n";
 	print INDEX_SH "echo \"Start index\t\" `date` \"\t$coreName\_sorted.bam\t\" `uname -n` >> $opt{OUTPUT_DIR}/$sampleName/logs/$sampleName.log\n";
-	print INDEX_SH "$opt{SAMBAMBA_PATH}/sambamba index -t $opt{MAPPING_THREADS} $coreName\_sorted.bam $coreName\_sorted.bai \n";
+	print INDEX_SH "$opt{SAMBAMBA_PATH}/sambamba index -t $opt{MAPPING_THREADS} $coreName\_sorted.tmp.bam $coreName\_sorted.tmp.bai \n";
 	print INDEX_SH "echo \"End index\t\" `date` \"\t$coreName\_sorted.bam\t\" `uname -n` >> $opt{OUTPUT_DIR}/$sampleName/logs/$sampleName.log\n";
 	close INDEX_SH;
 
@@ -400,7 +409,7 @@ sub submitMappingJobs{
 	    print MARKDUP_SH "\#!/bin/sh\n\n";
 	    print MARKDUP_SH "cd $opt{OUTPUT_DIR}/$sampleName/mapping \n";
 	    print MARKDUP_SH "echo \"Start markdup\t\" `date` \"\t$coreName\_sorted.bam\t\" `uname -n` >> $opt{OUTPUT_DIR}/$sampleName/logs/$sampleName.log\n";
-	    print MARKDUP_SH "$opt{SAMBAMBA_PATH}/sambamba markdup --overflow-list-size=$opt{MARKDUP_OVERFLOW_LIST_SIZE} --tmpdir=$opt{OUTPUT_DIR}/$sampleName/tmp/ -t $opt{MAPPING_THREADS} $coreName\_sorted.bam $coreName\_sorted_dedup.bam \n";
+	    print MARKDUP_SH "$opt{SAMBAMBA_PATH}/sambamba markdup --overflow-list-size=$opt{MARKDUP_OVERFLOW_LIST_SIZE} --tmpdir=$opt{OUTPUT_DIR}/$sampleName/tmp/ -t $opt{MAPPING_THREADS} $coreName\_sorted.tmp.bam $coreName\_sorted_dedup.tmp.bam \n";
 	    print MARKDUP_SH "echo \"End markdup\t\" `date` \"\t$coreName\_sorted.bam\t\" `uname -n` >> $opt{OUTPUT_DIR}/$sampleName/logs/$sampleName.log\n";
 	    close MARKDUP_SH;
 	    my $qsub = &qsubTemplate(\%opt,"MAPPING");
@@ -415,7 +424,7 @@ sub submitMappingJobs{
 	    print FS3_SH "\#!/bin/sh\n\n";
 	    print FS3_SH "cd $opt{OUTPUT_DIR}/$sampleName/mapping \n";
 	    print FS3_SH "echo \"Start flagstat\t\" `date` \"\t$coreName\_sorted_dedup.bam\t\" `uname -n` >> $opt{OUTPUT_DIR}/$sampleName/logs/$sampleName.log\n";
-	    print FS3_SH "$opt{SAMBAMBA_PATH}/sambamba flagstat -t $opt{FLAGSTAT_THREADS} $coreName\_sorted_dedup.bam > $coreName\_sorted_dedup.flagstat\n";
+	    print FS3_SH "$opt{SAMBAMBA_PATH}/sambamba flagstat -t $opt{FLAGSTAT_THREADS} $coreName\_sorted_dedup.tmp.bam > $coreName\_sorted_dedup.flagstat\n";
 	    print FS3_SH "echo \"End flagstat\t\" `date` \"\t$coreName\_sorted_dedup.bam\t\" `uname -n` >> $opt{OUTPUT_DIR}/$sampleName/logs/$sampleName.log\n";
 	    close FS3_SH;
 
@@ -441,6 +450,9 @@ sub submitMappingJobs{
     print CLEAN_SH "\tif [ \$FS1 -eq \$FS2 ]\n";
     print CLEAN_SH "\tthen\n";
     print CLEAN_SH "\t\trm $coreName.bam\n";
+    print CLEAN_SH "\t\tmv $coreName\_sorted.tmp.bam $coreName\_sorted.bam\n";
+    print CLEAN_SH "\t\tmv $coreName\_sorted.tmp.bai $coreName\_sorted.bai\n";
+    print CLEAN_SH "\t\tmv $coreName\_sorted.tmp.bam.bai $coreName\_sorted.bam.bai\n";
     print CLEAN_SH "\telse\n";
     print CLEAN_SH "\t\techo \"ERROR: $coreName.flagstat and $coreName\_sorted.flagstat do not have the same read counts\" >> $opt{OUTPUT_DIR}/$sampleName/logs/$coreName\_cleanup.err\n";
     print CLEAN_SH "\tfi\n";
@@ -455,8 +467,8 @@ sub submitMappingJobs{
 	print CLEAN_SH "\tFS2=\`grep -m 1 -P \"\\d+ \" $coreName\_sorted_dedup.flagstat | awk '{{split(\$0,columns , \"+\")} print columns[1]}'\`\n";
 	print CLEAN_SH "\tif [ \$FS1 -eq \$FS2 ]\n";
 	print CLEAN_SH "\tthen\n";
-	print CLEAN_SH "\t\trm $coreName\_sorted.bam\n";
-	print CLEAN_SH "\t\trm $coreName\_sorted.bam.bai\n";
+	print CLEAN_SH "\t\trm $coreName\_sorted.ba*\n";
+	print CLEAN_SH "\t\tmv $coreName\_sorted_dedup.tmp.bam $coreName\_sorted_dedup.bam\n";
 	print CLEAN_SH "\telse\n";
 	print CLEAN_SH "\t\techo \"ERROR: $coreName\_sorted.flagstat and $coreName\_sorted_dedup.flagstat do not have the same read counts\" >> $opt{OUTPUT_DIR}/$sampleName/logs/$coreName\_cleanup.err\n";
 	print CLEAN_SH "\tfi\n";
