@@ -21,11 +21,7 @@ sub runPreStats {
     my $configuration = shift;
     my %opt = %{$configuration};
     my $jobIds = {};
-    
-    my $mainJobID = "$opt{OUTPUT_DIR}/jobs/PreStatsMainJob_".get_job_id().".sh";
 
-    open (QSUB,">$mainJobID") or die "ERROR: Couldn't create $mainJobID\n";
-    print QSUB "\#!/bin/sh\n\n. $opt{CLUSTER_PATH}/settings.sh\n\n";
     print "Creating FASTQC report for the following fastq.gz files:\n";
 
     foreach my $input (keys %{$opt{FASTQ}}){
@@ -35,30 +31,30 @@ sub runPreStats {
 	my ($sampleName) =  split("_", $coreName);
 	print "\t$input\n"; #print fastq filename
 
-	if(! -e "$opt{OUTPUT_DIR}/$sampleName/logs/PreStats_$sampleName.done"){
+	if(! -e "$opt{OUTPUT_DIR}/$sampleName/logs/PreStats_$coreName.done"){
 
 	    my $preStatsJobId = "PreStat_$coreName\_".get_job_id();
-	    push(@{$jobIds->{$sampleName}}, $preStatsJobId);
 	    open PS,">$opt{OUTPUT_DIR}/$sampleName/jobs/$preStatsJobId.sh";
 	    print PS "\#!/bin/sh\n\n";
 	    print PS "cd $opt{OUTPUT_DIR}/$sampleName\n\n";
 	    print PS "echo \"Start PreStats\t\" `date` \"\t$coreName\t\" `uname -n` >> $opt{OUTPUT_DIR}/$sampleName/logs/$sampleName.log\n";
-	    print PS "$opt{FASTQC_PATH}/fastqc $input -o QCStats --noextract -t $opt{PRESTATS_THREADS}\n";
-	    print PS "touch logs/PreStats_$sampleName.done\n";
+	    print PS "$opt{FASTQC_PATH}/fastqc -o QCStats --noextract -t $opt{PRESTATS_THREADS} $input\n";
+	    print PS "if [ -s $opt{OUTPUT_DIR}/$sampleName/QCStats/$coreName\_fastqc.zip -a -s $opt{OUTPUT_DIR}/$sampleName/QCStats/$coreName\_fastqc.html ]\n";
+	    print PS "then\n";
+	    print PS "\ttouch logs/PreStats_$coreName.done\n";
+	    print PS "fi\n";
 	    print PS "echo \"End PreStats\t\" `date` \"\t$coreName\t\" `uname -n` >> $opt{OUTPUT_DIR}/$sampleName/logs/$sampleName.log\n";
 	    close PS;
 
 	    my $qsub = &qsubTemplate(\%opt,"PRESTATS");
-	    print QSUB $qsub," -o ",$opt{OUTPUT_DIR},"/",$sampleName,"/logs/PreStat_",$coreName,".out -e ",$opt{OUTPUT_DIR},"/",$sampleName,"/logs/PreStats_",$coreName,".err -N ",$preStatsJobId," ",$opt{OUTPUT_DIR},"/",$sampleName,"/jobs/",$preStatsJobId,".sh\n";
+	    system $qsub." -o ".$opt{OUTPUT_DIR}."/".$sampleName."/logs/PreStat_".$coreName.".out -e ".$opt{OUTPUT_DIR}."/".$sampleName."/logs/PreStats_".$coreName.".err -N ".$preStatsJobId." ".$opt{OUTPUT_DIR}."/".$sampleName."/jobs/".$preStatsJobId.".sh";
+	    push(@{$opt{RUNNING_JOBS}->{"preStats"}}, $preStatsJobId);
 	} else {
 	    print "\t WARNING: FASTQC report for $input already exists, skipping.\n";
 	}
 
     }
-
-    close QSUB;
-
-    system("sh $mainJobID");
+    return \%opt;
 }
 
 ############

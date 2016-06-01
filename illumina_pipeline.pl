@@ -31,6 +31,7 @@ use illumina_somaticVariants;
 use illumina_copyNumber;
 use illumina_structuralVariants;
 use illumina_baf;
+use illumina_callableLoci;
 use illumina_annotateVariants;
 use illumina_vcfutils;
 use illumina_nipt;
@@ -98,7 +99,8 @@ my $opt_ref;
 if( $opt{FASTQ} ){
     if($opt{PRESTATS} eq "yes"){
 	print "###SCHEDULING PRESTATS###\n";
-	illumina_prestats::runPreStats(\%opt);
+	$opt_ref = illumina_prestats::runPreStats(\%opt);
+	%opt = %$opt_ref;
     }
 
     if($opt{MAPPING} eq "yes"){
@@ -143,31 +145,33 @@ if(! $opt{VCF} ){
     ### Somatic variant callers
     if($opt{SOMATIC_VARIANTS} eq "yes"){
 	print "\n###SCHEDULING SOMATIC VARIANT CALLERS####\n";
-	$opt_ref = illumina_somaticVariants::parseSamples(\%opt);
-	%opt = %$opt_ref;
 	my $somVar_jobs = illumina_somaticVariants::runSomaticVariantCallers(\%opt);
 	$opt{RUNNING_JOBS}->{'somVar'} = $somVar_jobs;
     }
     if($opt{COPY_NUMBER} eq "yes"){
 	print "\n###SCHEDULING COPY NUMBER TOOLS####\n";
-	if($opt{CNV_MODE} eq "sample_control"){
-	    $opt_ref = illumina_copyNumber::parseSamples(\%opt);
-	    %opt = %$opt_ref;
-	}
 	my $cnv_jobs = illumina_copyNumber::runCopyNumberTools(\%opt);
 	$opt{RUNNING_JOBS}->{'CNV'} = $cnv_jobs;
     }
-    ### SV - Delly
+    ### SV - Delly/Manta
     if($opt{SV_CALLING} eq "yes"){
 	print "\n###SCHEDULING SV CALLING####\n";
-	my $sv_jobs = illumina_structuralVariants::runDelly(\%opt);
+	my $sv_jobs = illumina_structuralVariants::runStructuralVariantCallers(\%opt);
 	$opt{RUNNING_JOBS}->{'sv'} = $sv_jobs;
     }
+    ### BAF
     if($opt{BAF} eq "yes"){
 	print "\n###SCHEDULING BAF Analysis###\n";
 	my $baf_jobs = illumina_baf::runBAF(\%opt);
 	$opt{RUNNING_JOBS}->{'baf'} = $baf_jobs;
     }
+    ### CALLABLE LOCI
+    if($opt{CALLABLE_LOCI} eq "yes"){
+	print "\n###SCHEDULING CALLABLE LOCI Analysis###\n";
+	my $callable_loci_jobs = illumina_callableLoci::runCallableLoci(\%opt);
+	$opt{RUNNING_JOBS}->{'callable_loci'} = $callable_loci_jobs;
+    }
+    
     ### GATK
     if($opt{VARIANT_CALLING} eq "yes"){
 	print "\n###SCHEDULING VARIANT CALLING####\n";
@@ -238,6 +242,61 @@ sub getSamples{
     }
     
     @{$opt{SAMPLES}} = keys(%samples);
+
+    ###
+    # Parse sample names based on somatic_regex, store samples in single_sample array or somatic_sample hash
+    ###
+    my %somatic_samples;
+    my @somatic_samples_uniq; #usefull for pileup
+    my @single_samples;
+
+    ### Parse samples
+    foreach my $sample (@{$opt{SAMPLES}}){
+	if ($opt{SOMATIC_REGEX}){
+	    my ($sample_name,$origin) = ($sample =~ /$opt{SOMATIC_REGEX}/);
+
+	    if ( (! $sample_name) || (! $origin) ){
+		print "Running single sample analysis for: $sample\n";
+		push(@single_samples, $sample);
+	    } else {
+		print "Running somatic sample analysis for: $sample\n";
+		# Reference sample
+		if ($origin =~ m/R.*/){
+		    push(@{$somatic_samples{$sample_name}{"ref"}},$sample);
+		}
+		# Tumor samples
+		elsif ($origin =~ m/T.*/){
+		    push(@{$somatic_samples{$sample_name}{"tumor"}},$sample);
+		}
+	    }
+
+	} else {
+	    print "Running single sample analysis for: $sample\n";
+	    push(@single_samples, $sample);
+	}
+    }
+
+    ### Check pairs
+    foreach my $sample (keys %somatic_samples){
+	## If no ref or tumor found at samples to single_samples
+	if ( ! $somatic_samples{$sample}{"ref"}){
+	    print "WARNING: No ref found for $sample, switching to single sample mode\n";
+	    push(@single_samples, @{$somatic_samples{$sample}{"tumor"}});
+	    delete $somatic_samples{$sample};
+	}
+	elsif ( ! $somatic_samples{$sample}{"tumor"}){
+	    print "WARNING: No tumor found for $sample, switching to single sample mode\n";
+	    push(@single_samples, @{$somatic_samples{$sample}{"ref"}});
+	    delete $somatic_samples{$sample};
+	} else {
+	    push(@somatic_samples_uniq, @{$somatic_samples{$sample}{"tumor"}});
+	    push(@somatic_samples_uniq, @{$somatic_samples{$sample}{"ref"}});
+	}
+    }
+
+    @{$opt{SINGLE_SAMPLES}} = @single_samples;
+    %{$opt{SOMATIC_SAMPLES}} = %somatic_samples;
+    @{$opt{SOMATIC_SAMPLES_UNIQ}} = @somatic_samples_uniq;
 }
 
 sub createOutputDirs{
@@ -321,6 +380,7 @@ sub checkConfig{
     if(! $opt{COPY_NUMBER}){ print "ERROR: No COPY_NUMBER option found in config files. \n"; $checkFailed = 1; }
     if(! $opt{SV_CALLING}){ print "ERROR: No SV_CALLING option found in config files. \n"; $checkFailed = 1; }
     if(! $opt{BAF}){ print "ERROR: No BAF option found in config files. \n"; $checkFailed = 1; }
+    if(! $opt{CALLABLE_LOCI}){ print "ERROR: No CALLABLE_LOCI option found in config files. \n"; $checkFailed = 1; }
     if(! $opt{ANNOTATE_VARIANTS}){ print "ERROR: No ANNOTATE_VARIANTS option found in config files. \n"; $checkFailed = 1; }
     if(! $opt{VCF_UTILS}){ print "ERROR: No VCF_UTILS option found in config files. \n"; $checkFailed = 1; }
     if(! $opt{NIPT}){ print "ERROR: No NIPT option found in config files. \n"; $checkFailed = 1; }
@@ -479,7 +539,7 @@ sub checkConfig{
     if($opt{SOMATIC_VARIANTS} eq "yes"){
 	if(! $opt{SAMTOOLS_PATH}){ print "ERROR: No SAMTOOLS_PATH option found in config files.\n"; $checkFailed = 1; }
 	if( $opt{SOMVAR_TARGETS} && ! -e $opt{SOMVAR_TARGETS}) { print"ERROR: $opt{SOMVAR_TARGETS} does not exist\n"; $checkFailed = 1; }
-	if(! $opt{SOMVAR_REGEX}){ print "ERROR: No SOMVAR_REGEX option found in config files.\n"; $checkFailed = 1; }
+	if(! $opt{SOMATIC_REGEX}){ print "ERROR: No SOMATIC_REGEX option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{SOMVAR_STRELKA}){ print "ERROR: No SOMVAR_STRELKA option found in config files.\n"; $checkFailed = 1; }
 	if($opt{SOMVAR_STRELKA} eq "yes"){
 	    if(! $opt{STRELKA_PATH}){ print "ERROR: No STRELKA_PATH option found in config files.\n"; $checkFailed = 1; }
@@ -548,7 +608,7 @@ sub checkConfig{
 	if(! $opt{CNV_CONTRA}){ print "ERROR: No CNV_CONTRA  in config files.\n"; $checkFailed = 1; }
 	if(! $opt{CNV_MODE}){ print "ERROR: No CNV_MODE in config files. \n"; $checkFailed = 1; }
 	if($opt{CNV_MODE} eq "sample_control"){
-	    if(! $opt{CNV_REGEX}){ print "ERROR: No CNV_REGEX in config files. \n"; $checkFailed = 1; }
+	    if(! $opt{SOMATIC_REGEX}){ print "ERROR: No SOMATIC_REGEX in config files. \n"; $checkFailed = 1; }
 	}
 	if($opt{CNV_CONTRA} eq "yes"){
 	    if($opt{CNV_MODE} eq "sample"){ print "ERROR: Running Contra in CNV_MODE sample is not possible.\n"; $checkFailed = 1;}
@@ -580,22 +640,34 @@ sub checkConfig{
     }
     ## SV_CALLING
     if($opt{SV_CALLING} eq "yes"){
-	if(! $opt{DELLY_PATH}){ print "ERROR: No DELLY_PATH option found in config files.\n"; $checkFailed = 1; }
-	if(! $opt{DELLY_QUEUE}){ print "ERROR: No DELLY_QUEUE option found in config files.\n"; $checkFailed = 1; }
-	if(! $opt{DELLY_THREADS}){ print "ERROR: No DELLY_THREADS option found in config files.\n"; $checkFailed = 1; }
-	if(! $opt{DELLY_MEM}){ print "ERROR: No DELLY_MEM option found in config files.\n"; $checkFailed = 1; }
-	if(! $opt{DELLY_TIME}){ print "ERROR: No DELLY_TIME option found in config files.\n"; $checkFailed = 1; }
-	if(! $opt{DELLY_MERGE_QUEUE}){ print "ERROR: No DELLY_MERGE_QUEUE option found in config files.\n"; $checkFailed = 1; }
-	if(! $opt{DELLY_MERGE_TIME}){ print "ERROR: No DELLY_MERGE_TIME option found in config files.\n"; $checkFailed = 1; }
-	if(! $opt{DELLY_MERGE_THREADS}){ print "ERROR: No DELLY_MERGE_THREADS option found in config files.\n"; $checkFailed = 1; }
-	if(! $opt{DELLY_MERGE_MEM}){ print "ERROR: No DELLY_MERGE_MEM option found in config files.\n"; $checkFailed = 1; }
-	if(! $opt{DELLY_SVTYPE}){ print "ERROR: No DELLY_SVTYPE option found in config files.\n"; $checkFailed = 1; }
-	if(! $opt{DELLY_SPLIT}){ print "ERROR: No DELLY_SPLIT option found in config files.\n"; $checkFailed = 1; }
-	if(! $opt{DELLY_MAPQUAL}){ print "ERROR: No DELLY_MAPQUAL option found in config files.\n"; $checkFailed = 1; }
-	if(! $opt{DELLY_MAD}){ print "ERROR: No DELLY_MAD option found in config files.\n"; $checkFailed = 1; }
-	if(! $opt{DELLY_FLANK}){ print "ERROR: No DELLY_FLANK option found in config files.\n"; $checkFailed = 1; }
-	#if(! $opt{DELLY_VCF_GENO}){ print "ERROR: No DELLY_VCF_GENO option found in config files.\n"; $checkFailed = 1; }
-	if(! $opt{DELLY_GENO_QUAL}){ print "ERROR: No DELLY_GENO_QUA option found in config files.\n"; $checkFailed = 1; }
+	if(! $opt{SV_MANTA}){ print "ERROR: No SV_MANTA option found in config files.\n"; $checkFailed = 1; }
+	if($opt{SV_MANTA} eq "yes"){
+	    if(! $opt{MANTA_PATH}){ print "ERROR: No MANTA_PATH option found in config files.\n"; $checkFailed = 1; }
+	    if(! $opt{MANTA_QUEUE}){ print "ERROR: No MANTA_QUEUE option found in config files.\n"; $checkFailed = 1; }
+	    if(! $opt{MANTA_THREADS}){ print "ERROR: No MANTA_THREADS option found in config files.\n"; $checkFailed = 1; }
+	    if(! $opt{MANTA_MEM}){ print "ERROR: No MANTA_MEM option found in config files.\n"; $checkFailed = 1; }
+	    if(! $opt{MANTA_TIME}){ print "ERROR: No MANTA_TIME option found in config files.\n"; $checkFailed = 1; }
+	    #if( $opt{SOMATIC_REGEX}){  print "ERROR: No SOMATIC_REGEX option found in config files.\n"; $checkFailed = 1; }
+	}
+	if(! $opt{SV_DELLY}){ print "ERROR: No SV_DELLY option found in config files.\n"; $checkFailed = 1; }
+	if($opt{SV_DELLY} eq "yes"){
+	    if(! $opt{DELLY_PATH}){ print "ERROR: No DELLY_PATH option found in config files.\n"; $checkFailed = 1; }
+	    if(! $opt{DELLY_QUEUE}){ print "ERROR: No DELLY_QUEUE option found in config files.\n"; $checkFailed = 1; }
+	    if(! $opt{DELLY_THREADS}){ print "ERROR: No DELLY_THREADS option found in config files.\n"; $checkFailed = 1; }
+	    if(! $opt{DELLY_MEM}){ print "ERROR: No DELLY_MEM option found in config files.\n"; $checkFailed = 1; }
+	    if(! $opt{DELLY_TIME}){ print "ERROR: No DELLY_TIME option found in config files.\n"; $checkFailed = 1; }
+	    if(! $opt{DELLY_MERGE_QUEUE}){ print "ERROR: No DELLY_MERGE_QUEUE option found in config files.\n"; $checkFailed = 1; }
+	    if(! $opt{DELLY_MERGE_TIME}){ print "ERROR: No DELLY_MERGE_TIME option found in config files.\n"; $checkFailed = 1; }
+	    if(! $opt{DELLY_MERGE_THREADS}){ print "ERROR: No DELLY_MERGE_THREADS option found in config files.\n"; $checkFailed = 1; }
+	    if(! $opt{DELLY_MERGE_MEM}){ print "ERROR: No DELLY_MERGE_MEM option found in config files.\n"; $checkFailed = 1; }
+	    if(! $opt{DELLY_SVTYPE}){ print "ERROR: No DELLY_SVTYPE option found in config files.\n"; $checkFailed = 1; }
+	    if(! $opt{DELLY_SPLIT}){ print "ERROR: No DELLY_SPLIT option found in config files.\n"; $checkFailed = 1; }
+	    if(! $opt{DELLY_MAPQUAL}){ print "ERROR: No DELLY_MAPQUAL option found in config files.\n"; $checkFailed = 1; }
+	    if(! $opt{DELLY_MAD}){ print "ERROR: No DELLY_MAD option found in config files.\n"; $checkFailed = 1; }
+	    if(! $opt{DELLY_FLANK}){ print "ERROR: No DELLY_FLANK option found in config files.\n"; $checkFailed = 1; }
+	    #if(! $opt{DELLY_VCF_GENO}){ print "ERROR: No DELLY_VCF_GENO option found in config files.\n"; $checkFailed = 1; }
+	    if(! $opt{DELLY_GENO_QUAL}){ print "ERROR: No DELLY_GENO_QUA option found in config files.\n"; $checkFailed = 1; }
+	}
     }
     ##BAF Analysis
     if($opt{BAF} eq "yes"){
@@ -606,6 +678,17 @@ sub checkConfig{
 	if(! $opt{BIOVCF_PATH}){ print "ERROR: No BIOVCF_PATH option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{BAF_SNPS}){ print "ERROR: No BAF_SNPS option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{BAF_PLOTSCRIPT}){ print "ERROR: No BAF_PLOTSCRIPT option found in config files.\n"; $checkFailed = 1; }
+    }
+    if($opt{CALLABLE_LOCI} eq "yes"){
+	if(! $opt{CALLABLE_LOCI_QUEUE}){ print "ERROR: No CALLABLE_LOCI_QUEUE option found in config files.\n"; $checkFailed = 1; }
+	if(! $opt{CALLABLE_LOCI_THREADS}){ print "ERROR: No CALLABLE_LOCI_THREADS option found in config files.\n"; $checkFailed = 1; }
+	if(! $opt{CALLABLE_LOCI_MEM}){ print "ERROR: No CALLABLE_LOCI_MEM option found in config files.\n"; $checkFailed = 1; }
+	if(! $opt{CALLABLE_LOCI_TIME}){ print "ERROR: No CALLABLE_LOCI_TIME option found in config files.\n"; $checkFailed = 1; }
+	if(! $opt{CALLABLE_LOCI_BASEQUALITY}){ print "ERROR: No CALLABLE_LOCI_BASEQUALITY option found in config files.\n"; $checkFailed = 1; }
+	if(! $opt{CALLABLE_LOCI_MAPQUALITY}){ print "ERROR: No CALLABLE_LOCI_MAPQUALITY option found in config files.\n"; $checkFailed = 1; }
+	if(! $opt{CALLABLE_LOCI_DEPTH}){ print "ERROR: No CALLABLE_LOCI_DEPTH option found in config files.\n"; $checkFailed = 1; }
+	if(! $opt{CALLABLE_LOCI_DEPTHLOWMAPQ}){ print "ERROR: No CALLABLE_LOCI_DEPTHLOWMAPQ option found in config files.\n"; $checkFailed = 1; }
+	
     }
     ## ANNOTATE_VARIANTS
     if($opt{ANNOTATE_VARIANTS} eq "yes"){

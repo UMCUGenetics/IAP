@@ -17,8 +17,9 @@ perl illumina_createConfig.pl
 ```bash
 perl illumina_createConfig.pl -i <filename.ini> -o </path/to/output_dir> (-f /path/to/fastq_dir OR -b /path/to/bam_dir OR -v /path/to/vcfFile.vcf) -m your@mail.com
 ```
-in which fastq files in /path/to/fastq_dir have extension R[12]_fastq.gz and bamfiles in /path/to/bam_dir have extension .bam
-naming convention: sampleName_flowcellID_index_lane_tag_R[12].fastq.gz
+Input file naming convention:
+- Fastq: sample_flowcell_index_lane_R[12]_tag.fastq.gz
+- Bam: sample.bam
 
 #### Run pipeline
 ```bash
@@ -52,6 +53,7 @@ perl illumina_pipeline.pl /path/to/output_dir/settings.config>
 - [Tabix](http://www.htslib.org/doc/tabix.html)
 - [vcflib](https://github.com/ekg/vcflib)
 - [delly](https://github.com/tobiasrausch/delly/)
+- [manta](https://github.com/Illumina/manta)
 - [plink](http://pngu.mgh.harvard.edu/~purcell/plink/)
 - [king](http://people.virginia.edu/~wc9c/KING/)
 
@@ -114,6 +116,7 @@ SOMATIC_VARIANTS	yes/no
 SV_CALLING	yes/no
 COPY_NUMBER	yes/no
 BAF	yes/no
+CALLABLE_LOCI	yes/no
 FILTER_VARIANTS	yes/no
 ANNOTATE_VARIANTS	yes/no
 VCF_UTILS	yes/no
@@ -122,6 +125,13 @@ CHECKING	yes/no
 
 #### GENOME SETTINGS ####
 GENOME	/path/to/genome.fasta
+
+####SOMATIC SAMPLE REGEX####
+## Only required for somatic variant calling, copy number and structural variant analysis
+SOMATIC_REGEX	(CPCT\d{8})([TR][IVX]*$)
+### SOMATIC_REGEX should follow this patern: (<sample_match>)(<origin_match>)
+# R = reference
+# T = tumor
 
 #### PRESTATS CLUSTER CONFIGURATION ####
 PRESTATS_QUEUE	queue_name 
@@ -236,7 +246,6 @@ FILTER_CLUSTERWINDOWSIZE	35 | Optional, The window size (in bases) in which to e
 
 ####SOMATIC VARIANT CONFIGURATION####
 SOMVAR_TARGETS	/path/to/target.bed | Optional, use for targeted data e.g. exome.
-SOMVAR_REGEX	(CPCT\d{8})([TR][IVX]*$) | Used for tumor / control sample parsing, should follow this patern: (<sample_match>)(<origin_match>)
 
 ## Strelka
 SOMVAR_STRELKA	yes/no
@@ -290,7 +299,18 @@ SOMVARMERGE_TIME	estimated runtime
 SOMVARMERGE_THREADS	number_of_threads
 SOMVARMERGE_MEM	maximum_memory
 
-#### SV Calling -  DELLY CONFIGURATION####
+#### SV Calling CONFIGURATION####
+
+##MANTA
+SV_MANTA	yes/no
+MANTA_PATH	/path/to/manta/bin
+MANTA_QUEUE	queue_name
+MANTA_TIME	estimated runtime
+MANTA_THREADS	number_of_threads
+MANTA_MEM	maximum_memory
+
+##DELLY
+SV_DELLY	no/yes
 DELLY_PATH	/path/to/delly_v0.6.7
 DELLY_QUEUE	queue_name
 DELLY_TIME	estimated runtime
@@ -316,7 +336,6 @@ CNVCHECK_THREADS	number_of_threads
 CNVCHECK_MEM	maximum_memory
 CNV_MODE	sample_control
 CNV_TARGETS	/path/to/target.bed | Optional, use for targeted data e.g. exome.
-CNV_REGEX	(CPCT\d{8})([TR][IVX]*$) | Used for tumor / control sample parsing, should follow this patern: (<sample_match>)(<origin_match>)
 
 ## Contra
 CNV_CONTRA	yes/no
@@ -345,7 +364,7 @@ FREEC_WINDOW	1000 | explicit window size (higher priority than coefficientOfVari
 FREEC_TELOCENTROMERIC	50000 | length of pre-telomeric and pre-centromeric regions: Control-FREEC will not output small CNAs and LOH found within these regions (they are likely to be false because of mappability/genome assembly issues)
 50000 for human/mouse genomes.
 
-### B ALLELE FREQUENCY CLUSTER CONFIGURATION####
+#### B ALLELE FREQUENCY CLUSTER CONFIGURATION####
 BAF_QUEUE	queue_name
 BAF_TIME	estimated runtime
 BAF_THREADS	number_of_threads
@@ -353,6 +372,17 @@ BAF_MEM	maximum_memory
 BIOVCF_PATH	/path/to/biovcf/bin
 BAF_SNPS	/path/to/CytoScanHD/CytoScanHD_hg19_SNPs_sorted.bed
 BAF_PLOTSCRIPT	/path/to/IAP/scripts/makeBAFplot.R
+
+#### CALLABLE LOCI CLUSTER CONFIGURATION####
+CALLABLE_LOCI_QUEUE	queue_name
+CALLABLE_LOCI_TIME	estimated runtime
+CALLABLE_LOCI_THREADS	number_of_threads
+CALLABLE_LOCI_MEM	maximum_memory
+## CALLABLE LOCI filter settings based on haplotype caller settings
+CALLABLE_LOCI_BASEQUALITY	10
+CALLABLE_LOCI_MAPQUALITY	10
+CALLABLE_LOCI_DEPTH	20
+CALLABLE_LOCI_DEPTHLOWMAPQ	20
 
 ####VARIANT ANNOTATION CONFIGURATION####
 ANNOTATE_QUEUE	queue_name
