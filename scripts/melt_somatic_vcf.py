@@ -127,23 +127,31 @@ def melt_somatic_vcf(vcf_file, remove_filtered, tumor_sample):
 
                             ## Collect AD
                             if somatic_caller == 'freebayes':
+                                # freebayes_example.vcf:##FORMAT=<ID=RO,Number=1,Type=Integer,Description="Reference allele observation count">
                                 ro_index = variant_gt_format.index('RO')
                                 ref_ad.append(float(variant_call[ro_index]))
                             elif somatic_caller == 'mutect':
+                                # mutect_example.vcf:##FORMAT=<ID=AD,Number=.,Type=Integer,Description="Allelic depths for the ref and alt alleles in the order listed">
                                 if 'AD' in variant_gt_format:
                                     ad_index = variant_gt_format.index('AD')
                                     ref_ad.append(float(variant_call[ad_index].split(',')[0]))
-                                else:
+                                else: # AD NOT ALWAYS present.   Should use RD = (1-FA)*DP, AD = FA * DP  in this case
                                     freq = float(variant_call[variant_gt_format.index('FA')])
                                     variant_dp = float(variant_call[dp_index])
                                     ref_ad.append((1-freq) * variant_dp)
                             elif somatic_caller == 'varscan':
+                                # varscan_example.vcf:##FORMAT=<ID=RD,Number=1,Type=Integer,Description="Depth of reference-supporting bases (reads1)">
                                 rd_index = variant_gt_format.index('RD')
                                 ref_ad.append(float(variant_call[rd_index]))
                             elif somatic_caller == 'strelka':
                                 if type == 'snp':
+                                    # strelka_example.vcf:##FORMAT=<ID=AU,Number=2,Type=Integer,Description="Number of 'A' alleles used in tiers 1,2">
+                                    # strelka_example.vcf:##FORMAT=<ID=CU,Number=2,Type=Integer,Description="Number of 'C' alleles used in tiers 1,2">
+                                    # strelka_example.vcf:##FORMAT=<ID=GU,Number=2,Type=Integer,Description="Number of 'G' alleles used in tiers 1,2">
+                                    # strelka_example.vcf:##FORMAT=<ID=TU,Number=2,Type=Integer,Description="Number of 'T' alleles used in tiers 1,2">
                                     ref_ad.append(float(variant_call[variant_gt_format.index(ref+'U')].split(',')[0]))
-                                else:
+                                elif type == 'indel':
+                                    #strelka_example.vcf:##FORMAT=<ID=TAR,Number=2,Type=Integer,Description="Reads strongly supporting alternate allele for tiers 1,2"> == REF
                                     ref_ad.append(float(variant_call[variant_gt_format.index('TAR')].split(',')[0]))
 
                     ## Check support for each alternative allele among callers
@@ -169,7 +177,6 @@ def melt_somatic_vcf(vcf_file, remove_filtered, tumor_sample):
                                 ## Collect AD
                                 if somatic_caller == 'freebayes':
                                     # freebayes_example.vcf:##FORMAT=<ID=AO,Number=A,Type=Integer,Description="Alternate allele observation count">
-                                    # freebayes_example.vcf:##FORMAT=<ID=RO,Number=1,Type=Integer,Description="Reference allele observation count">
                                     variant_ao_index = variant_gt_format.index('AO')
                                     variant_ao =  variant_call[variant_ao_index].split(',')
                                     gt_alt_index = min(variant_call_gt.index(str(alt_allele_num)),(len(variant_ao)-1))
@@ -185,7 +192,6 @@ def melt_somatic_vcf(vcf_file, remove_filtered, tumor_sample):
                                         alt_ad.append(freq * variant_dp)
                                 elif somatic_caller == 'varscan':
                                     # varscan_example.vcf:##FORMAT=<ID=AD,Number=1,Type=Integer,Description="Depth of variant-supporting bases (reads2)">
-                                    # varscan_example.vcf:##FORMAT=<ID=RD,Number=1,Type=Integer,Description="Depth of reference-supporting bases (reads1)">
                                     if 'AD' in variant_gt_format:
                                         ad_index = variant_gt_format.index('AD')
                                         alt_ad.append(float(variant_call[ad_index]))
@@ -202,8 +208,7 @@ def melt_somatic_vcf(vcf_file, remove_filtered, tumor_sample):
                                         # strelka_example.vcf:##FORMAT=<ID=TU,Number=2,Type=Integer,Description="Number of 'T' alleles used in tiers 1,2">
                                         alt_ad.append(float(variant_call[variant_gt_format.index(alt+'U')].split(',')[0]))
                                     else:
-                                        #strelka_example.vcf:##FORMAT=<ID=TAR,Number=2,Type=Integer,Description="Reads strongly supporting alternate allele for tiers 1,2"> REFERENCE!!!
-                                        #strelka_example.vcf:##FORMAT=<ID=TIR,Number=2,Type=Integer,Description="Reads strongly supporting indel allele for tiers 1,2">
+                                        #strelka_example.vcf:##FORMAT=<ID=TIR,Number=2,Type=Integer,Description="Reads strongly supporting indel allele for tiers 1,2"> == ALT
                                         alt_ad.append(float(variant_call[variant_gt_format.index('TIR')].split(',')[0]))
 
                         # Store results
@@ -228,8 +233,10 @@ def melt_somatic_vcf(vcf_file, remove_filtered, tumor_sample):
                     if len(gt) == 1:
                         gt.append(gt[0])
 
-                    # Print variant
+                    #Calculate mean DP among callers with support for position
                     variant_dp = int(round(sum(variant_dp_counts)/len(variant_dp_counts)))
+
+                    # Print variant
                     print "{var_data};CSA={csa};CSP={csp}\t{gt_format}\t{gt}:{ad}:{dp}".format(
                         var_data = "\t".join(variant[:8]),
                         csa = ','.join(map(str,[ref_support]+alts_support)),
