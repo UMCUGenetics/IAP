@@ -177,9 +177,10 @@ def melt_somatic_vcf(vcf_file, remove_filtered, tumor_sample):
                                 ## Collect AD
                                 if somatic_caller == 'freebayes':
                                     # freebayes_example.vcf:##FORMAT=<ID=AO,Number=A,Type=Integer,Description="Alternate allele observation count">
+                                    # GATK combineVariants does not change AO field if the order of alt alleles is changed. Therefor in some cases an incorrect AO value is selected.
                                     variant_ao_index = variant_gt_format.index('AO')
                                     variant_ao =  variant_call[variant_ao_index].split(',')
-                                    gt_alt_index = min(variant_call_gt.index(str(alt_allele_num)),(len(variant_ao)-1))
+                                    gt_alt_index = min(alt_index,(len(variant_ao)-1))
                                     alt_ad.append(float(variant_ao[gt_alt_index]))
                                 elif somatic_caller == 'mutect':
                                     # mutect_example.vcf:##FORMAT=<ID=AD,Number=.,Type=Integer,Description="Allelic depths for the ref and alt alleles in the order listed">
