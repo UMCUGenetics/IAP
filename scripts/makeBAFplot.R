@@ -91,9 +91,9 @@ df <- df[!is.na(df$CHROM),]
 df$CHROM <- factor(df$CHROM, levels=chromosomes)
 #rm(rowdat)
 
-pdf(file=paste0(outdir,sample,"_BAF.pdf"), width=10, height=2, pointsize=6, useDingbats=FALSE)
+pdf(file=paste0(outdir,sample,"_BAF.pdf"), width=15, height=2, pointsize=6, useDingbats=FALSE)
 
-p <- ggplot(df, aes(POS, baf, group=CHROM)) + geom_point(shape=20) + facet_wrap(~CHROM, nrow=1, scales="free_x")
+p <- ggplot(df, aes(POS, baf, group=CHROM)) + geom_point(shape=20, size=0.2, alpha=0.5) + facet_wrap(~CHROM, nrow=1, scales="free_x")
 
 p <- p + theme(
   axis.line.x=element_blank(),
