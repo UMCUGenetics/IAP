@@ -7,13 +7,15 @@
 ###   - SnpSift -> DBNSFP
 ###   - ID from vcf file, for example Cosmic
 ###   - AC and AF from a vcf file, for example GoNL
-### Author: R.F.Ernst
+### Authors: R.F.Ernst & H.H.D.Kerstens
 ##################################################################################################################################################
 
 package illumina_annotateVariants;
 
 use strict;
 use POSIX qw(tmpnam);
+use lib "$FindBin::Bin"; #locates pipeline directory                                                                                                              
+use illumina_sge;
 
 sub runAnnotateVariants {
     ###
@@ -57,7 +59,7 @@ sub runAnnotateVariants {
 	$outvcf = $invcf;
 	$outvcf =~ s/.vcf/_snpEff.vcf/;
 	#$command = "java -Xmx".$javaMem."g -jar $opt{SNPEFF_PATH}/snpEff.jar -c $opt{SNPEFF_PATH}/snpEff.config $opt{ANNOTATE_DB} -v $invcf -o gatk $opt{ANNOTATE_FLAGS} > $outvcf\n";
-	$command = "java -Xmx".$opt{ANNOTATE_MEM}."g -jar $opt{SNPEFF_PATH}/snpEff.jar -c $opt{SNPEFF_PATH}/snpEff.config $opt{ANNOTATE_DB} -v $invcf $opt{ANNOTATE_FLAGS} > $outvcf\n";
+	$command = "java -Xmx".$opt{ANNOTATE_MEM}."g -Djava.io.tmpdir=$opt{OUTPUT_DIR}/tmp -jar $opt{SNPEFF_PATH}/snpEff.jar -c $opt{SNPEFF_PATH}/snpEff.config $opt{ANNOTATE_DB} -v $invcf $opt{ANNOTATE_FLAGS} > $outvcf\n";
 	$command .= "\t$opt{IGVTOOLS_PATH}/igvtools index $outvcf\n";
 	$command .= "\trm igv.log";
 	print ANNOTATE_SH "if [ -s $invcf ]\n";
@@ -73,7 +75,7 @@ sub runAnnotateVariants {
     if($opt{ANNOTATE_SNPSIFT} eq "yes"){
 	$outvcf = $invcf;
 	$outvcf =~ s/.vcf/_snpSift.vcf/;
-	$command = "java -Xmx".$opt{ANNOTATE_MEM}."g -jar $opt{SNPEFF_PATH}/SnpSift.jar dbnsfp -v -f $opt{ANNOTATE_FIELDS} -db $opt{ANNOTATE_DBNSFP} $invcf > $outvcf\n";
+	$command = "java -Xmx".$opt{ANNOTATE_MEM}."g -Djava.io.tmpdir=$opt{OUTPUT_DIR}/tmp -jar $opt{SNPEFF_PATH}/SnpSift.jar dbnsfp -v -f $opt{ANNOTATE_FIELDS} -db $opt{ANNOTATE_DBNSFP} $invcf > $outvcf\n";
 	$command .= "\t$opt{IGVTOOLS_PATH}/igvtools index $outvcf\n";
 	$command .= "\trm igv.log";
 	print ANNOTATE_SH "if [ -s $invcf ]\n";
@@ -93,7 +95,7 @@ sub runAnnotateVariants {
 	$outvcf = $invcf;
 	my $suffix = "_$opt{ANNOTATE_IDNAME}.vcf";
 	$outvcf =~ s/.vcf/$suffix/;
-	$command = "java -Xmx".$opt{ANNOTATE_MEM}."g -jar $opt{GATK_PATH}/GenomeAnalysisTK.jar -T VariantAnnotator -nt $opt{ANNOTATE_THREADS} -R $opt{GENOME} -o $outvcf --variant $invcf --dbsnp $opt{ANNOTATE_IDDB} --alwaysAppendDbsnpId";
+	$command = "java -Xmx".$opt{ANNOTATE_MEM}."g -Djava.io.tmpdir=$opt{OUTPUT_DIR}/tmp -jar $opt{GATK_PATH}/GenomeAnalysisTK.jar -T VariantAnnotator -nt $opt{ANNOTATE_THREADS} -R $opt{GENOME} -o $outvcf --variant $invcf --dbsnp $opt{ANNOTATE_IDDB} --alwaysAppendDbsnpId";
 	print ANNOTATE_SH "if [ -s $invcf ]\n";
 	print ANNOTATE_SH "then\n";
 	print ANNOTATE_SH "\t$command\n";
@@ -111,7 +113,7 @@ sub runAnnotateVariants {
 	$outvcf = $invcf;
 	my $suffix = "_$opt{ANNOTATE_FREQNAME}.vcf";
 	$outvcf =~ s/.vcf/$suffix/;
-	$command = "java -Xmx".$opt{ANNOTATE_MEM}."g -jar $opt{SNPEFF_PATH}/SnpSift.jar annotate -tabix -name $opt{ANNOTATE_FREQNAME}_ -info $opt{ANNOTATE_FREQINFO} $opt{ANNOTATE_FREQDB} $invcf > $outvcf \n";
+	$command = "java -Xmx".$opt{ANNOTATE_MEM}."g -Djava.io.tmpdir=$opt{OUTPUT_DIR}/tmp -jar $opt{SNPEFF_PATH}/SnpSift.jar annotate -tabix -name $opt{ANNOTATE_FREQNAME}_ -info $opt{ANNOTATE_FREQINFO} $opt{ANNOTATE_FREQDB} $invcf > $outvcf \n";
 	$command .= "\t$opt{IGVTOOLS_PATH}/igvtools index $outvcf\n";
 	$command .= "\trm igv.log";
 	print ANNOTATE_SH "if [ -s $invcf ]\n";
@@ -127,7 +129,7 @@ sub runAnnotateVariants {
     }
     
     ### Check final vcf, last chr and start position must be identical.
-    print ANNOTATE_SH "if [ \"\$(tail -n 1 $preAnnotateVCF | cut -f 1,2)\" = \"\$(tail -n 1 $outvcf | cut -f 1,2)\" ]\nthen\n\ttouch $opt{OUTPUT_DIR}/logs/VariantAnnotation.done\nfi\n\n";
+    print ANNOTATE_SH "if [ -s $preAnnotateVCF -a -s $outvcf -a \"\$(tail -n 1 $preAnnotateVCF | cut -f 1,2)\" = \"\$(tail -n 1 $outvcf | cut -f 1,2)\" ]\nthen\n\ttouch $opt{OUTPUT_DIR}/logs/VariantAnnotation.done\nfi\n\n";
     print ANNOTATE_SH "echo \"End variant annotation\t\" `date` \"\t$invcf\t\" `uname -n` >> $opt{OUTPUT_DIR}/logs/$runName.log\n";
     
     ### Process runningjobs
@@ -138,10 +140,11 @@ sub runAnnotateVariants {
     }
 
     ### Start main bash script
+    my $qsub = &qsubJava(\%opt,"ANNOTATE");
     if (@runningJobs){
-	system "qsub -q $opt{ANNOTATE_QUEUE} -m a -M $opt{MAIL} -pe threaded $opt{ANNOTATE_THREADS} -R $opt{CLUSTER_RESERVATION} -P $opt{CLUSTER_PROJECT} -o $logDir/VariantAnnotation_$runName.out -e $logDir/VariantAnnotation_$runName.err -N $jobID -hold_jid ".join(",",@runningJobs)." $bashFile";
+	system "$qsub -o $logDir/VariantAnnotation_$runName.out -e $logDir/VariantAnnotation_$runName.err -N $jobID -hold_jid ".join(",",@runningJobs)." $bashFile";
     } else {
-	system "qsub -q $opt{ANNOTATE_QUEUE} -m a -M $opt{MAIL} -pe threaded $opt{ANNOTATE_THREADS} -R $opt{CLUSTER_RESERVATION} -P $opt{CLUSTER_PROJECT} -o $logDir/VariantAnnotation_$runName.out -e $logDir/VariantAnnotation_$runName.err -N $jobID $bashFile";
+	system "$qsub -o $logDir/VariantAnnotation_$runName.out -e $logDir/VariantAnnotation_$runName.err -N $jobID $bashFile";
     }
 
     return $jobID;

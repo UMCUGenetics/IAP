@@ -12,6 +12,8 @@ package illumina_check;
 use strict;
 use POSIX qw(tmpnam);
 use FindBin;
+use lib "$FindBin::Bin"; #locates pipeline directory
+use illumina_sge;
 
 sub runCheck {
     ### 
@@ -24,8 +26,8 @@ sub runCheck {
     my @runningJobs;
 
     ### Create bash file
-    my $jobID = get_job_id();
-    my $bashFile = "$opt{OUTPUT_DIR}/jobs/check_".get_job_id().".sh";
+    my $jobID = $runName."_".get_job_id();
+    my $bashFile = "$opt{OUTPUT_DIR}/jobs/check_".$jobID.".sh";
     open (BASH,">$bashFile") or die "ERROR: Couldn't create $bashFile\n";
     print BASH "\#!/bin/sh\n . $opt{CLUSTER_PATH}/settings.sh\n\n";
 
@@ -39,13 +41,16 @@ sub runCheck {
     my $version = `git --git-dir $FindBin::Bin/.git describe --tags`;
     print BASH "echo \"Pipeline version: $version \" >>$logFile\n\n";
     print BASH "echo \"\">>$logFile\n\n"; ## empty line between samples
-
-    ### Check sample steps
-    foreach my $sample (@{$opt{SAMPLES}}){
-	if(! $opt{VCF}) {
-	    print BASH "echo \"Sample: $sample\" >>$logFile\n";
-	    if($opt{PRESTATS} eq "yes" && ! $opt{BAM}){
-		$doneFile = $opt{OUTPUT_DIR}."/$sample/logs/PreStats_$sample.done";
+    
+    ### Check fastq steps
+    if( $opt{FASTQ} ){
+	foreach my $fastq_file (keys %{$opt{FASTQ}}){
+	    my $coreName = (split("/", $fastq_file))[-1];
+	    $coreName =~ s/\.fastq.gz//;
+	    my ($sampleName) = split("_", $coreName);
+	    print BASH "echo \"Fastq: $sampleName - $coreName\" >>$logFile\n";
+	    if($opt{PRESTATS} eq "yes" ){
+		$doneFile = $opt{OUTPUT_DIR}."/$sampleName/logs/PreStats_$coreName.done";
 		print BASH "if [ -f $doneFile ]; then\n";
 		print BASH "\techo \"\t PreStats: done \" >>$logFile\n";
 		print BASH "else\n";
@@ -53,6 +58,18 @@ sub runCheck {
 		print BASH "\tfailed=true\n";
 		print BASH "fi\n";
 	    }
+	}
+	if ( $opt{RUNNING_JOBS}->{'preStats'} ){
+	    push( @runningJobs, @{$opt{RUNNING_JOBS}->{'preStats'}} );
+	}
+    }
+
+    print BASH "echo \"\" >>$logFile\n";
+
+    ### Check sample steps
+    foreach my $sample (@{$opt{SAMPLES}}){
+	if(! $opt{VCF}) {
+	    print BASH "echo \"Sample: $sample\" >>$logFile\n";
 	    if($opt{MAPPING} eq "yes" && ! $opt{BAM}){
 		$doneFile = $opt{OUTPUT_DIR}."/$sample/logs/Mapping_$sample.done";
 		print BASH "if [ -f $doneFile ]; then\n";
@@ -80,6 +97,31 @@ sub runCheck {
 		print BASH "\tfailed=true\n";
 		print BASH "fi\n";
 	    }
+	    if($opt{BAF} eq "yes"){
+		$doneFile = $opt{OUTPUT_DIR}."/$sample/logs/BAF_$sample.done";
+		print BASH "if [ -f $doneFile ]; then\n";
+		print BASH "\techo \"\t BAF analysis: done \" >>$logFile\n";
+		print BASH "else\n";
+		print BASH "\techo \"\t BAF analysis: failed \">>$logFile\n";
+		print BASH "\tfailed=true\n";
+		print BASH "fi\n";
+		if ( $opt{RUNNING_JOBS}->{'baf'} ){
+		    push( @runningJobs, @{$opt{RUNNING_JOBS}->{'baf'}} );
+		}
+	    }
+	    if($opt{CALLABLE_LOCI} eq "yes"){
+		$doneFile = $opt{OUTPUT_DIR}."/$sample/logs/CallableLoci_$sample.done";
+		print BASH "if [ -f $doneFile ]; then\n";
+		print BASH "\techo \"\t CallableLoci analysis: done \" >>$logFile\n";
+		print BASH "else\n";
+		print BASH "\techo \"\t CallableLoci analysis: failed \">>$logFile\n";
+		print BASH "\tfailed=true\n";
+		print BASH "fi\n";
+		if ( $opt{RUNNING_JOBS}->{'callable_loci'} ){
+		    push( @runningJobs, @{$opt{RUNNING_JOBS}->{'callable_loci'}} );
+		}
+	    }
+	    
 	    print BASH "echo \"\">>$logFile\n\n"; ## empty line between samples
 	}
 	## Running jobs
@@ -122,7 +164,7 @@ sub runCheck {
 	print BASH "\tfailed=true\n";
 	print BASH "fi\n";
     }
-    if($opt{SOMATIC_VARIANTS} eq "yes"){
+    if($opt{SOMATIC_VARIANTS} eq "yes" && ! $opt{VCF}){
 	print BASH "echo \"Somatic variants:\" >>$logFile\n";
 	foreach my $sample (keys(%{$opt{SOMATIC_SAMPLES}})){
 	    foreach my $sample_tumor (@{$opt{SOMATIC_SAMPLES}{$sample}{'tumor'}}){
@@ -142,7 +184,7 @@ sub runCheck {
 	    push( @runningJobs, @{$opt{RUNNING_JOBS}->{'somVar'}} );
 	}
     }
-    if($opt{COPY_NUMBER} eq "yes"){
+    if($opt{COPY_NUMBER} eq "yes" && ! $opt{VCF}){
 	print BASH "echo \"Copy number analysis:\" >>$logFile\n";
 	if($opt{CNV_MODE} eq "sample_control"){
 	    foreach my $sample (keys(%{$opt{SOMATIC_SAMPLES}})){
@@ -174,18 +216,47 @@ sub runCheck {
 	    push( @runningJobs, @{$opt{RUNNING_JOBS}->{'CNV'}} );
 	}
     }
-    if($opt{SV_CALLING} eq "yes"){
+    if($opt{SV_CALLING} eq "yes" && ! $opt{VCF}){
 	print BASH "echo \"SV calling:\" >>$logFile\n";
-	# per sv type done file check
-	my @svTypes = split/\t/, $opt{DELLY_SVTYPE};
-	foreach my $type (@svTypes){
-	    my $done_file = "$opt{OUTPUT_DIR}/DELLY/logs/DELLY_$type.done"; 
-	    print BASH "if [ -f $done_file ]; then\n";
-	    print BASH "\techo \"\t $type: done \" >>$logFile\n";
-	    print BASH "else\n";
-	    print BASH "\techo \"\t $type: failed \">>$logFile\n";
-	    print BASH "\tfailed=true\n";
-	    print BASH "fi\n";
+	if($opt{SV_DELLY} eq "yes"){
+	    # per sv type done file check
+	    my @svTypes = split/\t/, $opt{DELLY_SVTYPE};
+	    foreach my $type (@svTypes){
+		my $done_file = "$opt{OUTPUT_DIR}/structuralVariants/delly/logs/DELLY_$type.done"; 
+		print BASH "if [ -f $done_file ]; then\n";
+		print BASH "\techo \"\t Delly $type: done \" >>$logFile\n";
+		print BASH "else\n";
+		print BASH "\techo \"\t Delly $type: failed \">>$logFile\n";
+		print BASH "\tfailed=true\n";
+		print BASH "fi\n";
+	    }
+	}
+	if($opt{SV_MANTA} eq "yes"){
+	    # Check single samples
+	    foreach my $sample (@{$opt{SINGLE_SAMPLES}}){
+		my $done_file = "$opt{OUTPUT_DIR}/structuralVariants/manta/logs/SV_MANTA_$sample.done";
+		print BASH "if [ -f $done_file ]; then\n";
+		print BASH "\techo \"\t Manta $sample: done \" >>$logFile\n";
+		print BASH "else\n";
+		print BASH "\techo \"\t Manta $sample: failed \">>$logFile\n";
+		print BASH "\tfailed=true\n";
+		print BASH "fi\n";
+	    }
+	    # Check somatic samples
+	    foreach my $sample (keys(%{$opt{SOMATIC_SAMPLES}})){
+		foreach my $sample_tumor (@{$opt{SOMATIC_SAMPLES}{$sample}{'tumor'}}){
+		    foreach my $sample_ref (@{$opt{SOMATIC_SAMPLES}{$sample}{'ref'}}){
+			my $sample_tumor_name = "$sample_ref\_$sample_tumor";
+			my $done_file = "$opt{OUTPUT_DIR}/structuralVariants/manta/logs/SV_MANTA_$sample_tumor_name.done";
+			print BASH "if [ -f $done_file ]; then\n";
+			print BASH "\techo \"\t Manta $sample_tumor_name: done \" >>$logFile\n";
+			print BASH "else\n";
+			print BASH "\techo \"\t Manta $sample_tumor_name: failed \">>$logFile\n";
+			print BASH "\tfailed=true\n";
+			print BASH "fi\n";
+		    }
+		}
+	    }
 	}
 	if ( $opt{RUNNING_JOBS}->{'sv'} ){
 	    push( @runningJobs, @{$opt{RUNNING_JOBS}->{'sv'}} );
@@ -234,8 +305,7 @@ sub runCheck {
     ### Pipeline done
     print BASH "else\n";
     print BASH "\techo \"The pipeline completed successfully. The md5sum file will be created.\">>$logFile\n";
-    print BASH "\tmail -s \"IAP DONE $runName\" \"$opt{MAIL}\" < $logFile\n";
-    
+
     # Remove all tmp folders and empty logs except .done files if pipeline completed successfully
     print BASH "\trm -r $opt{OUTPUT_DIR}/tmp\n";
     print BASH "\trm -r $opt{OUTPUT_DIR}/*/tmp\n";
@@ -244,13 +314,22 @@ sub runCheck {
     print BASH "\tfind $opt{OUTPUT_DIR}/somaticVariants/*/logs -size 0 -not -name \"*.done\" -delete\n";
     if($opt{INDELREALIGNMENT} eq "yes"){
 	foreach my $sample (@{$opt{SAMPLES}}){
-	    if($opt{MAPPING_MARKDUP} eq "sample" || $opt{MAPPING_MARKDUP} eq "lane"){
+	    if($opt{MARKDUP_LEVEL} eq "sample" || $opt{MARKDUP_LEVEL} eq "lane"){
 		print BASH "\trm $opt{OUTPUT_DIR}/$sample/mapping/$sample\_dedup.ba*\n";
 	    } else {
 		print BASH "\trm $opt{OUTPUT_DIR}/$sample/mapping/$sample.ba*\n";
 	    }
 	}
     }
+    if($opt{SOMATIC_VARIANTS} eq "yes" && $opt{SOMVAR_VARSCAN} eq "yes"){
+	foreach my $sample (@{$opt{SOMATIC_SAMPLES_UNIQ}}){
+		print BASH "\trm $opt{OUTPUT_DIR}/$sample/mapping/$sample*.pileup.gz\n";
+		print BASH "\trm $opt{OUTPUT_DIR}/$sample/mapping/$sample*.pileup.gz.tbi\n";
+	}
+    }
+    # Send email.
+    print BASH "\tmail -s \"IAP DONE $runName\" \"$opt{MAIL}\" < $logFile\n";
+    
     # Create md5sum.txt
     print BASH "\n\tcd $opt{OUTPUT_DIR}\n";
     print BASH "\tfind . -type f \\( ! -iname \"md5sum.txt\" \\) -exec md5sum \"{}\" \\; > md5sum.txt\n";
@@ -261,10 +340,11 @@ sub runCheck {
     print BASH "sleep 5s \n";
 
     #Start main bash script
+    my $qsub = &qsubTemplate(\%opt,"CHECKING");
     if (@runningJobs){
-	system "qsub -q $opt{CHECKING_QUEUE} -m as -M $opt{MAIL} -pe threaded $opt{CHECKING_THREADS} -P $opt{CLUSTER_PROJECT} -o /dev/null -e /dev/null -N check_$jobID -hold_jid ".join(",",@runningJobs)." $bashFile";
+	system "$qsub -o /dev/null -e /dev/null -N check_$jobID -hold_jid ".join(",",@runningJobs)." $bashFile";
     } else {
-	system "qsub -q $opt{CHECKING_QUEUE} -m as -M $opt{MAIL} -pe threaded $opt{CHECKING_THREADS} -P $opt{CLUSTER_PROJECT} -o /dev/null -e /dev/null -N check_$jobID $bashFile";
+	system "$qsub -o /dev/null -e /dev/null -N check_$jobID $bashFile";
     }
 }
 

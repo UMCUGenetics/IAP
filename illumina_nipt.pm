@@ -13,6 +13,9 @@ package illumina_nipt;
 use strict;
 use POSIX qw(tmpnam);
 use FindBin;
+use lib "$FindBin::Bin"; #locates pipeline directory
+use illumina_sge;
+
 
 sub runNipt {
     ###
@@ -38,6 +41,9 @@ sub runNipt {
 	$command .= "-d $opt{NIPT_REFERENCESET} ";
 	$command .= "-x $opt{OUTPUT_DIR}/ ";
 	
+	# qsub options
+	$command .= "-q $opt{NIPT_QUEUE} -c $opt{NIPT_TIME} -t $opt{NIPT_THREADS} -m $opt{NIPT_MEM} ";
+	
 	my $bashFile = $opt{OUTPUT_DIR}."/jobs/".$jobID.".sh";
 	my $logDir = $opt{OUTPUT_DIR}."/logs";
         
@@ -48,10 +54,11 @@ sub runNipt {
 	print NIPT_SH "$command\n";
 	close NIPT_SH;
 	
+	my $qsub = &qsubTemplate(\%opt,"NIPT_MASTER");
 	if (@runningJobs){
-	    system "qsub -q $opt{NIPT_QUEUE} -m a -M $opt{MAIL} -pe threaded $opt{NIPT_THREADS} -R $opt{CLUSTER_RESERVATION} -P $opt{CLUSTER_PROJECT} -o $logDir/NIPT_$runName.out -e $logDir/NIPT_$runName.err -N $jobID -hold_jid ".join(",",@runningJobs)." $bashFile";
+	    system "$qsub -o $logDir/NIPT_$runName.out -e $logDir/NIPT_$runName.err -N $jobID -hold_jid ".join(",",@runningJobs)." $bashFile";
 	} else {
-	    system "qsub -q $opt{NIPT_QUEUE} -m a -M $opt{MAIL} -pe threaded $opt{NIPT_THREADS} -R $opt{CLUSTER_RESERVATION} -P $opt{CLUSTER_PROJECT} -o $logDir/NIPT_$runName.out -e $logDir/NIPT_$runName.err -N $jobID $bashFile";
+	    system "$qsub -o $logDir/NIPT_$runName.out -e $logDir/NIPT_$runName.err -N $jobID $bashFile";
 	}
 	
 	### Check Chromate result
@@ -64,7 +71,7 @@ sub runNipt {
 	print NIPTCHECK_SH "echo \"Finished NIPT\t\" `date` \"\t\" `uname -n` >> $opt{OUTPUT_DIR}/logs/$runName.log\n";
 	close NIPTCHECK_SH;
 
-	system "qsub -q $opt{NIPT_QUEUE} -m a -M $opt{MAIL} -pe threaded $opt{NIPT_THREADS} -R $opt{CLUSTER_RESERVATION} -P $opt{CLUSTER_PROJECT} -o $logDir/NIPT_$runName.out -e $logDir/NIPT_$runName.err -N $jobIDCheck -hold_jid bamMetrics_report_".$runName.",$jobID $bashFileCheck";
+	system "$qsub -o $logDir/NIPT_$runName.out -e $logDir/NIPT_$runName.err -N $jobIDCheck -hold_jid bamMetrics_report_".$runName.",$jobID $bashFileCheck";
 	return $jobIDCheck;
 
     } else {
