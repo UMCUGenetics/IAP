@@ -224,8 +224,8 @@ sub runDelly {
 	if ($svSplit[$i] eq "yes") {
 	    get_chrs_from_dict(\%chrs,\%opt) unless scalar(keys %chrs);
 	    my ( $jobIDs_chunks, $logFiles );
-	    ( $jobIDs_chunks, $logFiles ) = create_interchromosomal_chunks(\@sampleBams, \%chrs, $type, $delly_tmp_dir, $delly_job_dir, $delly_log_dir, \@runningJobs) if $type eq "TRA";
-	    ( $jobIDs_chunks, $logFiles ) = create_intrachromosomal_chunks(\@sampleBams, \%chrs, $type, $delly_tmp_dir, $delly_job_dir, $delly_log_dir, \@runningJobs) if $type =~ /DEL|DUP|INV/;
+	    ( $jobIDs_chunks, $logFiles ) = create_interchromosomal_chunks(\@sampleBams, \%chrs, $type, $delly_tmp_dir, $delly_job_dir, $delly_log_dir,\%opt, \@runningJobs) if $type eq "TRA";
+	    ( $jobIDs_chunks, $logFiles ) = create_intrachromosomal_chunks(\@sampleBams, \%chrs, $type, $delly_tmp_dir, $delly_job_dir, $delly_log_dir,\%opt, \@runningJobs) if $type =~ /DEL|DUP|INV/;
 
 	    # Translocation jobs
 	    if ($type eq "TRA") {
@@ -417,10 +417,11 @@ sub submit_delly {
 
 ### Create inter chromosomal chunks
 sub create_interchromosomal_chunks {
-    my ($bams, $chrs, $type, $delly_tmp_dir, $delly_job_dir, $delly_log_dir, $jobs) = @_;
+    my ($bams, $chrs, $type, $delly_tmp_dir, $delly_job_dir, $delly_log_dir, $config, $jobs) = @_;
     my @runningJobs = @{$jobs};
     my @jobIDs;
     my @logFiles;
+    my %opt = %{$config};
     open VCF_FILES, ">$delly_tmp_dir/$type\_vcf_files.txt";
     foreach my $chr1 (keys %{$chrs}) {
 	foreach my $chr2 (keys %{$chrs}) {
@@ -440,7 +441,7 @@ sub create_interchromosomal_chunks {
 	    my $jobID = "DELLY_".get_job_id();
 	    my $dellyFile = "$delly_job_dir/$type\_$chr1\_$chr2\_".$jobID.".sh";
 	    push @jobIDs, $jobID;
-	    my ( $logFile ) = submit_delly($dellyFile, $jobID, $type, $excludeFile, $vcfFile, \@runningJobs, $bams);
+	    my ( $logFile ) = submit_delly($dellyFile, $jobID, $type, $excludeFile, $vcfFile,\%opt, \@runningJobs, $bams);
 	    push @logFiles, $logFile;
 	}
     }
@@ -450,10 +451,11 @@ sub create_interchromosomal_chunks {
 
 ### Create intra chromosomal chunks
 sub create_intrachromosomal_chunks {
-    my ($bams, $chrs, $type, $delly_tmp_dir, $delly_job_dir, $delly_log_dir, $jobs) = @_;
+    my ($bams, $chrs, $type, $delly_tmp_dir, $delly_job_dir, $delly_log_dir,$config, $jobs) = @_;
     my @runningJobs = @{$jobs};
     my @jobIDs;
     my @logFiles;
+    my %opt = %{$config};
     open VCF_FILES, ">$delly_tmp_dir/$type\_vcf_files.txt";
     foreach my $chr (keys %{$chrs}) {
 	my $vcfFile = "$delly_tmp_dir/$type\_$chr.vcf";
@@ -472,7 +474,7 @@ sub create_intrachromosomal_chunks {
 	my $jobID = "DELLY_".get_job_id();
 	my $dellyFile = "$delly_job_dir/$type\_$chr\_".$jobID.".sh";
 	push @jobIDs, $jobID;
-	my ( $logFile ) = submit_delly($dellyFile, $jobID, $type, $excludeFile, $vcfFile, \@runningJobs, $bams);
+	my ( $logFile ) = submit_delly($dellyFile, $jobID, $type, $excludeFile, $vcfFile,\%opt, \@runningJobs, $bams);
 	push @logFiles, $logFile;
     }
     close VCF_FILES;
