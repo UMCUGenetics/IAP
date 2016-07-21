@@ -33,7 +33,7 @@ sub runVariantCalling {
 	print "WARNING: $opt{OUTPUT_DIR}/logs/VariantCaller.done exists, skipping \n";
 	return \%opt;
     }
-    
+
     ### Create gvcf folder if CALLING_GVCF eq yes
     if((! -e "$opt{OUTPUT_DIR}/gvcf" && $opt{CALLING_GVCF} eq 'yes')){
 	mkdir("$opt{OUTPUT_DIR}/gvcf") or die "Couldn't create directory: $opt{OUTPUT_DIR}/gvcf\n";
@@ -77,6 +77,9 @@ sub runVariantCalling {
     }
     if ( $opt{CALLING_PLOIDY} ) {
 	$command .= "-ploidy $opt{CALLING_PLOIDY} ";
+    }
+    if($opt{CALLING_GVCF} eq 'yes'){
+	$command .= "-gvcf ";
     }
     
     ### retry option
