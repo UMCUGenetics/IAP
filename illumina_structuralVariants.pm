@@ -435,7 +435,8 @@ sub create_interchromosomal_chunks {
 	    my $excludeFile = "$delly_tmp_dir/$type\_$chr1\_$chr2\_exclude.txt";
 	    open EXC, ">$excludeFile";
 	    foreach my $chrom (keys %{$chrs}) {
-		print EXC join("\t", $chrom, -1, $chrs->{$chrom}) . "\n" unless $chrom =~ /^$chr1$/ or $chrom =~ /^$chr2$/;
+		#print EXC join("\t", $chrom, -1, $chrs->{$chrom}) . "\n" unless $chrom =~ /^$chr1$/ or $chrom =~ /^$chr2$/;
+		print EXC $chrom . "\n" unless $chrom =~ /^$chr1$/ or $chrom =~ /^$chr2$/;
 	    }
 	    close EXC;
 	    my $jobID = "DELLY_".get_job_id();
@@ -467,7 +468,8 @@ sub create_intrachromosomal_chunks {
 	my $excludeFile = "$delly_tmp_dir/$type\_$chr\_exclude.txt";
 	open EXC, ">$excludeFile";
 	foreach my $chrom (keys %{$chrs}) {
-	    print EXC join("\t", $chrom, -1, $chrs->{$chrom}) . "\n" unless $chrom =~ /^$chr$/;
+	    #print EXC join("\t", $chrom, -1, $chrs->{$chrom}) . "\n" unless $chrom =~ /^$chr$/;
+	    print EXC $chrom . "\n" unless $chrom =~ /^$chr$/;
 	}
 	close EXC;
 	
