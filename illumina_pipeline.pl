@@ -10,7 +10,7 @@
 
 ### Load common perl modules ####
 use strict;
-use POSIX qw(tmpnam);
+use POSIX qw(tmpnam strftime);
 use Getopt::Long;
 use FindBin;
 use File::Path qw(make_path);
@@ -84,6 +84,20 @@ close CONFIGURATION;
 
 ### Check config file
 checkConfig();
+
+### Create main output directory
+if(! -e $opt{OUTPUT_DIR}){
+    make_path($opt{OUTPUT_DIR}) or die "Couldn't create directory: $opt{OUTPUT_DIR}\n";
+}
+
+### Setup sumbit log
+$| = 1;
+
+# Fork to log
+my $date = strftime "%m%d%Y_%H%M", localtime;
+open( my $SUBMITLOG, "|-", "tee $opt{OUTPUT_DIR}/submit_$date.log" ) || die $!;
+open( STDOUT, '>&', $SUBMITLOG ) || die $!;
+open( STDERR, '>&', $SUBMITLOG ) || die $!;
 
 ###Parse samples from FASTQ or BAM files
 getSamples();
@@ -216,6 +230,11 @@ if($opt{CHECKING} eq "yes"){
     illumina_check::runCheck(\%opt);
 }
 
+### Close submit log
+close(STDERR);
+close(STDOUT);
+close($SUBMITLOG);
+
 ############ SUBROUTINES  ############
 sub getSamples{
     my %samples;
@@ -301,9 +320,6 @@ sub getSamples{
 
 sub createOutputDirs{
     ### Create main output directories
-    if(! -e $opt{OUTPUT_DIR}){
-	make_path($opt{OUTPUT_DIR}) or die "Couldn't create directory: $opt{OUTPUT_DIR}\n";
-    }
     if(! -e "$opt{OUTPUT_DIR}/QCStats"){
 	mkdir("$opt{OUTPUT_DIR}/QCStats") or die "Couldn't create directory: $opt{OUTPUT_DIR}/QCStats\n";
     }
