@@ -693,7 +693,6 @@ sub checkConfig{
 	if(! $opt{BAF_TIME}){ print "ERROR: No BAF_TIME option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{BIOVCF_PATH}){ print "ERROR: No BIOVCF_PATH option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{BAF_SNPS}){ print "ERROR: No BAF_SNPS option found in config files.\n"; $checkFailed = 1; }
-	if(! $opt{BAF_PLOTSCRIPT}){ print "ERROR: No BAF_PLOTSCRIPT option found in config files.\n"; $checkFailed = 1; }
     }
     if($opt{CALLABLE_LOCI} eq "yes"){
 	if(! $opt{CALLABLE_LOCI_QUEUE}){ print "ERROR: No CALLABLE_LOCI_QUEUE option found in config files.\n"; $checkFailed = 1; }

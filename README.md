@@ -371,7 +371,6 @@ BAF_THREADS	number_of_threads
 BAF_MEM	maximum_memory
 BIOVCF_PATH	/path/to/biovcf/bin
 BAF_SNPS	/path/to/CytoScanHD/CytoScanHD_hg19_SNPs_sorted.bed
-BAF_PLOTSCRIPT	/path/to/IAP/scripts/makeBAFplot.R
 
 #### CALLABLE LOCI CLUSTER CONFIGURATION####
 CALLABLE_LOCI_QUEUE	queue_name
