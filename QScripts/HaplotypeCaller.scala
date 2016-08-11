@@ -4,7 +4,6 @@ import org.broadinstitute.gatk.queue.QScript
 import org.broadinstitute.gatk.queue.extensions.gatk._
 
 import org.broadinstitute.gatk.tools.walkers.haplotypecaller.ReferenceConfidenceMode
-import org.broadinstitute.gatk.utils.variant.GATKVCFIndexType
 
 class VariantCaller extends QScript {
     // Required arguments. All initialized to empty values.
@@ -50,6 +49,9 @@ class VariantCaller extends QScript {
 
     @Argument(doc="", shortName="sexAware", required=false)
     var sexAware: Boolean = false
+    
+    @Argument(doc="", shortName="sex", required=false)
+    var sexes: List[String] = Nil
 
     def script() {
         // Define common settings for original HC, gvcf HC and sex aware gvcf HC.
@@ -76,7 +78,8 @@ class VariantCaller extends QScript {
 	    if (dbsnpFile != null) {
 		haplotypeCaller.D = dbsnpFile
 	    }
-		if (targetFile != null) {
+
+	    if (targetFile != null) {
 		haplotypeCaller.L :+= targetFile
 		haplotypeCaller.ip = intervalPadding
 	    }
@@ -85,9 +88,10 @@ class VariantCaller extends QScript {
 
 	    //add function to queue
 	    add(haplotypeCaller)
+	}
 
 	// GVCF HC
-	} else if (gvcf == true && sexAware == false) {
+	else if (gvcf == true && sexAware == false) {
 	    var gvcfFiles : List[File] = Nil
 
 	    // Make gvcf per bam file
@@ -100,8 +104,6 @@ class VariantCaller extends QScript {
 
 		// gVCF settings
 		haplotypeCaller.emitRefConfidence = ReferenceConfidenceMode.GVCF
-		haplotypeCaller.variant_index_type = GATKVCFIndexType.LINEAR
-		haplotypeCaller.variant_index_parameter = 128000
 
 		// Optional input
 		if (targetFile != null) {
@@ -118,12 +120,10 @@ class VariantCaller extends QScript {
 
 	    //Joint genotyping
 	    val genotypeGVCFs = new GenotypeGVCFs
-
 	    genotypeGVCFs.V = gvcfFiles
 	    genotypeGVCFs.reference_sequence = referenceFile
 	    genotypeGVCFs.scatterCount = numScatters
 	    genotypeGVCFs.num_threads = numCPUThreads
-
 	    genotypeGVCFs.out = outputFilename + ".raw_variants.vcf"
 
 	    // Optional input
@@ -135,6 +135,82 @@ class VariantCaller extends QScript {
 		genotypeGVCFs.L :+= targetFile
 		genotypeGVCFs.ip = intervalPadding
 	    }
+	    // Add function to queue
+	    add(genotypeGVCFs)
+	}
+
+        // GVCF HC Sexaware HUMAN ONLY
+	else if (gvcf == true && sexAware == true) {
+	    var gvcfFiles : List[File] = Nil
+
+	    // Make gvcf per bam file
+	    for ((bamFile, sex) <- (bamFiles,sexes).zipped){
+
+		// Set common settings
+		trait HC_Arguments extends HaplotypeCaller {
+		    this.reference_sequence = referenceFile
+
+		    this.scatterCount = numScatters
+		    this.memoryLimit = maxMem
+		    this.num_cpu_threads_per_data_thread = numCPUThreads
+
+		    this.stand_emit_conf = standEmitConf
+		    this.stand_call_conf = standCallConf
+
+		    this.input_file :+= bamFile
+
+		    this.emitRefConfidence = ReferenceConfidenceMode.GVCF
+		}
+
+		val haplotypeCallerAutosome = new HaplotypeCaller with HC_Arguments
+		val haplotypeCallerAllosome = new HaplotypeCaller with HC_Arguments
+
+		// HUMAN AUTOSOME
+		haplotypeCallerAutosome.sample_ploidy = 2
+		haplotypeCallerAutosome.intervalsString = List("1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16","17","18","19","20","21","22","MT")
+		haplotypeCallerAutosome.out = swapExt(bamFile, "bam", "Autosome.g.vcf.gz")
+		
+		// HUMAN ALLOSOME
+		haplotypeCallerAllosome.out = swapExt(bamFile, "bam", "Allosome.g.vcf.gz")
+		// Sex aware
+		if ( sex == "male" ){
+		    haplotypeCallerAllosome.intervalsString = List("X","Y")
+		    haplotypeCallerAllosome.sample_ploidy = 1
+		} else if ( sex == "female" ){
+		    haplotypeCallerAllosome.intervalsString = List("X")
+		    haplotypeCallerAllosome.sample_ploidy = 2
+		}
+		
+		//add functions to queue
+	        add(haplotypeCallerAutosome,haplotypeCallerAllosome)
+
+		// Combine gvcfs -> probably can use CatVariants
+		val combineGVCF = new CatVariants
+		combineGVCF.reference = referenceFile
+		combineGVCF.V :+= haplotypeCallerAutosome.out
+		combineGVCF.V :+= haplotypeCallerAllosome.out
+		combineGVCF.out = swapExt(bamFile, "bam", "g.vcf.gz")
+		combineGVCF.assumeSorted = true
+		gvcfFiles :+= combineGVCF.out
+
+		//add function to queue
+		add(combineGVCF)
+		gvcfFiles :+= combineGVCF.out
+	    }
+
+	    //Joint genotyping
+	    val genotypeGVCFs = new GenotypeGVCFs
+	    genotypeGVCFs.V = gvcfFiles
+	    genotypeGVCFs.reference_sequence = referenceFile
+	    genotypeGVCFs.scatterCount = numScatters
+	    genotypeGVCFs.num_threads = numCPUThreads
+	    genotypeGVCFs.out = outputFilename + ".raw_variants.vcf"
+
+	    // Optional input
+	    if (dbsnpFile != null) {
+		genotypeGVCFs.D = dbsnpFile
+	    }
+
 	    // Add function to queue
 	    add(genotypeGVCFs)
         }

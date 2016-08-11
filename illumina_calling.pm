@@ -41,6 +41,7 @@ sub runVariantCalling {
     
     ### Build Queue command
     my $jobNative = &jobNative(\%opt,"CALLING");
+    my $determine_sex = ""; #Only used in sex aware calling
     my $command = "java -Xmx".$opt{CALLING_MASTER_MEM}."G -Djava.io.tmpdir=$opt{OUTPUT_DIR}/tmp -jar $opt{QUEUE_PATH}/Queue.jar ";
     $command .= "-jobQueue $opt{CALLING_QUEUE} -jobNative \"$jobNative\" -jobRunner GridEngine -jobReport $opt{OUTPUT_DIR}/logs/VariantCaller.jobReport.txt -memLimit $opt{CALLING_MEM} "; #Queue options
 
@@ -80,6 +81,13 @@ sub runVariantCalling {
     }
     if($opt{CALLING_GVCF} eq 'yes'){
 	$command .= "-gvcf ";
+	if($opt{CALLING_SEXAWARE} eq 'yes'){
+	    $command .= "-sexAware ";
+	    for my $i (0 .. $#sampleBams) {
+		$determine_sex .= "\tSEX_$i=`python $opt{IAP_PATH}/scripts/determine_sex.py -b $sampleBams[$i]`\n";
+		$command .= "-sex \$SEX_$i ";
+	    }
+	}
     }
     
     ### retry option
@@ -104,6 +112,9 @@ sub runVariantCalling {
     }
     print CALLING_SH "]\n";
     print CALLING_SH "then\n";
+    if($opt{CALLING_GVCF} eq 'yes' && $opt{CALLING_SEXAWARE} eq 'yes'){
+	print CALLING_SH $determine_sex;
+    }
     print CALLING_SH "\t$command\n";
     print CALLING_SH "else\n";
     print CALLING_SH "\techo \"ERROR: One or more input bam files do not exist.\" >&2\n";
