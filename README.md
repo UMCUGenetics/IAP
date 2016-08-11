@@ -216,7 +216,8 @@ CALLING_THREADS	number_of_threads
 CALLING_MEM	maximum_memory
 CALLING_SCATTER	number_of_scatters
 CALLING_SCALA	QScripts/HaplotypeCaller.scala
-CALLING_GVCF	no/yes | Set to yes if gvcf scala is used.
+CALLING_GVCF	no/yes
+CALLING_SEXAWARE	no/yes | Enable sex aware calling, only in combination with gvcf mode and human data
 CALLING_DBSNP	GATK_bundle/dbsnp_137.b37.vcf | common snp file supplied by gatk
 CALLING_STANDCALLCONF	30 | The minimum phred-scaled confidence threshold at which variants should be called. Gatk default = 30
 CALLING_STANDEMITCONF	15 | The minimum phred-scaled confidence threshold at which variants should be emitted (and filtered with LowQual if less than the calling threshold) Gatk default = 15
