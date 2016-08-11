@@ -46,7 +46,7 @@ sub runVariantCalling {
     $command .= "-jobQueue $opt{CALLING_QUEUE} -jobNative \"$jobNative\" -jobRunner GridEngine -jobReport $opt{OUTPUT_DIR}/logs/VariantCaller.jobReport.txt -memLimit $opt{CALLING_MEM} "; #Queue options
 
     ### Add caller and UG specific settings
-    $command .= "-S $opt{CALLING_SCALA} ";
+    $command .= "-S $opt{IAP_PATH}/$opt{CALLING_SCALA} ";
     if ($opt{CALLING_UGMODE}) {
 	$command .= " -glm $opt{CALLING_UGMODE} ";
     }

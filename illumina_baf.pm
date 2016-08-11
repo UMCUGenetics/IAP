@@ -125,7 +125,7 @@ sub runBAF {
 	    if (-e "$log_dir/BAF_PLOT_$sample.done"){
 		print "WARNING: $log_dir/BAF_PLOT._$sample done exists, skipping BAF plot for $sample \n";
 	    } else {
-		$command = "Rscript $opt{BAF_PLOTSCRIPT} $tmp_dir $output_dir/$output_baf ";
+		$command = "Rscript $opt{IAP_PATH}/scripts/makeBAFplot.R $tmp_dir $output_dir/$output_baf ";
 		print BAF_SH "echo \"Start BAF plotting\t\" `date` \"\t\" `uname -n` >> $log_dir/BAF_$sample.log\n";
 		print BAF_SH "if [ -s $output_dir/$output_baf -a -e $log_dir/BAF_FILE_$sample.done ]\n";
 		print BAF_SH "then\n";
