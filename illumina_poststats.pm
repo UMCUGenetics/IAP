@@ -46,6 +46,7 @@ sub runPostStats {
 	$command .= "-queue_time $opt{POSTSTATS_TIME} ";
 	$command .= "-queue_project $opt{CLUSTER_PROJECT} ";
 	$command .= "-picard_path $opt{PICARD_PATH} ";
+	$command .= "-sambamba_path $opt{SAMBAMBA_PATH} ";
 	$command .= "-debug ";
 	
 	if ( ($opt{POSTSTATS_TARGETS}) && ($opt{POSTSTATS_BAITS}) ) {
