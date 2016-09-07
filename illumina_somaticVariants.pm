@@ -215,6 +215,9 @@ sub runStrelka {
     print STRELKA_SH "\techo \"Start Strelka\t\" `date` \"\t $sample_ref_bam \t $sample_tumor_bam\t\" `uname -n` >> $log_dir/strelka.log\n\n";
 
     # Run Strelka
+    if (-e $strelka_out_dir){
+	print STRELKA_SH "\trm -r $strelka_out_dir \n";
+    }
     print STRELKA_SH "\t$opt{STRELKA_PATH}/bin/configureStrelkaWorkflow.pl --tumor $sample_tumor_bam --normal $sample_ref_bam --ref $opt{GENOME} --config $opt{STRELKA_INI} --output-dir $strelka_out_dir\n\n";
 
     print STRELKA_SH "\tcd $strelka_out_dir\n";
