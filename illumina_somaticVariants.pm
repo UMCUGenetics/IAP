@@ -542,26 +542,13 @@ sub runFreeBayes {
     # Uniqify freebayes output 
     print FREEBAYES_SH "\tuniq $freebayes_out_dir/$sample_tumor_name.vcf > $freebayes_out_dir/$sample_tumor_name.uniq.vcf\n";
     print FREEBAYES_SH "\tmv $freebayes_out_dir/$sample_tumor_name.uniq.vcf $freebayes_out_dir/$sample_tumor_name.vcf\n\n";
-
-    # get sample ids
-    print FREEBAYES_SH "\tsample_R=`grep -P \"^#CHROM\" $freebayes_out_dir/$sample_tumor_name.vcf | cut -f 10`\n";
-    print FREEBAYES_SH "\tsample_T=`grep -P \"^#CHROM\" $freebayes_out_dir/$sample_tumor_name.vcf | cut -f 11`\n\n";
-
-    # annotate somatic and germline scores
-    print FREEBAYES_SH "\t$opt{VCFLIB_PATH}/vcfsamplediff VT \$sample_R \$sample_T $freebayes_out_dir/$sample_tumor_name.vcf > $freebayes_out_dir/$sample_tumor_name\_VTannot.vcf\n";
-    print FREEBAYES_SH "\tsed -i 's/SSC/FB_SSC/' $freebayes_out_dir/$sample_tumor_name\_VTannot.vcf\n"; # to resolve merge conflicts with varscan vcfs
-    print FREEBAYES_SH "\tgrep -P \"^#\" $freebayes_out_dir/$sample_tumor_name\_VTannot.vcf > $freebayes_out_dir/$sample_tumor_name\_germline.vcf\n";
-    print FREEBAYES_SH "\tgrep -P \"^#\" $freebayes_out_dir/$sample_tumor_name\_VTannot.vcf > $freebayes_out_dir/$sample_tumor_name\_somatic.vcf\n";
-    print FREEBAYES_SH "\tgrep -i \"VT=germline\" $freebayes_out_dir/$sample_tumor_name\_VTannot.vcf >> $freebayes_out_dir/$sample_tumor_name\_germline.vcf\n";
-    print FREEBAYES_SH "\tgrep -i \"VT=somatic\" $freebayes_out_dir/$sample_tumor_name\_VTannot.vcf >> $freebayes_out_dir/$sample_tumor_name\_somatic.vcf\n";
-    print FREEBAYES_SH "\trm $freebayes_out_dir/$sample_tumor_name\_VTannot.vcf\n\n";
-
-    # Filter
-    print FREEBAYES_SH "\tcat $freebayes_out_dir/$sample_tumor_name\_somatic.vcf | java -Xmx".$opt{FREEBAYES_MEM}."G -jar $opt{SNPEFF_PATH}/SnpSift.jar filter \"$opt{FREEBAYES_SOMATICFILTER}\" > $freebayes_out_dir/$sample_tumor_name\_somatic_filtered.vcf\n";
-    print FREEBAYES_SH "\tcat $freebayes_out_dir/$sample_tumor_name\_germline.vcf | java -Xmx".$opt{FREEBAYES_MEM}."G -jar $opt{SNPEFF_PATH}/SnpSift.jar filter \"$opt{FREEBAYES_GERMLINEFILTER}\" > $freebayes_out_dir/$sample_tumor_name\_germline_filtered.vcf\n\n";
+    
+    # Filter freebayes vcf
+    print FREEBAYES_SH "python $opt{IAP_PATH}/scripts/filterFreebayes.py -v $freebayes_out_dir/$sample_tumor_name.vcf |";
+    print FREEBAYES_SH "java -Xmx".$opt{FREEBAYES_MEM}."G -jar $opt{SNPEFF_PATH}/SnpSift.jar filter \"$opt{FREEBAYES_SOMATICFILTER}\" > $freebayes_out_dir/$sample_tumor_name\_somatic_filtered.vcf \n";
     
     #Check freebayes completed
-    print FREEBAYES_SH "\tif [ -s $freebayes_out_dir/$sample_tumor_name\_somatic_filtered.vcf -a -s $freebayes_out_dir/$sample_tumor_name\_germline_filtered.vcf ]\n";
+    print FREEBAYES_SH "\tif [ -s $freebayes_out_dir/$sample_tumor_name\_somatic_filtered.vcf ]\n";
     print FREEBAYES_SH "\tthen\n";
     print FREEBAYES_SH "\t\t$rm_command\n";
     print FREEBAYES_SH "\t\ttouch $log_dir/freebayes.done\n\n"; ## Check on complete output!!!
