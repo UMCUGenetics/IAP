@@ -9,7 +9,7 @@ BWA_PATH	/hpc/cog_bioinf/common_scripts/bwa-0.7.5a
 SAMBAMBA_PATH	/hpc/cog_bioinf/common_scripts/sambamba_v0.5.8
 QUEUE_PATH	/hpc/cog_bioinf/common_scripts/GenomeAnalysisTK-3.4-46
 PICARD_PATH	/hpc/cog_bioinf/common_scripts/picard-tools-1.141
-BAMMETRICS_PATH	/hpc/cog_bioinf/common_scripts/bamMetrics
+BAMMETRICS_PATH	/hpc/local/CentOS7/cog_bioinf/bamMetrics_v2.1.2
 FASTQC_PATH	/hpc/local/CentOS6/cog_bioinf/FastQC_v0.11.3
 GATK_PATH	/hpc/cog_bioinf/common_scripts/GenomeAnalysisTK-3.4-46
 SNPEFF_PATH	/hpc/cog_bioinf/data/robert/src/snpEff_v4.1/
