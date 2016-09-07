@@ -218,7 +218,7 @@ sub runStrelka {
     print STRELKA_SH "\t$opt{STRELKA_PATH}/bin/configureStrelkaWorkflow.pl --tumor $sample_tumor_bam --normal $sample_ref_bam --ref $opt{GENOME} --config $opt{STRELKA_INI} --output-dir $strelka_out_dir\n\n";
 
     print STRELKA_SH "\tcd $strelka_out_dir\n";
-    print STRELKA_SH "\tmake -j 8\n\n";
+    print STRELKA_SH "\tmake -j $opt{STRELKA_THREADS}\n\n";
 
     # Check strelka completed
     print STRELKA_SH "\tif [ -f $strelka_out_dir/task.complete ]\n";
