@@ -1,5 +1,3 @@
-.libPaths(c("/hpc/local/CentOS7/cog/R_libs/3.2.2",.libPaths()))
-
 library("ggplot2")
 library("gtools")
 library("graphics")
