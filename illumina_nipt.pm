@@ -40,6 +40,7 @@ sub runNipt {
 	my $command = "python $opt{CHROMATE_PATH} -f ";
 	$command .= "-d $opt{NIPT_REFERENCESET} ";
 	$command .= "-x $opt{OUTPUT_DIR}/ ";
+	$command .= "--sambamba $opt{SAMBAMBA_PATH}/sambamba ";
 	
 	# qsub options
 	$command .= "-q $opt{NIPT_QUEUE} -c $opt{NIPT_TIME} -t $opt{NIPT_THREADS} -m $opt{NIPT_MEM} ";

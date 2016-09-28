@@ -10,7 +10,7 @@
 
 ### Load common perl modules ####
 use strict;
-use POSIX qw(tmpnam);
+use POSIX qw(tmpnam strftime);
 use Getopt::Long;
 use FindBin;
 use File::Path qw(make_path);
@@ -84,6 +84,20 @@ close CONFIGURATION;
 
 ### Check config file
 checkConfig();
+
+### Create main output directory
+if(! -e $opt{OUTPUT_DIR}){
+    make_path($opt{OUTPUT_DIR}) or die "Couldn't create directory: $opt{OUTPUT_DIR}\n";
+}
+
+### Setup sumbit log
+$| = 1;
+
+# Fork to log
+my $date = strftime "%m%d%Y_%H%M", localtime;
+open( my $SUBMITLOG, "|-", "tee $opt{OUTPUT_DIR}/submit_$date.log" ) || die $!;
+open( STDOUT, '>&', $SUBMITLOG ) || die $!;
+open( STDERR, '>&', $SUBMITLOG ) || die $!;
 
 ###Parse samples from FASTQ or BAM files
 getSamples();
@@ -216,6 +230,11 @@ if($opt{CHECKING} eq "yes"){
     illumina_check::runCheck(\%opt);
 }
 
+### Close submit log
+close(STDERR);
+close(STDOUT);
+close($SUBMITLOG);
+
 ############ SUBROUTINES  ############
 sub getSamples{
     my %samples;
@@ -301,9 +320,6 @@ sub getSamples{
 
 sub createOutputDirs{
     ### Create main output directories
-    if(! -e $opt{OUTPUT_DIR}){
-	make_path($opt{OUTPUT_DIR}) or die "Couldn't create directory: $opt{OUTPUT_DIR}\n";
-    }
     if(! -e "$opt{OUTPUT_DIR}/QCStats"){
 	mkdir("$opt{OUTPUT_DIR}/QCStats") or die "Couldn't create directory: $opt{OUTPUT_DIR}/QCStats\n";
     }
@@ -499,6 +515,7 @@ sub checkConfig{
 	if(! $opt{CALLING_TIME}){ print "ERROR: No CALLING_TIME option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{CALLING_SCATTER}){ print "ERROR: No CALLING_SCATTER option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{CALLING_GVCF}){ print "ERROR: No CALLING_GVCF option found in config files.\n"; $checkFailed = 1; }
+	if(! $opt{CALLING_SEXAWARE}){ print "ERROR: No CALLING_SEXAWARE option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{CALLING_SCALA}){ print "ERROR: No CALLING_SCALA option found in config files.\n"; $checkFailed = 1; }
 	if($opt{CALLING_UGMODE}){ 
 	    if($opt{CALLING_UGMODE} ne "SNP" and $opt{CALLING_UGMODE} ne "INDEL" and $opt{CALLING_UGMODE} ne "BOTH"){ print "ERROR: UGMODE: $opt{CALLING_UGMODE} does Not exist use SNP, INDEL or BOTH\n"; $checkFailed = 1; }
@@ -506,6 +523,8 @@ sub checkConfig{
 	if(! $opt{CALLING_STANDCALLCONF}){ print "ERROR: No CALLING_STANDCALLCONF option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{CALLING_STANDEMITCONF}){ print "ERROR: No CALLING_STANDEMITCONF option found in config files.\n"; $checkFailed = 1; }
 	if( $opt{CALLING_TARGETS} && ! -e $opt{CALLING_TARGETS}) { print"ERROR: $opt{CALLING_TARGETS} does Not exist\n"; $checkFailed = 1; }
+	if( $opt{CALLING_TARGETS} && $opt{CALLING_SEXAWARE} eq "yes") { print"ERROR: Sex aware variant calling does not work for targeted sequencing data. Disable CALLING_TARGETS or CALLING_SEXAWARE.\n"; $checkFailed = 1; }
+	if( $opt{CALLING_SEXAWARE} eq "yes" && $opt{CALLING_GVCF} eq "no") { print"ERROR: Sex aware variant calling does only work in gvcf mode. Set CALLING_GVCF to yes or CALLING_SEXAWARE to no.\n"; $checkFailed = 1; }
 	if( $opt{CALLING_DBSNP} && ! -e $opt{CALLING_DBSNP}) { print"ERROR: $opt{CALLING_DBSNP} does Not exist\n"; $checkFailed = 1; }
 	if(! $opt{QUEUE_RETRY}){ print "ERROR: No QUEUE_RETRY option found in config files.\n"; $checkFailed = 1; }
     }
@@ -677,7 +696,6 @@ sub checkConfig{
 	if(! $opt{BAF_TIME}){ print "ERROR: No BAF_TIME option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{BIOVCF_PATH}){ print "ERROR: No BIOVCF_PATH option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{BAF_SNPS}){ print "ERROR: No BAF_SNPS option found in config files.\n"; $checkFailed = 1; }
-	if(! $opt{BAF_PLOTSCRIPT}){ print "ERROR: No BAF_PLOTSCRIPT option found in config files.\n"; $checkFailed = 1; }
     }
     if($opt{CALLABLE_LOCI} eq "yes"){
 	if(! $opt{CALLABLE_LOCI_QUEUE}){ print "ERROR: No CALLABLE_LOCI_QUEUE option found in config files.\n"; $checkFailed = 1; }
