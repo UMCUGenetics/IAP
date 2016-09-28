@@ -8,12 +8,12 @@
 ###
 #######################################################
 
-package illumina_poststats;
+package UMCU::Illumina::poststats;
 
 use strict;
 use POSIX qw(tmpnam);
 use FindBin;
-use illumina_sge;
+use UMCU::Illumina::sge;
 
 
 sub runPostStats {

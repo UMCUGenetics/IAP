@@ -10,12 +10,12 @@
 ###
 ############################################################
 
-package illumina_vcfutils;
+package UMCU::Illumina::vcfutils;
 
 use strict;
 use POSIX qw(tmpnam);
 use lib "$FindBin::Bin"; #locates pipeline directory
-use illumina_sge;
+use UMCU::Illumina::sge;
 
 
 sub runVcfUtils {
