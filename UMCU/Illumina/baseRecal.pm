@@ -7,12 +7,12 @@
 ### Author: R.F.Ernst
 ####################################
 
-package illumina_baseRecal;
+package UMCU::Illumina::baseRecal;
 
 use strict;
 use POSIX qw(tmpnam);
 use lib "$FindBin::Bin"; #locates pipeline directory
-use illumina_sge;
+use UMCU::Illumina::sge;
 
 sub runBaseRecalibration {
     ###

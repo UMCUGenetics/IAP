@@ -8,13 +8,13 @@
 ###
 #######################################################
 
-package illumina_nipt;
+package UMCU::Illumina::nipt;
 
 use strict;
 use POSIX qw(tmpnam);
 use FindBin;
 use lib "$FindBin::Bin"; #locates pipeline directory
-use illumina_sge;
+use UMCU::Illumina::sge;
 
 
 sub runNipt {

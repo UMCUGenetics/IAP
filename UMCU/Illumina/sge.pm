@@ -4,7 +4,7 @@
 #
 
 
-package illumina_sge;
+package UMCU::Illumina::sge;
 use strict;
 use warnings;
 

@@ -20,22 +20,22 @@ use File::Basename qw( dirname );
 
 ### Load pipeline modules ####
 use lib "$FindBin::Bin"; #locates pipeline directory
-use illumina_prestats;
-use illumina_mapping;
-use illumina_poststats;
-use illumina_realign;
-use illumina_baseRecal;
-use illumina_calling;
-use illumina_filterVariants;
-use illumina_somaticVariants;
-use illumina_copyNumber;
-use illumina_structuralVariants;
-use illumina_baf;
-use illumina_callableLoci;
-use illumina_annotateVariants;
-use illumina_vcfutils;
-use illumina_nipt;
-use illumina_check;
+use UMCU::Illumina::prestats;
+use UMCU::Illumina::mapping;
+use UMCU::Illumina::poststats;
+use UMCU::Illumina::realign;
+use UMCU::Illumina::baseRecal;
+use UMCU::Illumina::calling;
+use UMCU::Illumina::filterVariants;
+use UMCU::Illumina::somaticVariants;
+use UMCU::Illumina::copyNumber;
+use UMCU::Illumina::structuralVariants;
+use UMCU::Illumina::baf;
+use UMCU::Illumina::callableLoci;
+use UMCU::Illumina::annotateVariants;
+use UMCU::Illumina::vcfutils;
+use UMCU::Illumina::nipt;
+use UMCU::Illumina::check;
 
 ### Check correct usage
 die usage() if @ARGV == 0;
