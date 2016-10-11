@@ -444,5 +444,6 @@ NIPT_MASTER_THREADS	number_of_threads
 CHECKING_QUEUE	queue_name
 CHECKING_TIME	estimated runtime
 CHECKING_THREADS	number_of_threads
+CHECKING_RM	list,of,files,to,remove
 
 ```

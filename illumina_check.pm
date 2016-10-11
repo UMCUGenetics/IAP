@@ -306,9 +306,11 @@ sub runCheck {
     print BASH "else\n";
     print BASH "\techo \"The pipeline completed successfully. The md5sum file will be created.\">>$logFile\n";
 
-    # Remove all tmp folders and empty logs except .done files if pipeline completed successfully
-    print BASH "\trm -r $opt{OUTPUT_DIR}/tmp\n";
-    print BASH "\trm -r $opt{OUTPUT_DIR}/*/tmp\n";
+    # Remove files/folders based on CHECKING_RM and empty logs except .done files if pipeline completed successfully
+    my @removeFiles = split(",", $opt{CHECKING_RM});
+    foreach my $removeFile (@removeFiles){
+	print BASH "\tfind $opt{OUTPUT_DIR} -name $removeFile -print0 | xargs -0 rm -r -- \n";
+    }
     print BASH "\tfind $opt{OUTPUT_DIR}/logs -size 0 -not -name \"*.done\" -delete\n";
     print BASH "\tfind $opt{OUTPUT_DIR}/*/logs -size 0 -not -name \"*.done\" -delete\n";
     print BASH "\tfind $opt{OUTPUT_DIR}/somaticVariants/*/logs -size 0 -not -name \"*.done\" -delete\n";
@@ -319,12 +321,6 @@ sub runCheck {
 	    } else {
 		print BASH "\trm $opt{OUTPUT_DIR}/$sample/mapping/$sample.ba*\n";
 	    }
-	}
-    }
-    if($opt{SOMATIC_VARIANTS} eq "yes" && $opt{SOMVAR_VARSCAN} eq "yes"){
-	foreach my $sample (@{$opt{SOMATIC_SAMPLES_UNIQ}}){
-		print BASH "\trm $opt{OUTPUT_DIR}/$sample/mapping/$sample*.pileup.gz\n";
-		print BASH "\trm $opt{OUTPUT_DIR}/$sample/mapping/$sample*.pileup.gz.tbi\n";
 	}
     }
     # Send email.

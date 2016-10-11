@@ -801,6 +801,7 @@ sub checkConfig{
         if(! $opt{CHECKING_THREADS}){ print "ERROR: No CHECKING_THREADS found in .ini file\n"; $checkFailed = 1; }
         if(! $opt{CHECKING_MEM}){ print "ERROR: No CHECKING_MEM found in .ini file\n"; $checkFailed = 1; }
         if(! $opt{CHECKING_TIME}){ print "ERROR: No CHECKING_TIME found in .ini file\n"; $checkFailed = 1; }
+        if(! $opt{CHECKING_RM}){ print "ERROR: No CHECKING_RM found in .ini file\n"; $checkFailed = 1; }
     }
 
     if ($checkFailed) { 
