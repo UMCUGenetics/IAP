@@ -151,6 +151,13 @@ sub runCopyNumberTools {
 		    my $freec_job = runFreec($sample, $sample_out_dir, $sample_job_dir, $sample_log_dir, $sample_bam, "", \@running_jobs, \%opt);
 		    if($freec_job){push(@cnv_jobs, $freec_job)};
 		}
+		if($opt{CNV_QDNASEQ} eq "yes"){
+		    print "\n###SCHEDULING QDNASEQ####\n";
+		    my $qdnaseq_job = runqDNAseq($sample, $sample_out_dir, $sample_job_dir, $sample_log_dir, $sample_bam, \@running_jobs, \%opt);
+		    if($qdnaseq_job){push(@cnv_jobs, $qdnaseq_job)};
+		}
+		
+		
 	    ## Check copy number analysis
 	    my $job_id = "CHECK_".$sample."_".get_job_id();
 	    my $bash_file = $sample_job_dir."/".$job_id.".sh";
@@ -158,7 +165,13 @@ sub runCopyNumberTools {
 	    open CHECK_SH, ">$bash_file" or die "cannot open file $bash_file \n";
 	    print CHECK_SH "#!/bin/bash\n\n";
 	    print CHECK_SH "echo \"Start Check\t\" `date` `uname -n` >> $sample_log_dir/check.log\n\n";
-	    print CHECK_SH "if [[ -f $sample_log_dir/freec.done ]]\n";
+	    if($opt{CNV_QDNASEQ} eq "yes" && $opt{CNV_FREEC} eq "yes"){
+		print CHECK_SH "if [ -f $sample_log_dir/freec.done -a -f $sample_log_dir/qdnaseq.done ]\n";
+	    } elsif ($opt{CNV_QDNASEQ} eq "yes" && $opt{CNV_FREEC} eq "no") {
+		print CHECK_SH "if [ -f $sample_log_dir/qdnaseq.done ]\n";
+	    } elsif ($opt{CNV_QDNASEQ} eq "no" && $opt{CNV_FREEC} eq "yes") {
+		print CHECK_SH "if [ -f $sample_log_dir/freec.done ]\n";
+	    }
 	    print CHECK_SH "then\n";
 	    print CHECK_SH "\ttouch $sample_log_dir/$sample.done\n";
 	    print CHECK_SH "fi\n\n";
@@ -177,6 +190,62 @@ sub runCopyNumberTools {
 }
 
 ### Copy number analysis tools
+sub runqDNAseq {
+    ###
+    # Run qDNAseq
+    ###
+    my ($sample_name, $out_dir, $job_dir, $log_dir, $sample_bam, $running_jobs, $opt) = (@_);
+    my @running_jobs = @{$running_jobs};
+    my %opt = %{$opt};
+    
+    # Skip qdnseq if done file exists
+    if (-e "$log_dir/qdnaseq.done"){
+	print "WARNING: $log_dir/qdnaseq.done exists, skipping \n";
+	return;
+    }
+    
+    ## Create qdnaseq output directory
+    my $qdnaseq_out_dir = "$out_dir/qdnaseq";
+    if(! -e $qdnaseq_out_dir){
+	make_path($qdnaseq_out_dir) or die "Couldn't create directory: $qdnaseq_out_dir\n";
+    }
+    
+    my $command = "Rscript $opt{IAP_PATH}/scripts/run_QDNAseq.R -qdnaseq_path $opt{QDNASEQ_PATH} ";
+    $command .= "-s $sample_name ";
+    $command .= "-b $sample_bam ";
+
+    ## Create qDNAseq bash script
+    my $job_id = "QDNASEQ_".$sample_name."_".get_job_id();
+    my $bash_file = $job_dir."/".$job_id.".sh";
+
+    open QDNASEQ_SH, ">$bash_file" or die "cannot open file $bash_file \n";
+    print QDNASEQ_SH "#!/bin/bash\n\n";
+    print QDNASEQ_SH "if [ -s $sample_bam ]\n";
+    print QDNASEQ_SH "then\n";
+    print QDNASEQ_SH "\techo \"Start QDNASEQ\t\" `date` \"\t $sample_bam\t\" `uname -n` >> $log_dir/qdnaseq.log\n";
+    print QDNASEQ_SH "\tcd $qdnaseq_out_dir\n";
+    print QDNASEQ_SH "\t$command\n";
+    print QDNASEQ_SH "\tif [ -s $qdnaseq_out_dir/$sample_name*.vcf ]\n";
+    print QDNASEQ_SH "\tthen\n";
+    print QDNASEQ_SH "\t\ttouch $log_dir/qdnaseq.done\n";
+    print QDNASEQ_SH "\tfi\n";
+    print QDNASEQ_SH "\techo \"End QDNASEQ\t\" `date` \"\t $sample_bam\t\" `uname -n` >> $log_dir/qdnaseq.log\n";
+    print QDNASEQ_SH "else\n";
+    print QDNASEQ_SH "\techo \"ERROR:  Input bam files do not exist.\" >> $log_dir/qdnaseq.log\n";
+    print QDNASEQ_SH "fi\n";
+    close QDNASEQ_SH;
+
+    ## Run job
+    my $qsub = &qsubTemplate(\%opt,"QDNASEQ");
+    if ( @running_jobs ){
+	system "$qsub -o $log_dir -e $log_dir -N $job_id -hold_jid ".join(",",@running_jobs)." $bash_file";
+    } else {
+	system "$qsub -o $log_dir -e $log_dir -N $job_id $bash_file";
+    }
+    return $job_id;
+}
+
+
 sub runFreec {
     ###
     # Run freec and plot result
@@ -185,7 +254,7 @@ sub runFreec {
     my @running_jobs = @{$running_jobs};
     my %opt = %{$opt};
     
-    ## Skip Contra if .done file exist
+    ## Skip Freec if .done file exist
     if (-e "$log_dir/freec.done"){
 	print "WARNING: $log_dir/freec.done exists, skipping \n";
 	return;

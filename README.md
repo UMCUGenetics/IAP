@@ -47,6 +47,7 @@ perl illumina_pipeline.pl /path/to/output_dir/settings.config>
 - [IGVtools](https://www.broadinstitute.org/igv/igvtools)
 - [Contra](http://contra-cnv.sourceforge.net/)
 - [FREEC](http://bioinfo-out.curie.fr/projects/freec/)
+- [QDNAseq](https://github.com/ccagc/QDNAseq)
 - [Varscan](http://varscan.sourceforge.net/)
 - [Strelka](https://sites.google.com/site/strelkasomaticvariantcaller/)
 - [Freebayes](https://github.com/ekg/freebayes)
@@ -337,6 +338,14 @@ CNVCHECK_THREADS	number_of_threads
 CNVCHECK_MEM	maximum_memory
 CNV_MODE	sample_control
 CNV_TARGETS	/path/to/target.bed | Optional, use for targeted data e.g. exome.
+
+## QDNASEQ
+CNV_QDNASEQ	yes
+QDNASEQ_QUEUE	queue_name
+QDNASEQ_TIME	estimated runtime
+QDNASEQ_THREADS	number of threads
+QDNASEQ_MEM	maximum memory
+QDNASEQ_PATH	/hpc/local/CentOS7/cog_bioinf/QDNAseq_1.9.2
 
 ## Contra
 CNV_CONTRA	yes/no

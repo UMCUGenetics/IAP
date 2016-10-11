@@ -656,6 +656,14 @@ sub checkConfig{
 	    if(! $opt{FREEC_WINDOW}){ print "ERROR: No FREEC_WINDOW option found in config files.\n"; $checkFailed = 1; }
 	    if(! $opt{FREEC_TELOCENTROMERIC}){ print "ERROR: No FREEC_TELOCENTROMERIC option found in config files.\n"; $checkFailed = 1; }
 	}
+	if(! $opt{CNV_QDNASEQ}){ print "ERROR: No CNV_QDNASEQ  in config files.\n"; $checkFailed = 1; }
+	if($opt{CNV_QDNASEQ} eq "yes"){
+	    if(! $opt{QDNASEQ_PATH}){ print "ERROR: No QDNASEQ_PATH option found in config files.\n"; $checkFailed = 1; }
+	    if(! $opt{QDNASEQ_QUEUE}){ print "ERROR: No QDNASEQ_QUEUE option found in config files.\n"; $checkFailed = 1; }
+	    if(! $opt{QDNASEQ_THREADS}){ print "ERROR: No QDNASEQ_THREADS option found in config files.\n"; $checkFailed = 1; }
+	    if(! $opt{QDNASEQ_MEM}){ print "ERROR: No QDNASEQ_MEM option found in config files.\n"; $checkFailed = 1; }
+	    if(! $opt{QDNASEQ_TIME}){ print "ERROR: No QDNASEQ_TIME option found in config files.\n"; $checkFailed = 1; }
+	}
     }
     ## SV_CALLING
     if($opt{SV_CALLING} eq "yes"){
