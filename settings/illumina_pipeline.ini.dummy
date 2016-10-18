@@ -6,7 +6,7 @@ CLUSTER_PROJECT	cog_bioinf
 
 ####DEFAULT TOOL PATHS####
 BWA_PATH	/hpc/cog_bioinf/common_scripts/bwa-0.7.5a
-SAMBAMBA_PATH	/hpc/cog_bioinf/common_scripts/sambamba_v0.5.8
+SAMBAMBA_PATH	/hpc/cog_bioinf/common_scripts/sambamba_v0.6.3
 QUEUE_PATH	/hpc/cog_bioinf/common_scripts/GenomeAnalysisTK-3.4-46
 PICARD_PATH	/hpc/cog_bioinf/common_scripts/picard-tools-1.141
 BAMMETRICS_PATH	/hpc/local/CentOS7/cog_bioinf/bamMetrics_v2.1.4
