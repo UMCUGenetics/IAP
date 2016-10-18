@@ -231,7 +231,7 @@ QDNASEQ_QUEUE	all.q
 QDNASEQ_TIME	8:0:0
 QDNASEQ_THREADS	2
 QDNASEQ_MEM	40
-QDNASEQ_PATH	/hpc/local/CentOS7/cog_bioinf/QDNAseq_1.9.2
+QDNASEQ_PATH	/hpc/local/CentOS7/cog_bioinf/QDNAseq_v1.9.2-HMF
 
 ## FREEC
 CNV_FREEC	yes
