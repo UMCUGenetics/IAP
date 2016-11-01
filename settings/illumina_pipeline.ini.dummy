@@ -157,7 +157,7 @@ SOMVAR_TARGETS	/hpc/cog_bioinf/GENOMES/Homo_sapiens.GRCh37.GATK.illumina/sorted_
 ## Strelka
 SOMVAR_STRELKA	yes
 STRELKA_PATH	/hpc/local/CentOS6/cog_bioinf/strelka-1.0.14
-STRELKA_INI	/hpc/cog_bioinf/common_scripts/IAP/settings/strelka/strelka_config_bwa_exome.ini
+STRELKA_INI	settings/strelka/strelka_config_bwa_exome.ini
 STRELKA_QUEUE	all.q
 STRELKA_TIME	8:0:0
 STRELKA_THREADS	6
