@@ -6,10 +6,10 @@ CLUSTER_PROJECT	cog_bioinf
 
 ####DEFAULT TOOL PATHS####
 BWA_PATH	/hpc/cog_bioinf/common_scripts/bwa-0.7.5a
-SAMBAMBA_PATH	/hpc/cog_bioinf/common_scripts/sambamba_v0.5.8
+SAMBAMBA_PATH	/hpc/cog_bioinf/common_scripts/sambamba_v0.6.5
 QUEUE_PATH	/hpc/cog_bioinf/common_scripts/GenomeAnalysisTK-3.4-46
 PICARD_PATH	/hpc/cog_bioinf/common_scripts/picard-tools-1.141
-BAMMETRICS_PATH	/hpc/local/CentOS7/cog_bioinf/bamMetrics_v2.1.2
+BAMMETRICS_PATH	/hpc/local/CentOS7/cog_bioinf/bamMetrics_v2.1.4
 FASTQC_PATH	/hpc/local/CentOS6/cog_bioinf/FastQC_v0.11.3
 GATK_PATH	/hpc/cog_bioinf/common_scripts/GenomeAnalysisTK-3.4-46
 SNPEFF_PATH	/hpc/cog_bioinf/data/robert/src/snpEff_v4.1/
@@ -157,7 +157,7 @@ SOMVAR_TARGETS	/hpc/cog_bioinf/GENOMES/Homo_sapiens.GRCh37.GATK.illumina/sorted_
 ## Strelka
 SOMVAR_STRELKA	yes
 STRELKA_PATH	/hpc/local/CentOS6/cog_bioinf/strelka-1.0.14
-STRELKA_INI	/hpc/cog_bioinf/common_scripts/IAP/settings/strelka/strelka_config_bwa_exome.ini
+STRELKA_INI	settings/strelka/strelka_config_bwa_exome.ini
 STRELKA_QUEUE	all.q
 STRELKA_TIME	8:0:0
 STRELKA_THREADS	6
@@ -224,6 +224,14 @@ CONTRA_FLAGS	--nomultimapped --largeDeletion --plot
 CONTRA_VISUALIZATION	yes
 CONTRA_PLOTSCRIPT	/hpc/cog_bioinf/data/annelies/CNVanalysis/CNA.pl
 CONTRA_PLOTDESIGN	wes
+
+## QDNASEQ
+CNV_QDNASEQ	yes
+QDNASEQ_QUEUE	all.q
+QDNASEQ_TIME	8:0:0
+QDNASEQ_THREADS	2
+QDNASEQ_MEM	40
+QDNASEQ_PATH	/hpc/local/CentOS7/cog_bioinf/QDNAseq_v1.9.2-HMF.1
 
 ## FREEC
 CNV_FREEC	yes
@@ -337,3 +345,4 @@ NIPT_THREADS	4
 CHECKING_QUEUE	all.q
 CHECKING_TIME	2:0:0
 CHECKING_THREADS	1
+CHECKING_RM	tmp,*.pileup.gz,*.pileup.gz.tbi
