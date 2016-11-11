@@ -345,4 +345,4 @@ NIPT_THREADS	4
 CHECKING_QUEUE	all.q
 CHECKING_TIME	2:0:0
 CHECKING_THREADS	1
-CHECKING_RM	tmp,*.pileup.gz,*.pileup.gz.tbi
+CHECKING_RM	tmp,*.recalibrated.bam,*.recalibrated.bai,*.recalibrated.bam.bai
