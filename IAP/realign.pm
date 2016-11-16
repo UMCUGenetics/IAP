@@ -8,12 +8,12 @@
 ####
 ###################################################
 
-package illumina_realign;
+package IAP::realign;
 
 use strict;
 use POSIX qw(tmpnam);
 use lib "$FindBin::Bin"; #locates pipeline directory
-use illumina_sge;
+use IAP::sge;
 
 sub runRealignment {
     ###

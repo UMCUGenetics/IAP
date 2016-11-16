@@ -7,13 +7,13 @@
 ### Author: R.F.Ernst , M. van Roosmalen ,H.H.D.Kerstens
 ##################################################################
 
-package illumina_structuralVariants;
+package IAP::structuralVariants;
 
 use strict;
 use POSIX qw(tmpnam);
 use File::Path qw(make_path);
 use lib "$FindBin::Bin"; #locates pipeline directory
-use illumina_sge;
+use IAP::sge;
 
 sub runStructuralVariantCallers {
     ###

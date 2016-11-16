@@ -4,7 +4,7 @@
 #
 
 
-package illumina_sge;
+package IAP::sge;
 use strict;
 use warnings;
 

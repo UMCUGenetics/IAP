@@ -9,13 +9,13 @@
 ### Author: R.F.Ernst & H.H.D.Kerstens
 #########################################################
 
-package illumina_somaticVariants;
+package IAP::somaticVariants;
 
 use strict;
 use POSIX qw(tmpnam);
 use File::Path qw(make_path);
 use lib "$FindBin::Bin"; #locates pipeline directory
-use illumina_sge;
+use IAP::sge;
 
 ### Run and merge
 sub runSomaticVariantCallers {

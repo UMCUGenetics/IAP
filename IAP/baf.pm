@@ -7,12 +7,12 @@
 ### Authors: R.F.Ernst 
 ##################################################################
 
-package illumina_baf;
+package IAP::baf;
 
 use strict;
 use POSIX qw(tmpnam);
 use lib "$FindBin::Bin"; #locates pipeline directory
-use illumina_sge;
+use IAP::sge;
 
 sub runBAF {
     ###

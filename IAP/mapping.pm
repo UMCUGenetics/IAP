@@ -10,12 +10,12 @@
 ###
 ##################################################################################################################################################
 
-package illumina_mapping;
+package IAP::mapping;
 
 use strict;
 use POSIX qw(tmpnam);
 use lib "$FindBin::Bin"; #locates pipeline directory
-use illumina_sge;
+use IAP::sge;
 
 sub runMapping {
     ###
