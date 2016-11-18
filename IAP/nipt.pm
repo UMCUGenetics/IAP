@@ -8,13 +8,13 @@
 ###
 #######################################################
 
-package illumina_nipt;
+package IAP::nipt;
 
 use strict;
 use POSIX qw(tmpnam);
 use FindBin;
 use lib "$FindBin::Bin"; #locates pipeline directory
-use illumina_sge;
+use IAP::sge;
 
 
 sub runNipt {

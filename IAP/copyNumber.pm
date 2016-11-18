@@ -9,13 +9,13 @@
 ### Author: R.F.Ernst & H.H.D.Kerstens
 ##################################################################################################################################################
 
-package illumina_copyNumber;
+package IAP::copyNumber;
 
 use strict;
 use POSIX qw(tmpnam);
 use File::Path qw(make_path);
 use lib "$FindBin::Bin"; #locates pipeline directory
-use illumina_sge;
+use IAP::sge;
 
 sub runCopyNumberTools {
     ### 

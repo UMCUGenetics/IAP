@@ -10,12 +10,12 @@
 ###
 ############################################################
 
-package illumina_vcfutils;
+package IAP::vcfutils;
 
 use strict;
 use POSIX qw(tmpnam);
 use lib "$FindBin::Bin"; #locates pipeline directory
-use illumina_sge;
+use IAP::sge;
 
 
 sub runVcfUtils {
