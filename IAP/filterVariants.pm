@@ -8,12 +8,12 @@
 ### Authors: R.F.Ernst & H.H.D.Kerstens
 #############################################################
 
-package illumina_filterVariants;
+package IAP::filterVariants;
 
 use strict;
 use POSIX qw(tmpnam);
 use lib "$FindBin::Bin"; #locates pipeline directory                                                                                                              
-use illumina_sge;
+use IAP::sge;
 
 sub runFilterVariants {
     ###

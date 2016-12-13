@@ -20,22 +20,22 @@ use File::Basename qw( dirname );
 
 ### Load pipeline modules ####
 use lib "$FindBin::Bin"; #locates pipeline directory
-use illumina_prestats;
-use illumina_mapping;
-use illumina_poststats;
-use illumina_realign;
-use illumina_baseRecal;
-use illumina_calling;
-use illumina_filterVariants;
-use illumina_somaticVariants;
-use illumina_copyNumber;
-use illumina_structuralVariants;
-use illumina_baf;
-use illumina_callableLoci;
-use illumina_annotateVariants;
-use illumina_vcfutils;
-use illumina_nipt;
-use illumina_check;
+use IAP::prestats;
+use IAP::mapping;
+use IAP::poststats;
+use IAP::realign;
+use IAP::baseRecal;
+use IAP::calling;
+use IAP::filterVariants;
+use IAP::somaticVariants;
+use IAP::copyNumber;
+use IAP::structuralVariants;
+use IAP::baf;
+use IAP::callableLoci;
+use IAP::annotateVariants;
+use IAP::vcfutils;
+use IAP::nipt;
+use IAP::check;
 
 ### Check correct usage
 die usage() if @ARGV == 0;
@@ -113,19 +113,19 @@ my $opt_ref;
 if( $opt{FASTQ} ){
     if($opt{PRESTATS} eq "yes"){
 	print "###SCHEDULING PRESTATS###\n";
-	$opt_ref = illumina_prestats::runPreStats(\%opt);
+	$opt_ref = IAP::prestats::runPreStats(\%opt);
 	%opt = %$opt_ref;
     }
 
     if($opt{MAPPING} eq "yes"){
 	print "\n###SCHEDULING MAPPING###\n";
-	$opt_ref = illumina_mapping::runMapping(\%opt);
+	$opt_ref = IAP::mapping::runMapping(\%opt);
 	%opt = %$opt_ref;
     }
 
 } if( $opt{BAM} ) {
     print "\n###SCHEDULING BAM PREP###\n";
-    $opt_ref = illumina_mapping::runBamPrep(\%opt);
+    $opt_ref = IAP::mapping::runBamPrep(\%opt);
     %opt = %$opt_ref;
 }
 
@@ -133,25 +133,25 @@ if( $opt{FASTQ} ){
 if(! $opt{VCF} ){
     if($opt{POSTSTATS} eq "yes"){
 	print "\n###SCHEDULING POSTSTATS###\n";
-	my $postStatsJob = illumina_poststats::runPostStats(\%opt);
+	my $postStatsJob = IAP::poststats::runPostStats(\%opt);
 	$opt{RUNNING_JOBS}->{'postStats'} = $postStatsJob;
     }
 
     if($opt{INDELREALIGNMENT} eq "yes"){
 	print "\n###SCHEDULING INDELREALIGNMENT###\n";
-	$opt_ref = illumina_realign::runRealignment(\%opt);
+	$opt_ref = IAP::realign::runRealignment(\%opt);
 	%opt = %$opt_ref;
     }
 
     if($opt{BASEQUALITYRECAL} eq "yes"){
 	print "\n###SCHEDULING BASERECALIBRATION###\n";
-	$opt_ref = illumina_baseRecal::runBaseRecalibration(\%opt);
+	$opt_ref = IAP::baseRecal::runBaseRecalibration(\%opt);
 	%opt = %$opt_ref;
     }
     
     if($opt{NIPT} eq "yes"){
 	print "\n###SCHEDULING NIPT###\n";
-	my $niptJob = illumina_nipt::runNipt(\%opt);
+	my $niptJob = IAP::nipt::runNipt(\%opt);
 	$opt{RUNNING_JOBS}->{'nipt'} = $niptJob;
     }
 
@@ -159,49 +159,49 @@ if(! $opt{VCF} ){
     ### Somatic variant callers
     if($opt{SOMATIC_VARIANTS} eq "yes"){
 	print "\n###SCHEDULING SOMATIC VARIANT CALLERS####\n";
-	my $somVar_jobs = illumina_somaticVariants::runSomaticVariantCallers(\%opt);
+	my $somVar_jobs = IAP::somaticVariants::runSomaticVariantCallers(\%opt);
 	$opt{RUNNING_JOBS}->{'somVar'} = $somVar_jobs;
     }
     if($opt{COPY_NUMBER} eq "yes"){
 	print "\n###SCHEDULING COPY NUMBER TOOLS####\n";
-	my $cnv_jobs = illumina_copyNumber::runCopyNumberTools(\%opt);
+	my $cnv_jobs = IAP::copyNumber::runCopyNumberTools(\%opt);
 	$opt{RUNNING_JOBS}->{'CNV'} = $cnv_jobs;
     }
     ### SV - Delly/Manta
     if($opt{SV_CALLING} eq "yes"){
 	print "\n###SCHEDULING SV CALLING####\n";
-	my $sv_jobs = illumina_structuralVariants::runStructuralVariantCallers(\%opt);
+	my $sv_jobs = IAP::structuralVariants::runStructuralVariantCallers(\%opt);
 	$opt{RUNNING_JOBS}->{'sv'} = $sv_jobs;
     }
     ### BAF
     if($opt{BAF} eq "yes"){
 	print "\n###SCHEDULING BAF Analysis###\n";
-	my $baf_jobs = illumina_baf::runBAF(\%opt);
+	my $baf_jobs = IAP::baf::runBAF(\%opt);
 	$opt{RUNNING_JOBS}->{'baf'} = $baf_jobs;
     }
     ### CALLABLE LOCI
     if($opt{CALLABLE_LOCI} eq "yes"){
 	print "\n###SCHEDULING CALLABLE LOCI Analysis###\n";
-	my $callable_loci_jobs = illumina_callableLoci::runCallableLoci(\%opt);
+	my $callable_loci_jobs = IAP::callableLoci::runCallableLoci(\%opt);
 	$opt{RUNNING_JOBS}->{'callable_loci'} = $callable_loci_jobs;
     }
     
     ### GATK
     if($opt{VARIANT_CALLING} eq "yes"){
 	print "\n###SCHEDULING VARIANT CALLING####\n";
-	$opt_ref = illumina_calling::runVariantCalling(\%opt);
+	$opt_ref = IAP::calling::runVariantCalling(\%opt);
 	%opt = %$opt_ref;
     }
 } elsif ( $opt{VCF} ) {
     print "\n###RUNNING VCF PREP###\n";
-    $opt_ref = illumina_calling::runVcfPrep(\%opt);
+    $opt_ref = IAP::calling::runVcfPrep(\%opt);
     %opt = %$opt_ref;
 }
 
 ### Filter variants
 if($opt{FILTER_VARIANTS} eq "yes"){
     print "\n###SCHEDULING VARIANT FILTRATION####\n";
-    my $FVJob = illumina_filterVariants::runFilterVariants(\%opt);
+    my $FVJob = IAP::filterVariants::runFilterVariants(\%opt);
     
     foreach my $sample (@{$opt{SAMPLES}}){
 	push (@{$opt{RUNNING_JOBS}->{$sample}} , $FVJob);
@@ -211,7 +211,7 @@ if($opt{FILTER_VARIANTS} eq "yes"){
 ### Annotate variants
 if($opt{ANNOTATE_VARIANTS} eq "yes"){
     print "\n###SCHEDULING VARIANT ANNOTATION####\n";
-    my $AVJob = illumina_annotateVariants::runAnnotateVariants(\%opt);
+    my $AVJob = IAP::annotateVariants::runAnnotateVariants(\%opt);
     
     foreach my $sample (@{$opt{SAMPLES}}){
 	push (@{$opt{RUNNING_JOBS}->{$sample}} , $AVJob);
@@ -221,13 +221,13 @@ if($opt{ANNOTATE_VARIANTS} eq "yes"){
 ### VCFUTILS step
 if($opt{VCF_UTILS} eq "yes"){
     print "\n###SCHEDULING VCF UTILS Module Jobs####\n";
-    my $vcfutils_job = illumina_vcfutils::runVcfUtils(\%opt);
+    my $vcfutils_job = IAP::vcfutils::runVcfUtils(\%opt);
     $opt{RUNNING_JOBS}->{'VCF_UTILS'} = $vcfutils_job;
 }
 
 if($opt{CHECKING} eq "yes"){
     print "\n###SCHEDULING CHECK AND CLEAN####\n";
-    illumina_check::runCheck(\%opt);
+    IAP::check::runCheck(\%opt);
 }
 
 ### Close submit log
