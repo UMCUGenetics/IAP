@@ -58,6 +58,7 @@ perl illumina_pipeline.pl /path/to/output_dir/settings.config>
 - [plink](http://pngu.mgh.harvard.edu/~purcell/plink/)
 - [king](http://people.virginia.edu/~wc9c/KING/)
 - [bcftools](https://samtools.github.io/bcftools/)
+- [VT](http://genome.sph.umich.edu/wiki/Vt)
 
 #### Perl modules
 - strict
@@ -275,6 +276,7 @@ SOMVAR_FREEBAYES	yes/no
 FREEBAYES_PATH	/path/to/freebayes/bin
 BIOVCF_PATH	/path/to/biovcf/
 VCFLIB_PATH /path/to/vcflib/
+VT_PATH	/path/to/vt
 FREEBAYES_QUEUE	queue_name
 FREEBAYES_TIME	estimated runtime
 FREEBAYES_THREADS	number_of_threads

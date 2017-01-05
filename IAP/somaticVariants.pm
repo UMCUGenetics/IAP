@@ -548,7 +548,10 @@ sub runFreeBayes {
     
     # Filter freebayes vcf
     print FREEBAYES_SH "python $opt{IAP_PATH}/scripts/filterFreebayes.py -v $freebayes_out_dir/$sample_tumor_name.vcf |";
-    print FREEBAYES_SH "java -Xmx".$opt{FREEBAYES_MEM}."G -jar $opt{SNPEFF_PATH}/SnpSift.jar filter \"$opt{FREEBAYES_SOMATICFILTER}\" > $freebayes_out_dir/$sample_tumor_name\_somatic_filtered.vcf \n";
+    print FREEBAYES_SH "java -Xmx".$opt{FREEBAYES_MEM}."G -jar $opt{SNPEFF_PATH}/SnpSift.jar filter \"$opt{FREEBAYES_SOMATICFILTER}\" > $freebayes_out_dir/$sample_tumor_name\_somatic_filtered_unnormalized.vcf \n";
+    
+    # Normalize freebayes vcf
+    print FREEBAYES_SH "$opt{VT_PATH}/vt normalize -r $opt{GENOME} $freebayes_out_dir/$sample_tumor_name\_somatic_filtered_unnormalized.vcf -o $freebayes_out_dir/$sample_tumor_name\_somatic_filtered.vcf \n";
     
     #Check freebayes completed
     print FREEBAYES_SH "\tif [ -s $freebayes_out_dir/$sample_tumor_name\_somatic_filtered.vcf ]\n";
