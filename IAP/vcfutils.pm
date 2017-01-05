@@ -5,6 +5,7 @@
 ### - Utility functions that can run after variant calling
 ###   - kinship analyses
 ###   - Phase by transmission
+###   - bcftools ROH
 ###
 ###Author: R.F.Ernst
 ###
@@ -109,7 +110,26 @@ sub runVcfUtils {
 	    print VCFUTILS_SH "fi\n\n";
 	}
     }
-
+    
+    if ( $opt{VCFUTILS_ROH} eq "yes" ){
+	foreach my $sample (@{$opt{SAMPLES}}){
+	    if (-e "$opt{OUTPUT_DIR}/logs/ROH_$sample.done"){
+		print "WARNING: $opt{OUTPUT_DIR}/logs/ROH_$sample.done exists, skipping \n";
+	    } else {
+		print VCFUTILS_SH "cd $opt{OUTPUT_DIR}/tmp/\n";
+		print VCFUTILS_SH "$opt{BCFTOOLS_PATH}/bcftools roh -s $sample $opt{ROH_SETTINGS} $opt{OUTPUT_DIR}/$vcf > $sample\_ROH.txt\n";
+		print VCFUTILS_SH "python $opt{IAP_PATH}/scripts/get_roh_regions.py $sample\_ROH.txt > $sample\_ROH_regions.txt\n";
+		print VCFUTILS_SH "\tmv $sample\_ROH*.txt $opt{OUTPUT_DIR}/\n";
+		print VCFUTILS_SH "if [ -s $opt{OUTPUT_DIR}/$sample\_ROH.txt -a -s $opt{OUTPUT_DIR}/$sample\_ROH_regions.txt ]; then\n";
+		print VCFUTILS_SH "\ttouch $opt{OUTPUT_DIR}/logs/ROH_$sample.done\n";
+		print VCFUTILS_SH "else\n";
+		print VCFUTILS_SH "\tfailed=true\n";
+		print VCFUTILS_SH "fi\n\n";
+	    }
+	}
+    }
+    
+    
     print VCFUTILS_SH "if [ \"\$failed\" = false ]; then\n";
     print VCFUTILS_SH "\ttouch $opt{OUTPUT_DIR}/logs/VCF_UTILS.done\n";
     print VCFUTILS_SH "fi\n\n";

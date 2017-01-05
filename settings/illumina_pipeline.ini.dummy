@@ -10,11 +10,11 @@ SAMBAMBA_PATH	/hpc/cog_bioinf/common_scripts/sambamba_v0.6.5
 QUEUE_PATH	/hpc/cog_bioinf/common_scripts/GenomeAnalysisTK-3.4-46
 PICARD_PATH	/hpc/cog_bioinf/common_scripts/picard-tools-1.141
 BAMMETRICS_PATH	/hpc/local/CentOS7/cog_bioinf/bamMetrics_v2.1.4
-FASTQC_PATH	/hpc/local/CentOS6/cog_bioinf/FastQC_v0.11.3
+FASTQC_PATH	/hpc/local/CentOS7/cog_bioinf/FastQC_v0.11.3
 GATK_PATH	/hpc/cog_bioinf/common_scripts/GenomeAnalysisTK-3.4-46
 SNPEFF_PATH	/hpc/cog_bioinf/data/robert/src/snpEff_v4.1/
 VCFTOOLS_PATH	/hpc/cog_bioinf/common_scripts/vcftools/bin/
-IGVTOOLS_PATH	/hpc/local/CentOS6/cog_bioinf/bin
+IGVTOOLS_PATH	/hpc/local/CentOS7/cog_bioinf/bin
 
 ####MODES####
 PRESTATS	yes
@@ -156,7 +156,7 @@ SOMVAR_TARGETS	/hpc/cog_bioinf/GENOMES/Homo_sapiens.GRCh37.GATK.illumina/sorted_
 
 ## Strelka
 SOMVAR_STRELKA	yes
-STRELKA_PATH	/hpc/local/CentOS6/cog_bioinf/strelka-1.0.14
+STRELKA_PATH	/hpc/local/CentOS7/cog_bioinf/strelka-1.0.14
 STRELKA_INI	settings/strelka/strelka_config_bwa_exome.ini
 STRELKA_QUEUE	all.q
 STRELKA_TIME	8:0:0
@@ -164,7 +164,7 @@ STRELKA_THREADS	6
 
 ## Varscan
 SOMVAR_VARSCAN	yes
-VARSCAN_PATH	/hpc/local/CentOS6/cog_bioinf/Varscan.v2.3.7/VarScan.v2.3.7.jar
+VARSCAN_PATH	/hpc/local/CentOS7/cog_bioinf/Varscan.v2.3.7/VarScan.v2.3.7.jar
 TABIX_PATH	/hpc/cog_bioinf/common_scripts/tabix-0.2.5/
 VARSCAN_QUEUE	all.q
 VARSCAN_TIME	24:0:0
@@ -176,10 +176,10 @@ PILEUP_THREADS	7
 
 ## Freebayes
 SOMVAR_FREEBAYES	yes
-FREEBAYES_PATH	/hpc/local/CentOS6/cog_bioinf/freebayes/bin
-VCFSAMPLEDIFF_PATH	/hpc/local/CentOS6/cog_bioinf/vcflib/bin
-BIOVCF_PATH	/hpc/local/CentOS6/cog_bioinf/CuppenResearch/somatic_pipeline/wrappers
-VCFLIB_PATH	/hpc/local/CentOS6/cog_bioinf/vcflib/bin/
+FREEBAYES_PATH	/hpc/local/CentOS7/cog_bioinf/freebayes/bin
+VCFSAMPLEDIFF_PATH	/hpc/local/CentOS7/cog_bioinf/vcflib/bin
+BIOVCF_PATH	/hpc/local/CentOS7/cog_bioinf/CuppenResearch/somatic_pipeline/wrappers
+VCFLIB_PATH	/hpc/local/CentOS7/cog_bioinf/vcflib/bin/
 FREEBAYES_QUEUE	all.q
 FREEBAYES_TIME	8:0:0
 FREEBAYES_THREADS	4
@@ -218,7 +218,7 @@ CNV_CONTRA	yes
 CONTRA_THREADS	7
 CONTRA_QUEUE	all.q
 CONTRA_TIME	8:0:0
-CONTRA_PATH	/hpc/local/CentOS6/cog_bioinf/CONTRA.v2.0.6/
+CONTRA_PATH	/hpc/local/CentOS7/cog_bioinf/CONTRA.v2.0.6/
 CONTRA_FLAGS	--nomultimapped --largeDeletion --plot
 
 CONTRA_VISUALIZATION	yes
@@ -244,7 +244,7 @@ FREEC_CHRFILES	/hpc/cog_bioinf/GENOMES/Homo_sapiens.GRCh37.GATK.illumina/chr_fil
 FREEC_PLOIDY	2
 FREEC_WINDOW	1000
 FREEC_TELOCENTROMERIC	50000
-FREEC_MAPPABILITY_TRACKS	/hpc/local/CentOS6/cog_bioinf/freec/hg19_mappability_tracks/out100m1_hg19.gem	/hpc/local/CentOS6/cog_bioinf/freec/hg19_mappability_tracks/out100m2_hg19.gem
+FREEC_MAPPABILITY_TRACKS	/hpc/local/CentOS7/cog_bioinf/freec/hg19_mappability_tracks/out100m1_hg19.gem	/hpc/local/CentOS7/cog_bioinf/freec/hg19_mappability_tracks/out100m2_hg19.gem
 
 #### SV Calling CONFIGURATION####
 
@@ -322,13 +322,16 @@ VCFUTILS_TIME	2:0:0
 VCFUTILS_THREADS	1
 VCFUTILS_MEM	8
 VCFUTILS_KINSHIP	yes
-PLINK_PATH	/hpc/local/CentOS6/cog_bioinf/plink_1.9b3
-KING_PATH	/hpc/local/CentOS6/cog_bioinf/king_1.4
+PLINK_PATH	/hpc/local/CentOS7/cog_bioinf/plink_1.9b3
+KING_PATH	/hpc/local/CentOS7/cog_bioinf/king_1.4
 VCFUTILS_GENDERCHECK	yes
 GENDERCHECK_FEMALE_MAX_F	0.3
 GENDERCHECK_MALE_MIN_F	0.7
 VCFUTILS_PHASE	yes
 PED_PATH	/path/to/folder/with/ped_files
+VCFUTILS_ROH	yes
+BCFTOOLS_PATH	/hpc/local/CentOS7/cog_bioinf/bcftools-1.3
+ROH_SETTINGS	--AF-dflt 0.4
 
 ####NIPT CLUSTER CONFIGURATION####
 CHROMATE_PATH	/path/to/chromate.py
