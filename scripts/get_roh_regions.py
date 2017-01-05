@@ -13,17 +13,18 @@ def list_mean(list):
 
 def get_roh_regions(roh_file):
     """Create roh regions."""
+    roh_regions = []
     try:
         f = open(roh_file, 'r')
     except IOError:
         sys.exit("Can't open: {0}".format(roh_file))
     else:
         with f:
-            # skip header rows == 4
+            # skip header rows == 4, bcftools 1.3
             for line in islice(f, 4):
                 next
 
-            roh_regions = []
+            # Get first roh_region
             chr, pos, state, qual = next(f).rstrip().split('\t')
             roh_region = {
                 'chr': chr,
@@ -32,10 +33,10 @@ def get_roh_regions(roh_file):
                 'state': int(state),
                 'qual': [float(qual)]
             }
+
             for line in f:
                 chr, pos, state, qual = line.rstrip().split('\t')
-                if (roh_region['chr'] == chr and
-                        roh_region['state'] == int(state)):
+                if (roh_region['chr'] == chr and roh_region['state'] == int(state)):
                     roh_region['end'] = int(pos)
                     roh_region['qual'].append(float(qual))
                 else:
@@ -50,12 +51,13 @@ def get_roh_regions(roh_file):
                         'state': int(state),
                         'qual': [float(qual)]
                     }
+
             # Calculate average qual and length
             roh_region['qual'] = list_mean(roh_region['qual'])
             roh_region['len'] = roh_region['end'] - roh_region['start']
             roh_regions.append(roh_region)
-            f.close()
-            return roh_regions
+
+    return roh_regions
 
 
 if __name__ == "__main__":
