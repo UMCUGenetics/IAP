@@ -185,7 +185,7 @@ FREEBAYES_QUEUE	all.q
 FREEBAYES_TIME	8:0:0
 FREEBAYES_THREADS	4
 FREEBAYES_TARGETS	/hpc/cog_bioinf/ENRICH/PICARD/SS_exome_v5_S04380110_Covered_picard.bed
-FREEBAYES_SETTINGS	-C 3 --pooled-discrete --genotype-qualities --min-coverage 5 --no-mnps --no-complex
+FREEBAYES_SETTINGS	--min-alternate-fraction 0.1 --min-alternate-count 2 --no-partial-observation --pooled-continuous --report-genotype-likelihood-max --allele-balance-priors-off --pooled-discrete --genotype-qualities --min-coverage 5 --no-mnps --no-complex
 FREEBAYES_SOMATICFILTER	--filter 'r.tumor.dp>=20 and r.normal.dp>=20 and r.info.ssc>=20 and qual>=10' --sfilter 's.gq>=15'
 FREEBAYES_GERMLINEFILTER	--filter 'r.tumor.dp>=20 and r.normal.dp>=20 and qual>=10' --sfilter 's.gq>=15'
 
