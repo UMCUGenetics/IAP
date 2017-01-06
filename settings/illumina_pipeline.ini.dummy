@@ -177,9 +177,8 @@ PILEUP_THREADS	7
 ## Freebayes
 SOMVAR_FREEBAYES	yes
 FREEBAYES_PATH	/hpc/local/CentOS7/cog_bioinf/freebayes/bin
-VCFSAMPLEDIFF_PATH	/hpc/local/CentOS7/cog_bioinf/vcflib/bin
 BIOVCF_PATH	/hpc/local/CentOS7/cog_bioinf/CuppenResearch/somatic_pipeline/wrappers
-VCFLIB_PATH	/hpc/local/CentOS7/cog_bioinf/vcflib/bin/
+VCFLIB_PATH	/hpc/local/CentOS7/cog_bioinf/vcflib_v1.0.0-rc1/bin
 VT_PATH	/hpc/local/CentOS7/cog_bioinf/vt_0.5772
 FREEBAYES_QUEUE	all.q
 FREEBAYES_TIME	8:0:0
