@@ -378,6 +378,20 @@ sub checkConfig{
     if(! ($opt{FASTQ} || $opt{BAM} || $opt{VCF}) ){ print "ERROR: No FASTQ/BAM/VCF files found in config files.\n"; $checkFailed = 1; }
     if(! $opt{MAIL}){ print "ERROR: No MAIL address specified in config files.\n"; $checkFailed = 1; }
 
+    ### Check fastq input
+    if($opt{FASTQ}){
+	foreach my $input (keys %{$opt{FASTQ}}){
+	    my $fastqFile = (split("/", $input))[-1];
+	    print $fastqFile;
+	    print "\n";
+	    my $fastqPattern = qr/^(?<sampleName>[^_]+)_(?<flowcellID>[^_]+)_(?<index>[^_]+)_(?<lane>[^_]+)_(?<tag>R1|R2)_(?<suffix>[^\.]+)(?<ext>\.fastq\.gz)$/x;
+	    $fastqFile =~ $fastqPattern or do {
+		print "ERROR: FASTQ filename '$fastqFile' must match regex '$fastqPattern'. \n\t For example: SAMPLENAME_FLOWCELLID_S1_L001_R1_001.fastq.gz)\n";
+		$checkFailed = 1;
+	    }
+	}
+    }
+
     ### Cluster settings
     if(! $opt{CLUSTER_PATH}){ print "ERROR: No CLUSTER_PATH option found in config files.\n"; $checkFailed = 1; }
     if(! $opt{CLUSTER_TMP}){ print "ERROR: No CLUSTER_TMP option found in config files.\n"; $checkFailed = 1; }
@@ -811,7 +825,7 @@ sub checkConfig{
     }
 
     if ($checkFailed) { 
-	print "One or more options not found in config files.";
+	print "One or more errors found in config files.";
 	die;
     }
 }
