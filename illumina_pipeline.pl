@@ -382,8 +382,6 @@ sub checkConfig{
     if($opt{FASTQ}){
 	foreach my $input (keys %{$opt{FASTQ}}){
 	    my $fastqFile = (split("/", $input))[-1];
-	    print $fastqFile;
-	    print "\n";
 	    my $fastqPattern = qr/^(?<sampleName>[^_]+)_(?<flowcellID>[^_]+)_(?<index>[^_]+)_(?<lane>[^_]+)_(?<tag>R1|R2)_(?<suffix>[^\.]+)(?<ext>\.fastq\.gz)$/x;
 	    $fastqFile =~ $fastqPattern or do {
 		print "ERROR: FASTQ filename '$fastqFile' must match regex '$fastqPattern'. \n\t For example: SAMPLENAME_FLOWCELLID_S1_L001_R1_001.fastq.gz)\n";
