@@ -148,6 +148,76 @@ sub runVariantCalling {
     return \%opt;
 }
 
+sub runSNPPanelCalling {
+    ###
+    # Run single sample UnifiedGenotyper on small SNP panel
+    ###
+    my $configuration = shift;
+    my %opt = %{$configuration};
+    my $runName = (split("/", $opt{OUTPUT_DIR}))[-1];
+    my $jobID = "SNP_Panel_".get_job_id();
+    my @running_jobs;
+    my $log_dir = $opt{OUTPUT_DIR}."/logs";
+    my $output_dir = "$opt{OUTPUT_DIR}/snpPanel";
+
+    ### Create snpPanel folder
+    if(! -e $output_dir){
+	mkdir($output_dir) or die "Couldn't create directory: $output_dir\n";
+    }
+    ### Create bash script
+    my $bashFile = $opt{OUTPUT_DIR}."/jobs/".$jobID.".sh";
+
+    open SNPPANEL_SH, ">$bashFile" or die "cannot open file $bashFile \n";
+    print SNPPANEL_SH "#!/bin/bash\n";
+    print SNPPANEL_SH "bash $opt{CLUSTER_PATH}/settings.sh\n\n";
+    print SNPPANEL_SH "cd $output_dir\n\n";
+
+    foreach my $sample (@{$opt{SAMPLES}}){
+	if (-e "$log_dir/SNPPanel_$sample.done"){
+	    print "WARNING: $opt{OUTPUT_DIR}/logs/SNP_PANEL_$sample.done exists, skipping \n";
+	} else {
+	    my $sample_bam = "$opt{OUTPUT_DIR}/$sample/mapping/$opt{BAM_FILES}->{$sample}";
+	    my $output_vcf = $sample."_SNP_Panel.vcf";
+
+	    ## Running jobs
+	    if ( @{$opt{RUNNING_JOBS}->{$sample}} ){
+		push( @running_jobs, @{$opt{RUNNING_JOBS}->{$sample}} );
+	    }
+
+	    ### Build gatk command
+	    my $command = "java -Djava.io.tmpdir=$opt{OUTPUT_DIR}/tmp/ -Xmx".$opt{SNP_PANEL_MEM}."G -jar $opt{QUEUE_PATH}/GenomeAnalysisTK.jar ";
+	    $command .= "-T UnifiedGenotyper ";
+	    $command .= "-R $opt{GENOME} ";
+	    $command .= "-L $opt{SNP_PANEL_TARGET} ";
+	    $command .= "-I $sample_bam ";
+	    $command .= "-o $output_vcf ";
+	    $command .= "--output_mode EMIT_ALL_SITES ";
+
+	    print SNPPANEL_SH "if [ -s $sample_bam ]\n";
+	    print SNPPANEL_SH "then\n";
+	    print SNPPANEL_SH "\t$command\n";
+	    print SNPPANEL_SH "else\n";
+	    print SNPPANEL_SH "\techo \"ERROR: Sample bam file do not exist.\" >&2\n";
+	    print SNPPANEL_SH "fi\n";
+
+	    print SNPPANEL_SH "if [ \"\$(tail -n 1 $output_vcf | cut -f 1,2)\" = \"\$(tail -n 1 $opt{SNP_PANEL_TARGET} | cut -f 1,2)\" ]\n";
+	    print SNPPANEL_SH "then\n";
+	    print SNPPANEL_SH "\ttouch $log_dir/SNP_PANEL_$sample.done\n";
+	    print SNPPANEL_SH "fi\n\n";
+	}
+    }
+
+    ## Submit SNPPANEL JOB
+    my $qsub = &qsubJava(\%opt,"SNP_PANEL");
+    if (@running_jobs){
+	system "$qsub -o $log_dir/SNPPanel.out -e $log_dir/SNPPanel.err -N $jobID -hold_jid ".join(",",@running_jobs)." $bashFile";
+    } else {
+	system "$qsub -o $log_dir/SNPPanel.out -e $log_dir/SNPPanel.err -N $jobID $bashFile";
+    }
+    return $jobID;
+}
+
+
 sub runVcfPrep {
     ###
     # Run vcf prep when starting pipeline with a vcf file.
