@@ -121,16 +121,16 @@ sub runCheck {
 		    push( @runningJobs, @{$opt{RUNNING_JOBS}->{'callable_loci'}} );
 		}
 	    }
-	    if($opt{SNP_PANEL} eq "yes"){
-		$doneFile = $opt{OUTPUT_DIR}."/logs/SNP_PANEL_$sample.done";
+	    if($opt{FINGERPRINT} eq "yes"){
+		$doneFile = $opt{OUTPUT_DIR}."/logs/Fingerprint_$sample.done";
 		print BASH "if [ -f $doneFile ]; then\n";
-		print BASH "\techo \"\t SNP Panel analysis: done \" >>$logFile\n";
+		print BASH "\techo \"\t Fingerprint analysis: done \" >>$logFile\n";
 		print BASH "else\n";
-		print BASH "\techo \"\t SNP Panel analysis: failed \">>$logFile\n";
+		print BASH "\techo \"\t Fingerprint analysis: failed \">>$logFile\n";
 		print BASH "\tfailed=true\n";
 		print BASH "fi\n";
-		if ( $opt{RUNNING_JOBS}->{'snp_panel'} ){
-		    push( @runningJobs, $opt{RUNNING_JOBS}->{'snp_panel'} );
+		if ( $opt{RUNNING_JOBS}->{'fingerprint'} ){
+		    push( @runningJobs, $opt{RUNNING_JOBS}->{'fingerprint'} );
 		}
 	    }
 	    

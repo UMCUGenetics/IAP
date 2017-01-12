@@ -187,10 +187,10 @@ if(! $opt{VCF} ){
     }
 
     ### SNPPanel
-    if($opt{SNP_PANEL} eq "yes"){
-	print "\n###SCHEDULING SNP Panel Analysis###\n";
-	my $snp_panel_job = IAP::calling::runSNPPanelCalling(\%opt);
-	$opt{RUNNING_JOBS}->{'snp_panel'} = $snp_panel_job;
+    if($opt{FINGERPRINT} eq "yes"){
+	print "\n###SCHEDULING FINGERPRINT Analysis###\n";
+	my $fingerprint_job = IAP::calling::runFingerprint(\%opt);
+	$opt{RUNNING_JOBS}->{'fingerprint'} = $fingerprint_job;
     }
 
     ### GATK
@@ -403,7 +403,7 @@ sub checkConfig{
     if(! $opt{COPY_NUMBER}){ print "ERROR: No COPY_NUMBER option found in config files. \n"; $checkFailed = 1; }
     if(! $opt{SV_CALLING}){ print "ERROR: No SV_CALLING option found in config files. \n"; $checkFailed = 1; }
     if(! $opt{BAF}){ print "ERROR: No BAF option found in config files. \n"; $checkFailed = 1; }
-    if(! $opt{SNP_PANEL}){ print "ERROR: No SNP_PANEL option found in config files. \n"; $checkFailed = 1; }
+    if(! $opt{FINGERPRINT}){ print "ERROR: No FINGERPRINT option found in config files. \n"; $checkFailed = 1; }
     if(! $opt{CALLABLE_LOCI}){ print "ERROR: No CALLABLE_LOCI option found in config files. \n"; $checkFailed = 1; }
     if(! $opt{ANNOTATE_VARIANTS}){ print "ERROR: No ANNOTATE_VARIANTS option found in config files. \n"; $checkFailed = 1; }
     if(! $opt{VCF_UTILS}){ print "ERROR: No VCF_UTILS option found in config files. \n"; $checkFailed = 1; }
@@ -726,12 +726,12 @@ sub checkConfig{
 	
     }
     ##SNP Panel Analysis
-    if($opt{SNP_PANEL} eq "yes"){
-	if(! $opt{SNP_PANEL_QUEUE}){ print "ERROR: No SNP_PANEL_QUEUE option found in config files.\n"; $checkFailed = 1; }
-	if(! $opt{SNP_PANEL_THREADS}){ print "ERROR: No SNP_PANEL_THREADS option found in config files.\n"; $checkFailed = 1; }
-	if(! $opt{SNP_PANEL_MEM}){ print "ERROR: No SNP_PANEL_MEM option found in config files.\n"; $checkFailed = 1; }
-	if(! $opt{SNP_PANEL_TIME}){ print "ERROR: No SNP_PANEL_TIME option found in config files.\n"; $checkFailed = 1; }
-	if(! $opt{SNP_PANEL_TARGET}){ print "ERROR: No SNP_PANEL_TARGET option found in config files.\n"; $checkFailed = 1; }
+    if($opt{FINGERPRINT} eq "yes"){
+	if(! $opt{FINGERPRINT_QUEUE}){ print "ERROR: No FINGERPRINT_QUEUE option found in config files.\n"; $checkFailed = 1; }
+	if(! $opt{FINGERPRINT_THREADS}){ print "ERROR: No FINGERPRINT_THREADS option found in config files.\n"; $checkFailed = 1; }
+	if(! $opt{FINGERPRINT_MEM}){ print "ERROR: No FINGERPRINT_MEM option found in config files.\n"; $checkFailed = 1; }
+	if(! $opt{FINGERPRINT_TIME}){ print "ERROR: No FINGERPRINT_TIME option found in config files.\n"; $checkFailed = 1; }
+	if(! $opt{FINGERPRINT_TARGET}){ print "ERROR: No FINGERPRINT_TARGET option found in config files.\n"; $checkFailed = 1; }
     }
     ## ANNOTATE_VARIANTS
     if($opt{ANNOTATE_VARIANTS} eq "yes"){
