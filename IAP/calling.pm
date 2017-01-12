@@ -148,6 +148,76 @@ sub runVariantCalling {
     return \%opt;
 }
 
+sub runFingerprint {
+    ###
+    # Run single sample UnifiedGenotyper for genetic fingerprint analysis
+    ###
+    my $configuration = shift;
+    my %opt = %{$configuration};
+    my $runName = (split("/", $opt{OUTPUT_DIR}))[-1];
+    my $jobID = "Fingerprint_".get_job_id();
+    my @running_jobs;
+    my $log_dir = $opt{OUTPUT_DIR}."/logs";
+    my $output_dir = "$opt{OUTPUT_DIR}/fingerprint";
+
+    ### Create output folder
+    if(! -e $output_dir){
+	mkdir($output_dir) or die "Couldn't create directory: $output_dir\n";
+    }
+    ### Create bash script
+    my $bashFile = $opt{OUTPUT_DIR}."/jobs/".$jobID.".sh";
+
+    open FINGERPRINT_SH, ">$bashFile" or die "cannot open file $bashFile \n";
+    print FINGERPRINT_SH "#!/bin/bash\n";
+    print FINGERPRINT_SH "bash $opt{CLUSTER_PATH}/settings.sh\n\n";
+    print FINGERPRINT_SH "cd $output_dir\n\n";
+
+    foreach my $sample (@{$opt{SAMPLES}}){
+	if (-e "$log_dir/Fingerprint_$sample.done"){
+	    print "WARNING: $opt{OUTPUT_DIR}/logs/Fingerprint_$sample.done exists, skipping \n";
+	} else {
+	    my $sample_bam = "$opt{OUTPUT_DIR}/$sample/mapping/$opt{BAM_FILES}->{$sample}";
+	    my $output_vcf = $sample."_fingerprint.vcf";
+
+	    ## Running jobs
+	    if ( @{$opt{RUNNING_JOBS}->{$sample}} ){
+		push( @running_jobs, @{$opt{RUNNING_JOBS}->{$sample}} );
+	    }
+
+	    ### Build gatk command
+	    my $command = "java -Djava.io.tmpdir=$opt{OUTPUT_DIR}/tmp/ -Xmx".$opt{FINGERPRINT_MEM}."G -jar $opt{QUEUE_PATH}/GenomeAnalysisTK.jar ";
+	    $command .= "-T UnifiedGenotyper ";
+	    $command .= "-R $opt{GENOME} ";
+	    $command .= "-L $opt{FINGERPRINT_TARGET} ";
+	    $command .= "-I $sample_bam ";
+	    $command .= "-o $output_vcf ";
+	    $command .= "--output_mode EMIT_ALL_SITES ";
+
+	    print FINGERPRINT_SH "if [ -s $sample_bam ]\n";
+	    print FINGERPRINT_SH "then\n";
+	    print FINGERPRINT_SH "\t$command\n";
+	    print FINGERPRINT_SH "else\n";
+	    print FINGERPRINT_SH "\techo \"ERROR: Sample bam file do not exist.\" >&2\n";
+	    print FINGERPRINT_SH "fi\n";
+
+	    print FINGERPRINT_SH "if [ \"\$(tail -n 1 $output_vcf | cut -f 1,2)\" = \"\$(tail -n 1 $opt{FINGERPRINT_TARGET} | cut -f 1,2)\" ]\n";
+	    print FINGERPRINT_SH "then\n";
+	    print FINGERPRINT_SH "\ttouch $log_dir/Fingerprint_$sample.done\n";
+	    print FINGERPRINT_SH "fi\n\n";
+	}
+    }
+
+    ## Submit fingerprint job
+    my $qsub = &qsubJava(\%opt,"FINGERPRINT");
+    if (@running_jobs){
+	system "$qsub -o $log_dir/Fingerprint.out -e $log_dir/Fingerprint.err -N $jobID -hold_jid ".join(",",@running_jobs)." $bashFile";
+    } else {
+	system "$qsub -o $log_dir/Fingerprint.out -e $log_dir/Fingerprint.err -N $jobID $bashFile";
+    }
+    return $jobID;
+}
+
+
 sub runVcfPrep {
     ###
     # Run vcf prep when starting pipeline with a vcf file.

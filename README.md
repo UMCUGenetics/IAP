@@ -118,6 +118,7 @@ SOMATIC_VARIANTS	yes/no
 SV_CALLING	yes/no
 COPY_NUMBER	yes/no
 BAF	yes/no
+FINGERPRINT	yes/no
 CALLABLE_LOCI	yes/no
 FILTER_VARIANTS	yes/no
 ANNOTATE_VARIANTS	yes/no
@@ -382,6 +383,13 @@ BAF_THREADS	number_of_threads
 BAF_MEM	maximum_memory
 BIOVCF_PATH	/path/to/biovcf/bin
 BAF_SNPS	/path/to/CytoScanHD/CytoScanHD_hg19_SNPs_sorted.bed
+
+####FINGERPRINT CONFIGURATION####
+FINGERPRINT_QUEUE	queue_name
+FINGERPRINT_THREADS	number of threads
+FINGERPRINT_MEM	maximum_memory
+FINGERPRINT_TIME	estimate runtime
+FINGERPRINT_TARGET	/path/to/fingerprint_design.vcf
 
 #### CALLABLE LOCI CLUSTER CONFIGURATION####
 CALLABLE_LOCI_QUEUE	queue_name

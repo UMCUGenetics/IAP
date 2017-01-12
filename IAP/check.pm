@@ -121,6 +121,18 @@ sub runCheck {
 		    push( @runningJobs, @{$opt{RUNNING_JOBS}->{'callable_loci'}} );
 		}
 	    }
+	    if($opt{FINGERPRINT} eq "yes"){
+		$doneFile = $opt{OUTPUT_DIR}."/logs/Fingerprint_$sample.done";
+		print BASH "if [ -f $doneFile ]; then\n";
+		print BASH "\techo \"\t Fingerprint analysis: done \" >>$logFile\n";
+		print BASH "else\n";
+		print BASH "\techo \"\t Fingerprint analysis: failed \">>$logFile\n";
+		print BASH "\tfailed=true\n";
+		print BASH "fi\n";
+		if ( $opt{RUNNING_JOBS}->{'fingerprint'} ){
+		    push( @runningJobs, $opt{RUNNING_JOBS}->{'fingerprint'} );
+		}
+	    }
 	    
 	    print BASH "echo \"\">>$logFile\n\n"; ## empty line between samples
 	}
