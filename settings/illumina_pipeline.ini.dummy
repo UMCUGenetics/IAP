@@ -340,6 +340,7 @@ PED_PATH	/path/to/folder/with/ped_files
 VCFUTILS_ROH	yes
 BCFTOOLS_PATH	/hpc/local/CentOS7/cog_bioinf/bcftools-1.3
 ROH_SETTINGS	--AF-dflt 0.4
+VCFUTILS_SINGLE_SAMPLE_VCF	no
 
 ####NIPT CLUSTER CONFIGURATION####
 CHROMATE_PATH	/path/to/chromate.py
