@@ -112,6 +112,11 @@ sub runVcfUtils {
     }
     
     if ( $opt{VCFUTILS_ROH} eq "yes" ){
+	my $output_dir = "$opt{OUTPUT_DIR}/roh";
+	### Create output folder
+	if(! -e $output_dir){
+	    mkdir($output_dir) or die "Couldn't create directory: $output_dir\n";
+	}
 	foreach my $sample (@{$opt{SAMPLES}}){
 	    if (-e "$opt{OUTPUT_DIR}/logs/ROH_$sample.done"){
 		print "WARNING: $opt{OUTPUT_DIR}/logs/ROH_$sample.done exists, skipping \n";
@@ -119,8 +124,8 @@ sub runVcfUtils {
 		print VCFUTILS_SH "cd $opt{OUTPUT_DIR}/tmp/\n";
 		print VCFUTILS_SH "$opt{BCFTOOLS_PATH}/bcftools roh -s $sample $opt{ROH_SETTINGS} $opt{OUTPUT_DIR}/$vcf > $sample\_ROH.txt\n";
 		print VCFUTILS_SH "python $opt{IAP_PATH}/scripts/get_roh_regions.py $sample\_ROH.txt > $sample\_ROH_regions.txt\n";
-		print VCFUTILS_SH "\tmv $sample\_ROH*.txt $opt{OUTPUT_DIR}/\n";
-		print VCFUTILS_SH "if [ -s $opt{OUTPUT_DIR}/$sample\_ROH.txt -a -s $opt{OUTPUT_DIR}/$sample\_ROH_regions.txt ]; then\n";
+		print VCFUTILS_SH "\tmv $sample\_ROH*.txt $output_dir/\n";
+		print VCFUTILS_SH "if [ -s $output_dir/$sample\_ROH.txt -a -s $output_dir/$sample\_ROH_regions.txt ]; then\n";
 		print VCFUTILS_SH "\ttouch $opt{OUTPUT_DIR}/logs/ROH_$sample.done\n";
 		print VCFUTILS_SH "else\n";
 		print VCFUTILS_SH "\tfailed=true\n";
