@@ -439,6 +439,7 @@ PED	/path/to/ped_file_folder/
 VCFUTILS_ROH	yes/no
 BCFTOOLS_PATH	/path/to/bcftools-1.3
 ROH_SETTINGS	--AF-dflt 0.4
+VCFUTILS_SINGLE_SAMPLE_VCF	yes/no
 
 ####NIPT CLUSTER CONFIGURATION####
 CHROMATE_PATH	/path/to/chromate.py

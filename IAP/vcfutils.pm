@@ -129,6 +129,33 @@ sub runVcfUtils {
 	}
     }
     
+    if ( $opt{VCFUTILS_SINGLE_SAMPLE_VCF} eq "yes" ){
+	my $output_dir = "$opt{OUTPUT_DIR}/single_sample_vcf";
+	### Create output folder
+	if(! -e $output_dir){
+	    mkdir($output_dir) or die "Couldn't create directory: $output_dir\n";
+	}
+	
+	foreach my $sample (@{$opt{SAMPLES}}){
+	    if (-e "$opt{OUTPUT_DIR}/logs/SINGLE_SAMPLE_VCF_$sample.done"){
+		print "WARNING: $opt{OUTPUT_DIR}/logs/SINGLE_SAMPLE_VCF_$sample.done exists, skipping \n";
+	    } else {
+		print VCFUTILS_SH "cd $opt{OUTPUT_DIR}/tmp/\n";
+		my $output_vcf = $vcf;
+		$output_vcf =~ s/$runName/$sample/g;
+		print VCFUTILS_SH "java -Xmx".$opt{VCFUTILS_MEM}."G -jar $opt{GATK_PATH}/GenomeAnalysisTK.jar -T SelectVariants  -R $opt{GENOME} -V $opt{OUTPUT_DIR}/$vcf -o $output_vcf -sn $sample\n";
+		## Check output
+		print VCFUTILS_SH "if [ \"\$(tail -n 1 $opt{OUTPUT_DIR}/$vcf | cut -f 1,2)\" = \"\$(tail -n 1 $output_vcf | cut -f 1,2)\" ]\n";
+		print VCFUTILS_SH "then\n";
+		print VCFUTILS_SH "\tmv $output_vcf $output_dir/\n";
+		print VCFUTILS_SH "\ttouch $opt{OUTPUT_DIR}/logs/SINGLE_SAMPLE_VCF_$sample.done\n";
+		print VCFUTILS_SH "else\n";
+		print VCFUTILS_SH "\tfailed=true\n";
+		print VCFUTILS_SH "fi\n\n";
+	    }
+	}
+    }
+    
     
     print VCFUTILS_SH "if [ \"\$failed\" = false ]; then\n";
     print VCFUTILS_SH "\ttouch $opt{OUTPUT_DIR}/logs/VCF_UTILS.done\n";

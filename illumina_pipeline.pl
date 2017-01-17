@@ -789,6 +789,7 @@ sub checkConfig{
 	    if(! $opt{BCFTOOLS_PATH}){ print "ERROR: No BCFTOOLS_PATH found in .ini file\n"; $checkFailed = 1; }
 	    if(! $opt{ROH_SETTINGS}){ print "ERROR: No ROH_SETTINGS found in .ini file\n"; $checkFailed = 1; }
 	}
+	if(! $opt{VCFUTILS_SINGLE_SAMPLE_VCF}){ print "ERROR: No VCFUTILS_SINGLE_SAMPLE_VCF found in .ini file\n"; $checkFailed = 1; }
 	## Check and copy ped file needed for phasing and gendercheck
 	## Ped file is copied to output_dir to make sure it is accessible on compute nodes
 	if ( $opt{VCFUTILS_GENDERCHECK} eq "yes" || $opt{VCFUTILS_PHASE} eq "yes" ) {
