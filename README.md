@@ -33,14 +33,14 @@ perl illumina_pipeline.pl /path/to/output_dir/settings.config>
 - Python/dev
 - R/dev
 - Java 1.7/jre/dev
- 
+
 #### Bio tools
 - [FastQC](http://www.bioinformatics.babraham.ac.uk/projects/fastqc/)
 - [BWA](http://bio-bwa.sourceforge.net/)
 - [Sambamba](http://lomereiter.github.io/sambamba/)
 - [bamMetrics](https://github.com/CuppenResearch/bamMetrics)
 - [GATK (genomeanalysis toolkit) and GATK QUEUE >= 3.2-2](https://www.broadinstitute.org/gatk/)
-- [Picard >= 1.119](http://broadinstitute.github.io/picard/) 
+- [Picard >= 1.119](http://broadinstitute.github.io/picard/)
 - [SnpEff / SnpSift](http://snpeff.sourceforge.net/)
 - [Samtools](http://www.htslib.org/)
 - [Vcftools](http://vcftools.sourceforge.net/)
@@ -58,6 +58,7 @@ perl illumina_pipeline.pl /path/to/output_dir/settings.config>
 - [plink](http://pngu.mgh.harvard.edu/~purcell/plink/)
 - [king](http://people.virginia.edu/~wc9c/KING/)
 - [bcftools](https://samtools.github.io/bcftools/)
+- [VT](http://genome.sph.umich.edu/wiki/Vt)
 
 #### Perl modules
 - strict
@@ -137,10 +138,10 @@ SOMATIC_REGEX	(CPCT\d{8})([TR][IVX]*$)
 # T = tumor
 
 #### PRESTATS CLUSTER CONFIGURATION ####
-PRESTATS_QUEUE	queue_name 
+PRESTATS_QUEUE	queue_name
 PRESTATS_TIME	estimated runtime
 PRESTATS_THREADS	number_of_threads
-PRESTATS_MEM	maximum_memory 
+PRESTATS_MEM	maximum_memory
 
 #### MAPPING CLUSTER CONFIGURATION ####
 MAPPING_QUEUE	queue_name
@@ -268,14 +269,15 @@ VARSCAN_QUEUE	queue_name
 VARSCAN_TIME	estimated runtime
 VARSCAN_THREADS	number_of_threads
 VARSCAN_MEM	maximum_memory
-VARSCAN_SETTINGS	--min-coverage 20 --min-var-freq 0.1 --tumor-purity 0.8 | Varscan settings
-VARSCAN_POSTSETTINGS	-max-normal-freq 0.02 --p-value 0.05 | Varscan post settings
+VARSCAN_SETTINGS	--min-var-freq 0.1 --strand-filter 1 | Varscan settings
+VARSCAN_POSTSETTINGS	--p-value 0.05 | Varscan post settings
 
 ## Freebayes
 SOMVAR_FREEBAYES	yes/no
 FREEBAYES_PATH	/path/to/freebayes/bin
 BIOVCF_PATH	/path/to/biovcf/
 VCFLIB_PATH /path/to/vcflib/
+VT_PATH	/path/to/vt
 FREEBAYES_QUEUE	queue_name
 FREEBAYES_TIME	estimated runtime
 FREEBAYES_THREADS	number_of_threads
@@ -330,7 +332,7 @@ DELLY_SPLIT	no/yes	no/yes	no/yes	yes/no
 DELLY_MAPQUAL	1
 DELLY_MAD	9
 DELLY_FLANK	13
-#DELLY_VCF_GENO	
+#DELLY_VCF_GENO
 DELLY_GENO_QUAL	5
 
 ####COPY NUMBER VARIANTION CONFIGURATION####
@@ -371,7 +373,7 @@ FREEC_MEM	maximum_memory
 FREEC_PATH	/path/to/freec
 FREEC_CHRLENFILE	/path/to/genome.len
 FREEC_CHRFILES	/path/to/chr_files
-FREEC_PLOIDY	2 | Ploidy (number of chromosomes) per sample. 
+FREEC_PLOIDY	2 | Ploidy (number of chromosomes) per sample.
 FREEC_WINDOW	1000 | explicit window size (higher priority than coefficientOfVariation )
 FREEC_TELOCENTROMERIC	50000 | length of pre-telomeric and pre-centromeric regions: Control-FREEC will not output small CNAs and LOH found within these regions (they are likely to be false because of mappability/genome assembly issues)
 50000 for human/mouse genomes.

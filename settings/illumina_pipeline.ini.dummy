@@ -43,7 +43,7 @@ GENOME	/hpc/cog_bioinf/GENOMES/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GR
 ####SOMATIC SAMPLE REGEX####
 SOMATIC_REGEX	(CPCT\d{8})([TR][IVX]*$)
 ### SOMATIC_REGEX should follow this patern: (<sample_match>)(<origin_match>)
-# R = reference 
+# R = reference
 # T = tumor
 
 ####PRESTATS CLUSTER CONFIGURATION####
@@ -170,22 +170,22 @@ TABIX_PATH	/hpc/cog_bioinf/common_scripts/tabix-0.2.5/
 VARSCAN_QUEUE	all.q
 VARSCAN_TIME	24:0:0
 VARSCAN_THREADS	2
-VARSCAN_SETTINGS	--min-coverage 20 --min-var-freq 0.1 --tumor-purity 0.8
-VARSCAN_POSTSETTINGS	-max-normal-freq 0.02 --p-value 0.05
+VARSCAN_SETTINGS	--min-var-freq 0.1 --strand-filter 1
+VARSCAN_POSTSETTINGS	--p-value 0.05
 PILEUP_QUEUE	medium
 PILEUP_THREADS	7
 
 ## Freebayes
 SOMVAR_FREEBAYES	yes
 FREEBAYES_PATH	/hpc/local/CentOS7/cog_bioinf/freebayes/bin
-VCFSAMPLEDIFF_PATH	/hpc/local/CentOS7/cog_bioinf/vcflib/bin
 BIOVCF_PATH	/hpc/local/CentOS7/cog_bioinf/CuppenResearch/somatic_pipeline/wrappers
-VCFLIB_PATH	/hpc/local/CentOS7/cog_bioinf/vcflib/bin/
+VCFLIB_PATH	/hpc/local/CentOS7/cog_bioinf/vcflib_v1.0.0-rc1/bin
+VT_PATH	/hpc/local/CentOS7/cog_bioinf/vt_0.5772
 FREEBAYES_QUEUE	all.q
 FREEBAYES_TIME	8:0:0
 FREEBAYES_THREADS	4
 FREEBAYES_TARGETS	/hpc/cog_bioinf/ENRICH/PICARD/SS_exome_v5_S04380110_Covered_picard.bed
-FREEBAYES_SETTINGS	-C 3 --pooled-discrete --genotype-qualities --min-coverage 5 --no-mnps --no-complex
+FREEBAYES_SETTINGS	--min-alternate-fraction 0.1 --min-alternate-count 2 --no-partial-observation --pooled-continuous --report-genotype-likelihood-max --allele-balance-priors-off --pooled-discrete --genotype-qualities --min-coverage 5 --no-mnps --no-complex
 FREEBAYES_SOMATICFILTER	--filter 'r.tumor.dp>=20 and r.normal.dp>=20 and r.info.ssc>=20 and qual>=10' --sfilter 's.gq>=15'
 FREEBAYES_GERMLINEFILTER	--filter 'r.tumor.dp>=20 and r.normal.dp>=20 and qual>=10' --sfilter 's.gq>=15'
 
@@ -263,7 +263,7 @@ DELLY_SPLIT	no	no	no	yes
 DELLY_MAPQUAL	1
 DELLY_MAD	9
 DELLY_FLANK	13
-DELLY_VCF_GENO	
+DELLY_VCF_GENO
 DELLY_GENO_QUAL	5
 
 ## MANTA
