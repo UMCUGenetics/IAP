@@ -245,7 +245,7 @@ FREEC_CHRFILES	/hpc/cog_bioinf/GENOMES/Homo_sapiens.GRCh37.GATK.illumina/chr_fil
 FREEC_PLOIDY	2
 FREEC_WINDOW	1000
 FREEC_TELOCENTROMERIC	50000
-FREEC_MAPPABILITY_TRACKS	/hpc/local/CentOS7/cog_bioinf/freec/hg19_mappability_tracks/out100m1_hg19.gem	/hpc/local/CentOS7/cog_bioinf/freec/hg19_mappability_tracks/out100m2_hg19.gem
+FREEC_MAPPABILITY_TRACK	/hpc/cog_bioinf/common_dbs/hg19_mappability_tracks/out100m2_hg19.gem
 
 #### SV Calling CONFIGURATION####
 

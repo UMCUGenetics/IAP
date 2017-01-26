@@ -377,6 +377,7 @@ FREEC_PLOIDY	2 | Ploidy (number of chromosomes) per sample.
 FREEC_WINDOW	1000 | explicit window size (higher priority than coefficientOfVariation )
 FREEC_TELOCENTROMERIC	50000 | length of pre-telomeric and pre-centromeric regions: Control-FREEC will not output small CNAs and LOH found within these regions (they are likely to be false because of mappability/genome assembly issues)
 50000 for human/mouse genomes.
+FREEC_MAPPABILITY_TRACK	Optional mappability track
 
 #### B ALLELE FREQUENCY CLUSTER CONFIGURATION####
 BAF_QUEUE	queue_name

@@ -266,12 +266,6 @@ sub runFreec {
 	make_path($freec_out_dir) or die "Couldn't create directory: $freec_out_dir\n";
     }
     
-    ## Parse mappability tracks
-    my @mappabilityTracks;
-    if($opt{FREEC_MAPPABILITY_TRACKS}) {
-	@mappabilityTracks = split('\t', $opt{FREEC_MAPPABILITY_TRACKS});
-    }
-    
     ## Create freec config
     my $freec_config = $freec_out_dir."/freec_config.txt";
     open FREEC_CONFIG, ">$freec_config" or die "cannot open file $freec_config \n";
@@ -287,12 +281,10 @@ sub runFreec {
     print FREEC_CONFIG "BedGraphOutput=TRUE\n";
     print FREEC_CONFIG "outputDir=$freec_out_dir\n";
 
-    ## mappability tracks
-    foreach my $mappabilityTrack (@mappabilityTracks){
-	print FREEC_CONFIG "gemMappabilityFile=$mappabilityTrack\n";
+    ## mappability track
+    if($opt{FREEC_MAPPABILITY_TRACK}) {
+	print FREEC_CONFIG "gemMappabilityFile=$opt{FREEC_MAPPABILITY_TRACK}\n;"
     }
-    #print FREEC_CONFIG "gemMappabilityFile=/hpc/local/CentOS6/cog_bioinf/freec/hg19_mappability_tracks/out100m1_hg19.gem\n";
-    #print FREEC_CONFIG "gemMappabilityFile=/hpc/local/CentOS6/cog_bioinf/freec/hg19_mappability_tracks/out100m2_hg19.gem\n";
 
     print FREEC_CONFIG "[sample]\n";
     print FREEC_CONFIG "mateFile=$sample_bam\n";
