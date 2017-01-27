@@ -283,7 +283,7 @@ sub runFreec {
 
     ## mappability track
     if($opt{FREEC_MAPPABILITY_TRACK}) {
-	print FREEC_CONFIG "gemMappabilityFile=$opt{FREEC_MAPPABILITY_TRACK}\n;"
+	print FREEC_CONFIG "gemMappabilityFile=$opt{FREEC_MAPPABILITY_TRACK}\n";
     }
 
     print FREEC_CONFIG "[sample]\n";
