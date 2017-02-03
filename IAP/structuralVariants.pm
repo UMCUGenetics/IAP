@@ -7,13 +7,13 @@
 ### Author: R.F.Ernst , M. van Roosmalen ,H.H.D.Kerstens
 ##################################################################
 
-package illumina_structuralVariants;
+package IAP::structuralVariants;
 
 use strict;
 use POSIX qw(tmpnam);
 use File::Path qw(make_path);
 use lib "$FindBin::Bin"; #locates pipeline directory
-use illumina_sge;
+use IAP::sge;
 
 sub runStructuralVariantCallers {
     ###
@@ -257,7 +257,7 @@ sub runDelly {
 	        print CONVERT "if [[ \${#FAILED[@]} > 0 ]] ; then\n";
 	        print CONVERT "\t>&2 echo \"error\"\n";
 	        print CONVERT "else\n";
-	        print CONVERT "\t$opt{VCFTOOLS_PATH}/vcf-concat -f $delly_tmp_dir/$type\_vcf_files.txt | $opt{VCFTOOLS_PATH}/vcf-sort -c > $delly_tmp_dir/$runName\_$type.vcf\n";
+	        print CONVERT "\t$opt{VCFTOOLS_PATH}/vcf-concat -f $delly_tmp_dir/$type\_vcf_files.txt | $opt{VCFTOOLS_PATH}/vcf-sort -c --temporary-directory $delly_tmp_dir > $delly_tmp_dir/$runName\_$type.vcf\n";
 	        print CONVERT "\t$opt{IAP_PATH}/scripts/delly_TRA_convert.pl $delly_tmp_dir/$runName\_$type.vcf\n";
 	        print CONVERT "fi\n";
 		close CONVERT;
@@ -271,7 +271,7 @@ sub runDelly {
 		print VCF_CONCAT "FILE=$delly_log_dir/$type\_CONVERT.out\n";
 		print VCF_CONCAT "TAIL=`tail -n 1 \$FILE`\n";
 		print VCF_CONCAT "if [[ \$TAIL =~ Done.\$ ]] ; then\n";
-		print VCF_CONCAT "\t$opt{VCFTOOLS_PATH}/vcf-sort -c $delly_tmp_dir/$runName\_$type\_CONVERT.vcf > $delly_tmp_dir/$runName\_$type\_CONVERT_SORT.vcf\n";
+		print VCF_CONCAT "\t$opt{VCFTOOLS_PATH}/vcf-sort -c --temporary-directory $delly_tmp_dir $delly_tmp_dir/$runName\_$type\_CONVERT.vcf > $delly_tmp_dir/$runName\_$type\_CONVERT_SORT.vcf\n";
 		print VCF_CONCAT "\tmv $delly_tmp_dir/$runName\_$type\_CONVERT_SORT.vcf $delly_out_dir/$runName\_$type.vcf\n";
 	        print VCF_CONCAT "\ttouch $delly_log_dir/DELLY_$type.done\n";
 	        print VCF_CONCAT "fi\n\n";
@@ -310,7 +310,7 @@ sub runDelly {
 	        print VCF_CONCAT "if [[ \${#FAILED[@]} > 0 ]] ; then\n";
 	        print VCF_CONCAT "\t>&2 echo \"error\"\n";
 	        print VCF_CONCAT "else\n";
-	        print VCF_CONCAT "\t$opt{VCFTOOLS_PATH}/vcf-concat -f $delly_tmp_dir/$type\_vcf_files.txt | $opt{VCFTOOLS_PATH}/vcf-sort -c > $delly_tmp_dir/$runName\_$type.vcf\n";
+	        print VCF_CONCAT "\t$opt{VCFTOOLS_PATH}/vcf-concat -f $delly_tmp_dir/$type\_vcf_files.txt | $opt{VCFTOOLS_PATH}/vcf-sort -c --temporary-directory $delly_tmp_dir > $delly_tmp_dir/$runName\_$type.vcf\n";
 	        print VCF_CONCAT "\tmv $delly_tmp_dir/$runName\_$type.vcf $delly_out_dir/$runName\_$type.vcf\n";
 	        print VCF_CONCAT "\ttouch $delly_log_dir/DELLY_$type.done\n";
 	        print VCF_CONCAT "fi\n\n";
@@ -347,7 +347,7 @@ sub runDelly {
     		    print VCF_CONCAT "FILE=$delly_log_dir/$type\_CONVERT.out\n";
 		    print VCF_CONCAT "TAIL=`tail -n 1 \$FILE`\n";
 		    print VCF_CONCAT "if [[ \$TAIL =~ Done.\$ ]] ; then\n";
-		    print VCF_CONCAT "\t$opt{VCFTOOLS_PATH}/vcf-sort -c $delly_tmp_dir/$runName\_$type\_CONVERT.vcf > $delly_tmp_dir/$runName\_$type\_CONVERT_SORT.vcf\n";
+		    print VCF_CONCAT "\t$opt{VCFTOOLS_PATH}/vcf-sort -c --temporary-directory $delly_tmp_dir $delly_tmp_dir/$runName\_$type\_CONVERT.vcf > $delly_tmp_dir/$runName\_$type\_CONVERT_SORT.vcf\n";
 		    print VCF_CONCAT "\tmv $delly_tmp_dir/$runName\_$type\_CONVERT_SORT.vcf $delly_out_dir/$runName\_$type.vcf\n";
 	    	    print VCF_CONCAT "\ttouch $delly_log_dir/DELLY_$type.done\n";
 	    	    print VCF_CONCAT "fi\n\n";

@@ -9,13 +9,13 @@
 ### Author: R.F.Ernst & H.H.D.Kerstens
 #########################################################
 
-package illumina_somaticVariants;
+package IAP::somaticVariants;
 
 use strict;
 use POSIX qw(tmpnam);
 use File::Path qw(make_path);
 use lib "$FindBin::Bin"; #locates pipeline directory
-use illumina_sge;
+use IAP::sge;
 
 ### Run and merge
 sub runSomaticVariantCallers {
@@ -479,14 +479,17 @@ sub runFreeBayes {
 	$freebayes_command .= "$opt{FREEBAYES_SETTINGS} $sample_ref_bam $sample_tumor_bam > $freebayes_out_dir/$output_name.vcf";
 
 	## Sort vcf, remove duplicate lines and filter on target
-	my $sort_uniq_filter_command = "$opt{VCFTOOLS_PATH}/vcf-sort -c -t $freebayes_tmp_dir $freebayes_out_dir/$output_name.vcf | $opt{VCFLIB_PATH}/vcfuniq > $freebayes_out_dir/$output_name.sorted_uniq.vcf";
+	my $sort_uniq_normalize_filter_command = "$opt{VCFTOOLS_PATH}/vcf-sort -c -t $freebayes_tmp_dir $freebayes_out_dir/$output_name.vcf ";
+	$sort_uniq_normalize_filter_command .= "| $opt{VCFLIB_PATH}/vcfuniq ";
+	$sort_uniq_normalize_filter_command .= "| $opt{VT_PATH}/vt normalize -r $opt{GENOME} - > $freebayes_out_dir/$output_name.sorted_uniq_normalized.vcf\n";
+	
 	my $mv_command;
 	# Filter vcf on target
 	if($opt{SOMVAR_TARGETS}){
-	    $sort_uniq_filter_command .= "\n\tjava -Xmx".$opt{FREEBAYES_MEM}."G -jar $opt{GATK_PATH}/GenomeAnalysisTK.jar -T SelectVariants -R $opt{GENOME} -L $opt{SOMVAR_TARGETS} -V $freebayes_out_dir/$output_name.sorted_uniq.vcf -o $freebayes_out_dir/$output_name.sorted_uniq_targetfilter.vcf\n";
-	    $mv_command = "mv $freebayes_out_dir/$output_name.sorted_uniq_targetfilter.vcf $freebayes_out_dir/$output_name.vcf";
+	    $sort_uniq_normalize_filter_command .= "\n\tjava -Xmx".$opt{FREEBAYES_MEM}."G -jar $opt{GATK_PATH}/GenomeAnalysisTK.jar -T SelectVariants -R $opt{GENOME} -L $opt{SOMVAR_TARGETS} -V $output_name.sorted_uniq_normalized.vcf -o $freebayes_out_dir/$output_name.sorted_uniq_normalized_targetfilter.vcf\n";
+	    $mv_command = "mv $freebayes_out_dir/$output_name.sorted_uniq_normalized_targetfilter.vcf $freebayes_out_dir/$output_name.vcf";
 	} else {
-	    $mv_command = "mv $freebayes_out_dir/$output_name.sorted_uniq.vcf $freebayes_out_dir/$output_name.vcf";
+	    $mv_command = "mv $freebayes_out_dir/$output_name.sorted_uniq_normalized.vcf $freebayes_out_dir/$output_name.vcf";
 	}
 	## Create bashscript
 	open FREEBAYES_SH, ">$bash_file" or die "cannot open file $bash_file \n";
@@ -496,7 +499,7 @@ sub runFreeBayes {
 	print FREEBAYES_SH "then\n";
 	print FREEBAYES_SH "\techo \"Start Freebayes\t\" `date` \"\t $chr \t $sample_ref_bam \t $sample_tumor_bam\t\" `uname -n` >> $log_dir/freebayes.log\n\n";
 	print FREEBAYES_SH "\t$freebayes_command\n";
-	print FREEBAYES_SH "\t$sort_uniq_filter_command\n";
+	print FREEBAYES_SH "\t$sort_uniq_normalize_filter_command\n";
 	print FREEBAYES_SH "\t$mv_command\n\n";
 	print FREEBAYES_SH "\techo \"End Freebayes\t\" `date` \"\t $chr $sample_ref_bam \t $sample_tumor_bam\t\" `uname -n` >> $log_dir/freebayes.log\n";
 	print FREEBAYES_SH "else\n";
@@ -549,6 +552,9 @@ sub runFreeBayes {
     # Filter freebayes vcf
     print FREEBAYES_SH "python $opt{IAP_PATH}/scripts/filterFreebayes.py -v $freebayes_out_dir/$sample_tumor_name.vcf |";
     print FREEBAYES_SH "java -Xmx".$opt{FREEBAYES_MEM}."G -jar $opt{SNPEFF_PATH}/SnpSift.jar filter \"$opt{FREEBAYES_SOMATICFILTER}\" > $freebayes_out_dir/$sample_tumor_name\_somatic_filtered.vcf \n";
+    
+    # Normalize freebayes vcf -> moved to chr steps
+    # print FREEBAYES_SH "$opt{VT_PATH}/vt normalize -r $opt{GENOME} $freebayes_out_dir/$sample_tumor_name\_somatic_filtered_unnormalized.vcf -o $freebayes_out_dir/$sample_tumor_name\_somatic_filtered.vcf \n";
     
     #Check freebayes completed
     print FREEBAYES_SH "\tif [ -s $freebayes_out_dir/$sample_tumor_name\_somatic_filtered.vcf ]\n";

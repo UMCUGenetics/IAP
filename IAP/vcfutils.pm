@@ -5,17 +5,18 @@
 ### - Utility functions that can run after variant calling
 ###   - kinship analyses
 ###   - Phase by transmission
+###   - bcftools ROH
 ###
 ###Author: R.F.Ernst
 ###
 ############################################################
 
-package illumina_vcfutils;
+package IAP::vcfutils;
 
 use strict;
 use POSIX qw(tmpnam);
 use lib "$FindBin::Bin"; #locates pipeline directory
-use illumina_sge;
+use IAP::sge;
 
 
 sub runVcfUtils {
@@ -109,7 +110,58 @@ sub runVcfUtils {
 	    print VCFUTILS_SH "fi\n\n";
 	}
     }
-
+    
+    if ( $opt{VCFUTILS_ROH} eq "yes" ){
+	my $output_dir = "$opt{OUTPUT_DIR}/roh";
+	### Create output folder
+	if(! -e $output_dir){
+	    mkdir($output_dir) or die "Couldn't create directory: $output_dir\n";
+	}
+	foreach my $sample (@{$opt{SAMPLES}}){
+	    if (-e "$opt{OUTPUT_DIR}/logs/ROH_$sample.done"){
+		print "WARNING: $opt{OUTPUT_DIR}/logs/ROH_$sample.done exists, skipping \n";
+	    } else {
+		print VCFUTILS_SH "cd $opt{OUTPUT_DIR}/tmp/\n";
+		print VCFUTILS_SH "$opt{BCFTOOLS_PATH}/bcftools roh -s $sample $opt{ROH_SETTINGS} $opt{OUTPUT_DIR}/$vcf > $sample\_ROH.txt\n";
+		print VCFUTILS_SH "python $opt{IAP_PATH}/scripts/get_roh_regions.py $sample\_ROH.txt > $sample\_ROH_regions.txt\n";
+		print VCFUTILS_SH "\tmv $sample\_ROH*.txt $output_dir/\n";
+		print VCFUTILS_SH "if [ -s $output_dir/$sample\_ROH.txt -a -s $output_dir/$sample\_ROH_regions.txt ]; then\n";
+		print VCFUTILS_SH "\ttouch $opt{OUTPUT_DIR}/logs/ROH_$sample.done\n";
+		print VCFUTILS_SH "else\n";
+		print VCFUTILS_SH "\tfailed=true\n";
+		print VCFUTILS_SH "fi\n\n";
+	    }
+	}
+    }
+    
+    if ( $opt{VCFUTILS_SINGLE_SAMPLE_VCF} eq "yes" ){
+	my $output_dir = "$opt{OUTPUT_DIR}/single_sample_vcf";
+	### Create output folder
+	if(! -e $output_dir){
+	    mkdir($output_dir) or die "Couldn't create directory: $output_dir\n";
+	}
+	
+	foreach my $sample (@{$opt{SAMPLES}}){
+	    if (-e "$opt{OUTPUT_DIR}/logs/SINGLE_SAMPLE_VCF_$sample.done"){
+		print "WARNING: $opt{OUTPUT_DIR}/logs/SINGLE_SAMPLE_VCF_$sample.done exists, skipping \n";
+	    } else {
+		print VCFUTILS_SH "cd $opt{OUTPUT_DIR}/tmp/\n";
+		my $output_vcf = $vcf;
+		$output_vcf =~ s/$runName/$sample/g;
+		print VCFUTILS_SH "java -Xmx".$opt{VCFUTILS_MEM}."G -jar $opt{GATK_PATH}/GenomeAnalysisTK.jar -T SelectVariants  -R $opt{GENOME} -V $opt{OUTPUT_DIR}/$vcf -o $output_vcf -sn $sample\n";
+		## Check output
+		print VCFUTILS_SH "if [ \"\$(tail -n 1 $opt{OUTPUT_DIR}/$vcf | cut -f 1,2)\" = \"\$(tail -n 1 $output_vcf | cut -f 1,2)\" ]\n";
+		print VCFUTILS_SH "then\n";
+		print VCFUTILS_SH "\tmv $output_vcf $output_dir/\n";
+		print VCFUTILS_SH "\ttouch $opt{OUTPUT_DIR}/logs/SINGLE_SAMPLE_VCF_$sample.done\n";
+		print VCFUTILS_SH "else\n";
+		print VCFUTILS_SH "\tfailed=true\n";
+		print VCFUTILS_SH "fi\n\n";
+	    }
+	}
+    }
+    
+    
     print VCFUTILS_SH "if [ \"\$failed\" = false ]; then\n";
     print VCFUTILS_SH "\ttouch $opt{OUTPUT_DIR}/logs/VCF_UTILS.done\n";
     print VCFUTILS_SH "fi\n\n";

@@ -7,13 +7,13 @@
 ### Author: R.F.Ernst
 ########################################################################
 
-package illumina_check;
+package IAP::check;
 
 use strict;
 use POSIX qw(tmpnam);
 use FindBin;
 use lib "$FindBin::Bin"; #locates pipeline directory
-use illumina_sge;
+use IAP::sge;
 
 sub runCheck {
     ### 
@@ -119,6 +119,18 @@ sub runCheck {
 		print BASH "fi\n";
 		if ( $opt{RUNNING_JOBS}->{'callable_loci'} ){
 		    push( @runningJobs, @{$opt{RUNNING_JOBS}->{'callable_loci'}} );
+		}
+	    }
+	    if($opt{FINGERPRINT} eq "yes"){
+		$doneFile = $opt{OUTPUT_DIR}."/logs/Fingerprint_$sample.done";
+		print BASH "if [ -f $doneFile ]; then\n";
+		print BASH "\techo \"\t Fingerprint analysis: done \" >>$logFile\n";
+		print BASH "else\n";
+		print BASH "\techo \"\t Fingerprint analysis: failed \">>$logFile\n";
+		print BASH "\tfailed=true\n";
+		print BASH "fi\n";
+		if ( $opt{RUNNING_JOBS}->{'fingerprint'} ){
+		    push( @runningJobs, $opt{RUNNING_JOBS}->{'fingerprint'} );
 		}
 	    }
 	    

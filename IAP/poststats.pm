@@ -8,12 +8,12 @@
 ###
 #######################################################
 
-package illumina_poststats;
+package IAP::poststats;
 
 use strict;
 use POSIX qw(tmpnam);
 use FindBin;
-use illumina_sge;
+use IAP::sge;
 
 
 sub runPostStats {
