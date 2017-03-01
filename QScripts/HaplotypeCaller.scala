@@ -4,13 +4,14 @@ import org.broadinstitute.gatk.queue.QScript
 import org.broadinstitute.gatk.queue.extensions.gatk._
 
 import org.broadinstitute.gatk.tools.walkers.haplotypecaller.ReferenceConfidenceMode
+import org.broadinstitute.gatk.utils.commandline.ClassType
 
 class VariantCaller extends QScript {
     // Required arguments. All initialized to empty values.
     @Input(doc="The reference file for the bam files.", shortName="R", required=true)
     var referenceFile: File = _
 
-    @Input(doc="One or more bam files.", shortName="I")
+    @Input(doc="One or more bam files.", shortName="I", required=true)
     var bamFiles: List[File] = Nil
 
     @Input(doc="Output core filename.", shortName="O", required=true)
@@ -25,11 +26,8 @@ class VariantCaller extends QScript {
     @Argument(doc="Number of scatters", shortName="nsc", required=true)
     var numScatters: Int = _
 
-    @Argument(doc="Minimum phred-scaled confidence to call variants", shortName="stand_call_conf", required=true)
-    var standCallConf: Int = _ //30 //default: best-practices value
-
-    @Argument(doc="Minimum phred-scaled confidence to emit variants", shortName="stand_emit_conf", required=true)
-    var standEmitConf: Int = _ //10 //default: best-practices value
+    @Argument(doc="Minimum phred-scaled confidence to call variants", shortName="stand_call_conf", required=false)
+    var standCallConf: Int = 10 //default: best-practices value
 
     // The following arguments are all optional.
     @Input(doc="An optional file with known SNP sites.", shortName="D", required=false)
@@ -44,17 +42,21 @@ class VariantCaller extends QScript {
     @Argument(doc="Ploidy (number of chromosomes) per sample", shortName="ploidy", required=false)
     var samplePloidy: Int = 2
 
-    @Argument(doc="", shortName="gvcf", required=false)
+    @Argument(doc="Use gvcf analysis method", shortName="gvcf", required=false)
     var gvcf: Boolean = false
+    
+    @Argument(doc="Exclusive upper bounds for reference confidence GQ bands", shortName="gqb", required=false)
+    @ClassType(classOf[Int])
+    var GVCFGQBands: Seq[Int] = Nil
 
-    @Argument(doc="", shortName="sexAware", required=false)
+    @Argument(doc="Use sex aware calling method", shortName="sexAware", required=false)
     var sexAware: Boolean = false
     
-    @Argument(doc="", shortName="sex", required=false)
+    @Argument(doc="Define sexes used during sex aware calling", shortName="sex", required=false)
     var sexes: List[String] = Nil
 
     def script() {
-        // Define common settings for original HC, gvcf HC and sex aware gvcf HC.
+        // Define common settings for original HC, gvcf HC.
 	trait HC_Arguments extends HaplotypeCaller {
 	    this.reference_sequence = referenceFile
 
@@ -62,7 +64,6 @@ class VariantCaller extends QScript {
 	    this.memoryLimit = maxMem
 	    this.num_cpu_threads_per_data_thread = numCPUThreads
 
-	    this.stand_emit_conf = standEmitConf
 	    this.stand_call_conf = standCallConf
 	}
 
@@ -104,6 +105,7 @@ class VariantCaller extends QScript {
 
 		// gVCF settings
 		haplotypeCaller.emitRefConfidence = ReferenceConfidenceMode.GVCF
+		haplotypeCaller.GVCFGQBands = GVCFGQBands
 
 		// Optional input
 		if (targetFile != null) {
@@ -157,12 +159,12 @@ class VariantCaller extends QScript {
 		    this.memoryLimit = maxMem
 		    this.num_cpu_threads_per_data_thread = numCPUThreads
 
-		    this.stand_emit_conf = standEmitConf
 		    this.stand_call_conf = standCallConf
 
 		    this.input_file :+= bamFile
 
 		    this.emitRefConfidence = ReferenceConfidenceMode.GVCF
+		    this.GVCFGQBands = GVCFGQBands
 		}
 
 		val haplotypeCallerAutosome = new HaplotypeCaller with HC_Arguments
