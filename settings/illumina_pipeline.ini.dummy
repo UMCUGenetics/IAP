@@ -16,6 +16,10 @@ SNPEFF_PATH	/hpc/cog_bioinf/data/robert/src/snpEff_v4.1/
 VCFTOOLS_PATH	/hpc/cog_bioinf/common_scripts/vcftools/bin/
 IGVTOOLS_PATH	/hpc/local/CentOS7/cog_bioinf/bin
 
+### MODULE ###
+# (temporary) Solution for gatk 3.7 requiring java 1.8.
+GATK_JAVA_MODULE	Java/1.8.0_60
+
 ####MODES####
 PRESTATS	yes
 MAPPING	yes
@@ -124,6 +128,7 @@ CALLING_MEM	4
 CALLING_SCATTER	1000
 CALLING_SCALA	QScripts/HaplotypeCaller.scala
 CALLING_GVCF	no
+CALLING_GVCFGQBANDS	5,10,15,20,30,40,50,60	# Must be set when calling_gvcf == yes
 CALLING_SEXAWARE	no
 CALLING_DBSNP	bundle/dbsnp_137.b37.vcf
 # Optional target interval and padding
