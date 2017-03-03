@@ -33,6 +33,7 @@ perl illumina_pipeline.pl /path/to/output_dir/settings.config>
 - Python/dev
 - R/dev
 - Java 1.7/jre/dev
+    - Java 1.8 for gatk >= 3.7
 
 #### Bio tools
 - [FastQC](http://www.bioinformatics.babraham.ac.uk/projects/fastqc/)
@@ -107,6 +108,8 @@ GATK_PATH	/path/to/gatk | gatk > 3.2-2
 SNPEFF_PATH /path/to/snpeff
 VCFTOOLS_PATH	/path/to/vcftools
 IGVTOOLS_PATH	/path/to/igvtools
+
+GATK_JAVA_MODULE	Temporay fix to allow for different java versions using modules. Probably will be replaced by GNU GUIX.
 
 #### MODES ####
 PRESTATS	yes/no
@@ -224,6 +227,7 @@ CALLING_MEM	maximum_memory
 CALLING_SCATTER	number_of_scatters
 CALLING_SCALA	QScripts/HaplotypeCaller.scala
 CALLING_GVCF	no/yes
+CALLING_GVCFGQBANDS	5,10,15,20,30,40,50,60 | Required if CALLING_GVCF == yes
 CALLING_SEXAWARE	no/yes | Enable sex aware calling, only in combination with gvcf mode and human data
 CALLING_DBSNP	GATK_bundle/dbsnp_137.b37.vcf | common snp file supplied by gatk
 CALLING_STANDCALLCONF	30 | The minimum phred-scaled confidence threshold at which variants should be called. Gatk default = 30
