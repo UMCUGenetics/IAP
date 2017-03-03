@@ -73,6 +73,7 @@ sub runBAF {
 
 		#Create UG bash script
 		print BAF_SH "echo \"Start Unified Genotyper\t\" `date` \"\t\" `uname -n` >> $log_dir/BAF_$sample.log\n";
+		print BAF_SH "module load $opt{GATK_JAVA_MODULE}\n";
 
 		print BAF_SH "if [ -s $sample_bam ]\n";
 		print BAF_SH "then\n";

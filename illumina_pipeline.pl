@@ -427,6 +427,7 @@ sub checkConfig{
     elsif(! -e $opt{GENOME}){ print"ERROR: $opt{GENOME} does Not exist\n"}
     if(! $opt{SAMBAMBA_PATH}){ print "ERROR: No SAMBAMBA_PATH option found in config files.\n"; $checkFailed = 1; }
     if(! $opt{QUEUE_PATH}){ print "ERROR: No QUEUE_PATH option found in config files.\n"; $checkFailed = 1; }
+    if(! $opt{GATK_JAVA_MODULE}){ print "ERROR: No GATK_JAVA_MODULE option found in config files.\n"; $checkFailed = 1; }
     ## PRESTATS
     if($opt{PRESTATS} eq "yes"){
 	if(! $opt{FASTQC_PATH}){ print "ERROR: No FASTQC_PATH option found in config files.\n"; $checkFailed = 1; }

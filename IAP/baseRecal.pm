@@ -73,6 +73,7 @@ sub runBaseRecalibration {
 	open BASERECAL_SH, ">$bashFile" or die "cannot open file $bashFile \n";
 	print BASERECAL_SH "#!/bin/bash\n\n";
 	print BASERECAL_SH "bash $opt{CLUSTER_PATH}/settings.sh\n\n";
+	print BASERECAL_SH "module load $opt{GATK_JAVA_MODULE}\n";
 	print BASERECAL_SH "cd $opt{OUTPUT_DIR}/$sample/tmp/\n";
 	print BASERECAL_SH "echo \"Start base recalibration\t\" `date` \"\t$inBam\t\" `uname -n` >> ../logs/$sample.log\n\n";
 	
