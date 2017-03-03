@@ -52,7 +52,7 @@ sub runVariantCalling {
     }
 
     ### Common settings
-    $command .= "-R $opt{GENOME} -O $runName -mem $opt{CALLING_MEM} -nct $opt{CALLING_THREADS} -nsc $opt{CALLING_SCATTER} -stand_call_conf $opt{CALLING_STANDCALLCONF} -stand_emit_conf $opt{CALLING_STANDEMITCONF} ";
+    $command .= "-R $opt{GENOME} -O $runName -mem $opt{CALLING_MEM} -nct $opt{CALLING_THREADS} -nsc $opt{CALLING_SCATTER} -stand_call_conf $opt{CALLING_STANDCALLCONF} ";
 
     ### Add all bams
     foreach my $sample (@{$opt{SAMPLES}}){
@@ -81,6 +81,9 @@ sub runVariantCalling {
     }
     if($opt{CALLING_GVCF} eq 'yes'){
 	$command .= "-gvcf ";
+	foreach my $gvcf_gq_band (split(",", $opt{CALLING_GVCFGQBANDS})){
+	    $command .= "-gqb $gvcf_gq_band ";
+	}
 	if($opt{CALLING_SEXAWARE} eq 'yes'){
 	    $command .= "-sexAware ";
 	    for my $i (0 .. $#sampleBams) {
@@ -103,6 +106,7 @@ sub runVariantCalling {
     open CALLING_SH, ">$bashFile" or die "cannot open file $bashFile \n";
     print CALLING_SH "#!/bin/bash\n\n";
     print CALLING_SH "bash $opt{CLUSTER_PATH}/settings.sh\n\n";
+    print CALLING_SH "module load $opt{GATK_JAVA_MODULE}\n";
     print CALLING_SH "cd $opt{OUTPUT_DIR}/tmp/\n";
     print CALLING_SH "echo \"Start variant caller\t\" `date` \"\t\" `uname -n` >> $opt{OUTPUT_DIR}/logs/$runName.log\n\n";
     
@@ -170,6 +174,7 @@ sub runFingerprint {
     open FINGERPRINT_SH, ">$bashFile" or die "cannot open file $bashFile \n";
     print FINGERPRINT_SH "#!/bin/bash\n";
     print FINGERPRINT_SH "bash $opt{CLUSTER_PATH}/settings.sh\n\n";
+    print FINGERPRINT_SH "module load $opt{GATK_JAVA_MODULE}\n";
     print FINGERPRINT_SH "cd $output_dir\n\n";
 
     foreach my $sample (@{$opt{SAMPLES}}){
