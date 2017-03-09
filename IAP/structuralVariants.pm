@@ -225,7 +225,7 @@ sub runDelly {
 	    get_chrs_from_dict(\%chrs,\%opt) unless scalar(keys %chrs);
 	    my ( $jobIDs_chunks, $logFiles );
 	    ( $jobIDs_chunks, $logFiles ) = create_interchromosomal_chunks(\@sampleBams, \%chrs, $type, $delly_tmp_dir, $delly_job_dir, $delly_log_dir,\%opt, \@runningJobs) if $type eq "TRA";
-	    ( $jobIDs_chunks, $logFiles ) = create_intrachromosomal_chunks(\@sampleBams, \%chrs, $type, $delly_tmp_dir, $delly_job_dir, $delly_log_dir,\%opt, \@runningJobs) if $type =~ /DEL|DUP|INV/;
+	    ( $jobIDs_chunks, $logFiles ) = create_intrachromosomal_chunks(\@sampleBams, \%chrs, $type, $delly_tmp_dir, $delly_job_dir, $delly_log_dir,\%opt, \@runningJobs) if $type =~ /DEL|DUP|INV|INS/;
 
 	    # Translocation jobs
 	    if ($type eq "TRA") {
