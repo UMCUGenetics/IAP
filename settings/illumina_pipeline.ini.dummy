@@ -241,7 +241,7 @@ CNV_FREEC	yes
 FREEC_THREADS	8
 FREEC_QUEUE	all.q
 FREEC_TIME	8:0:0
-FREEC_PATH	/hpc/cog_bioinf/common_scripts/freec_v7.2
+FREEC_PATH	/hpc/cog_bioinf/common_scripts/freec_v10.4
 FREEC_CHRLENFILE	/hpc/cog_bioinf/GENOMES/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.len
 FREEC_CHRFILES	/hpc/cog_bioinf/GENOMES/Homo_sapiens.GRCh37.GATK.illumina/chr_files
 FREEC_PLOIDY	2
