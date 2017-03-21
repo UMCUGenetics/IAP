@@ -275,27 +275,31 @@ sub getSamples{
     my %somatic_samples;
     my @somatic_samples_uniq; #usefull for pileup
     my @single_samples;
-
+    
     ### Parse samples
     foreach my $sample (@{$opt{SAMPLES}}){
 	if ($opt{SOMATIC_REGEX}){
-	    my ($sample_name,$origin) = ($sample =~ /$opt{SOMATIC_REGEX}/);
-
-	    if ( (! $sample_name) || (! $origin) ){
+	    my ($sample_name,$origin) = (undef, undef);
+	    ($sample_name,$origin) = ($sample =~ /$opt{SOMATIC_REGEX}/);
+	    if ( (! defined $sample) || (! defined $origin) ){
 		print "Running single sample analysis for: $sample\n";
 		push(@single_samples, $sample);
 	    } else {
 		print "Running somatic sample analysis for: $sample\n";
 		# Reference sample
-		if ($origin =~ m/R.*/){
-		    push(@{$somatic_samples{$sample_name}{"ref"}},$sample);
+		my @ref_codes = split(",", $opt{SOMATIC_REGEX_REF_CODE});
+		foreach my $ref_code (@ref_codes){
+		    if ($origin =~ m/$ref_code.*/){
+			push(@{$somatic_samples{$sample_name}{"ref"}},$sample);
+		    }
 		}
-		# Tumor samples
-		elsif ($origin =~ m/T.*/){
-		    push(@{$somatic_samples{$sample_name}{"tumor"}},$sample);
+		my @tumor_codes = split(",", $opt{SOMATIC_REGEX_TUMOR_CODE});
+		foreach my $tumor_code (@tumor_codes){
+		    if ($origin =~ m/$tumor_code.*/){
+			push(@{$somatic_samples{$sample_name}{"tumor"}},$sample);
+		    }
 		}
 	    }
-
 	} else {
 	    print "Running single sample analysis for: $sample\n";
 	    push(@single_samples, $sample);
@@ -579,6 +583,8 @@ sub checkConfig{
 	if(! $opt{SAMTOOLS_PATH}){ print "ERROR: No SAMTOOLS_PATH option found in config files.\n"; $checkFailed = 1; }
 	if( $opt{SOMVAR_TARGETS} && ! -e $opt{SOMVAR_TARGETS}) { print"ERROR: $opt{SOMVAR_TARGETS} does not exist\n"; $checkFailed = 1; }
 	if(! $opt{SOMATIC_REGEX}){ print "ERROR: No SOMATIC_REGEX option found in config files.\n"; $checkFailed = 1; }
+	if(! $opt{SOMATIC_REGEX_REF_CODE}){ print "ERROR: No SOMATIC_REGEX_REF_CODE option found in config files.\n"; $checkFailed = 1; }
+	if(! $opt{SOMATIC_REGEX_TUMOR_CODE}){ print "ERROR: No SOMATIC_REGEX_TUMOR_CODE option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{SOMVAR_STRELKA}){ print "ERROR: No SOMVAR_STRELKA option found in config files.\n"; $checkFailed = 1; }
 	if($opt{SOMVAR_STRELKA} eq "yes"){
 	    if(! $opt{STRELKA_PATH}){ print "ERROR: No STRELKA_PATH option found in config files.\n"; $checkFailed = 1; }

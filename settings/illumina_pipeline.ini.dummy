@@ -42,6 +42,8 @@ GENOME	/hpc/cog_bioinf/GENOMES/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GR
 
 ####SOMATIC SAMPLE REGEX####
 SOMATIC_REGEX	(CPCT\d{8})([TR][IVX]*$)
+SOMATIC_REGEX_REF_CODE	R
+SOMATIC_REGEX_TUMOR_CODE	T
 ### SOMATIC_REGEX should follow this patern: (<sample_match>)(<origin_match>)
 # R = reference
 # T = tumor
@@ -258,8 +260,8 @@ DELLY_MERGE_QUEUE	all.q
 #DELLY_MERGE_TIME	2:0:0
 DELLY_THREADS	4
 
-DELLY_SVTYPE	DEL	DUP	INV	TRA
-DELLY_SPLIT	no	no	no	yes
+DELLY_SVTYPE	INS	DEL	DUP	INV	TRA
+DELLY_SPLIT	no	no	no	no	yes
 DELLY_MAPQUAL	1
 DELLY_MAD	9
 DELLY_FLANK	13
