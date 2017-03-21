@@ -76,6 +76,7 @@ sub runCallableLoci {
 	    }
 	    #Create UG bash script
 	    print CALLABLE_LOCI_SH "echo \"Start CallableLoci\t\" `date` \"\t\" `uname -n` >> $log_dir/CallableLoci_$sample.log\n";
+	    print CALLABLE_LOCI_SH "module load $opt{GATK_JAVA_MODULE}\n";
 	    print CALLABLE_LOCI_SH "if [ -s $sample_bam ]\n";
 	    print CALLABLE_LOCI_SH "then\n";
 	    print CALLABLE_LOCI_SH "\t$command\n";

@@ -50,7 +50,8 @@ sub runAnnotateVariants {
 
     open ANNOTATE_SH, ">$bashFile" or die "cannot open file $bashFile \n";
     print ANNOTATE_SH "#!/bin/bash\n\n";
-    print ANNOTATE_SH "bash $opt{CLUSTER_PATH}/settings.sh\n\n";
+    print ANNOTATE_SH "bash $opt{CLUSTER_PATH}/settings.sh\n";
+    print ANNOTATE_SH "module load $opt{GATK_JAVA_MODULE}\n\n";
     print ANNOTATE_SH "cd $opt{OUTPUT_DIR}/\n\n";
     print ANNOTATE_SH "echo \"Start variant annotation\t\" `date` \"\t$invcf\t\" `uname -n` >> $opt{OUTPUT_DIR}/logs/$runName.log\n\n";
 
