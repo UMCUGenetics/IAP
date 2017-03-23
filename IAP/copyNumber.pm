@@ -145,7 +145,7 @@ sub runCopyNumberTools {
 		    next;
 		}
 
-		## Run CNV callers only Freec for wgs data
+		## Run CNV callers
 		if($opt{CNV_FREEC} eq "yes"){
 		    print "\n###SCHEDULING FREEC####\n";
 		    my $freec_job = runFreec($sample, $sample_out_dir, $sample_job_dir, $sample_log_dir, $sample_bam, "", \@running_jobs, \%opt);
@@ -274,6 +274,7 @@ sub runFreec {
     print FREEC_CONFIG "chrLenFile= $opt{FREEC_CHRLENFILE}\n";
     print FREEC_CONFIG "ploidy=2\n";
     print FREEC_CONFIG "samtools=$opt{SAMTOOLS_PATH}/samtools\n";
+    print FREEC_CONFIG "sambamba=$opt{SAMBAMBA_PATH}/sambamba\n";
     print FREEC_CONFIG "chrFiles= $opt{FREEC_CHRFILES}\n";
     print FREEC_CONFIG "window=$opt{FREEC_WINDOW}\n";
     print FREEC_CONFIG "maxThreads=$opt{FREEC_THREADS}\n";

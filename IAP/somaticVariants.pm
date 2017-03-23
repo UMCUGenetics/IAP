@@ -226,9 +226,10 @@ sub runStrelka {
     # Check strelka completed
     print STRELKA_SH "\tif [ -f $strelka_out_dir/task.complete ]\n";
     print STRELKA_SH "\tthen\n";
-    print STRELKA_SH "\t\tjava -Xmx".$opt{STRELKA_MEM}."G -jar $opt{GATK_PATH}/GenomeAnalysisTK.jar -T CombineVariants -R $opt{GENOME} --genotypemergeoption unsorted -o passed.somatic.merged.vcf -V results/passed.somatic.snvs.vcf -V results/passed.somatic.indels.vcf \n";
-    print STRELKA_SH "\t\tperl -p -e 's/\\t([A-Z][A-Z]:)/\\tGT:\$1/g' passed.somatic.merged.vcf | perl -p -e 's/(:T[UO]R?)\\t/\$1\\t0\\/0:/g' | perl -p -e 's/(:\\d+,\\d+)\\t/\$1\\t0\\/1:/g' | perl -p -e 's/(#CHROM.*)/##StrelkaGATKCompatibility=Added GT fields to strelka calls for gatk compatibility.\\n\$1/g' > temp.vcf\n";
-    print STRELKA_SH "\t\tmv temp.vcf passed.somatic.merged.vcf\n";
+    print STRELKA_SH "\t\tjava -Xmx".$opt{STRELKA_MEM}."G -jar $opt{GATK_PATH}/GenomeAnalysisTK.jar -T CombineVariants -R $opt{GENOME} --genotypemergeoption unsorted -V:snp results/passed.somatic.snvs.vcf -V:indel results/passed.somatic.indels.vcf -o passed.somatic.merged.vcf\n";
+    #print STRELKA_SH "\t\tperl -p -e 's/\\t([A-Z][A-Z]:)/\\tGT:\$1/g' passed.somatic.merged.vcf | perl -p -e 's/(:T[UO]R?)\\t/\$1\\t0\\/0:/g' | perl -p -e 's/(:\\d+,\\d+)\\t/\$1\\t0\\/1:/g' | perl -p -e 's/(#CHROM.*)/##StrelkaGATKCompatibility=Added GT fields to strelka calls for gatk compatibility.\\n\$1/g' > tmp.vcf\n";
+    print STRELKA_SH "\t\tawk -F'\t' -v OFS='\t' '/^#CHROM/ { print \"##StrelkaGATKCompatibility=Added GT fields to strelka calls for gatk compatibility.\"; } /^[^#]/ { \$9 = \"GT:\" \$9; \$10 = \"0/0:\" \$10; \$11 = \"0/1:\" \$11; } { print }' passed.somatic.merged.vcf | python $opt{IAP_PATH}/scripts/filterStrelka.py > tmp.vcf\n";
+    print STRELKA_SH "\t\tmv tmp.vcf passed.somatic.merged.vcf\n";
     print STRELKA_SH "\t\trm -r chromosomes/ \n";
     print STRELKA_SH "\t\ttouch $log_dir/strelka.done\n";
     print STRELKA_SH "\tfi\n\n";
@@ -416,7 +417,7 @@ sub runVarscan {
     print VARSCAN_SH "\tjava -Xmx".$opt{VARSCAN_MEM}."G -jar $opt{VARSCAN_PATH} processSomatic $sample_tumor_name.snp.vcf $opt{VARSCAN_POSTSETTINGS}\n\n";
 
     # merge varscan hc snps and indels
-    print VARSCAN_SH "\tjava -Xmx".$opt{VARSCAN_MEM}."G -jar $opt{GATK_PATH}/GenomeAnalysisTK.jar -T CombineVariants -R $opt{GENOME} --genotypemergeoption unsorted -o $sample_tumor_name.merged.Somatic.hc.vcf -V $sample_tumor_name.snp.Somatic.hc.vcf -V $sample_tumor_name.indel.Somatic.hc.vcf\n";
+    print VARSCAN_SH "\tjava -Xmx".$opt{VARSCAN_MEM}."G -jar $opt{GATK_PATH}/GenomeAnalysisTK.jar -T CombineVariants -R $opt{GENOME} --genotypemergeoption unsorted -o $sample_tumor_name.merged.Somatic.hc.vcf -V:snp $sample_tumor_name.snp.Somatic.hc.vcf -V:indel $sample_tumor_name.indel.Somatic.hc.vcf\n";
     print VARSCAN_SH "\tsed -i 's/SSC/VS_SSC/' $sample_tumor_name.merged.Somatic.hc.vcf\n\n"; # to resolve merge conflict with FB vcfs
 
     # Check varscan completed
@@ -479,17 +480,17 @@ sub runFreeBayes {
 	$freebayes_command .= "$opt{FREEBAYES_SETTINGS} $sample_ref_bam $sample_tumor_bam > $freebayes_out_dir/$output_name.vcf";
 
 	## Sort vcf, remove duplicate lines and filter on target
-	my $sort_uniq_normalize_filter_command = "$opt{VCFTOOLS_PATH}/vcf-sort -c -t $freebayes_tmp_dir $freebayes_out_dir/$output_name.vcf ";
-	$sort_uniq_normalize_filter_command .= "| $opt{VCFLIB_PATH}/vcfuniq ";
-	$sort_uniq_normalize_filter_command .= "| $opt{VT_PATH}/vt normalize -r $opt{GENOME} - > $freebayes_out_dir/$output_name.sorted_uniq_normalized.vcf\n";
-	
+	my $sort_uniq_filter_command = "$opt{VCFTOOLS_PATH}/vcf-sort -c -t $freebayes_tmp_dir $freebayes_out_dir/$output_name.vcf ";
+	$sort_uniq_filter_command .= "| $opt{VCFLIB_PATH}/vcfuniq ";
+	$sort_uniq_filter_command .= "> $freebayes_out_dir/$output_name.sorted_uniq.vcf\n";
+
 	my $mv_command;
 	# Filter vcf on target
 	if($opt{SOMVAR_TARGETS}){
-	    $sort_uniq_normalize_filter_command .= "\n\tjava -Xmx".$opt{FREEBAYES_MEM}."G -jar $opt{GATK_PATH}/GenomeAnalysisTK.jar -T SelectVariants -R $opt{GENOME} -L $opt{SOMVAR_TARGETS} -V $output_name.sorted_uniq_normalized.vcf -o $freebayes_out_dir/$output_name.sorted_uniq_normalized_targetfilter.vcf\n";
-	    $mv_command = "mv $freebayes_out_dir/$output_name.sorted_uniq_normalized_targetfilter.vcf $freebayes_out_dir/$output_name.vcf";
+	    $sort_uniq_filter_command .= "\n\tjava -Xmx".$opt{FREEBAYES_MEM}."G -jar $opt{GATK_PATH}/GenomeAnalysisTK.jar -T SelectVariants -R $opt{GENOME} -L $opt{SOMVAR_TARGETS} -V $output_name.sorted_uniq.vcf -o $freebayes_out_dir/$output_name.sorted_uniq_targetfilter.vcf\n";
+	    $mv_command = "mv $freebayes_out_dir/$output_name.sorted_uniq_targetfilter.vcf $freebayes_out_dir/$output_name.vcf";
 	} else {
-	    $mv_command = "mv $freebayes_out_dir/$output_name.sorted_uniq_normalized.vcf $freebayes_out_dir/$output_name.vcf";
+	    $mv_command = "mv $freebayes_out_dir/$output_name.sorted_uniq.vcf $freebayes_out_dir/$output_name.vcf";
 	}
 	## Create bashscript
 	open FREEBAYES_SH, ">$bash_file" or die "cannot open file $bash_file \n";
@@ -499,7 +500,7 @@ sub runFreeBayes {
 	print FREEBAYES_SH "then\n";
 	print FREEBAYES_SH "\techo \"Start Freebayes\t\" `date` \"\t $chr \t $sample_ref_bam \t $sample_tumor_bam\t\" `uname -n` >> $log_dir/freebayes.log\n\n";
 	print FREEBAYES_SH "\t$freebayes_command\n";
-	print FREEBAYES_SH "\t$sort_uniq_normalize_filter_command\n";
+	print FREEBAYES_SH "\t$sort_uniq_filter_command\n";
 	print FREEBAYES_SH "\t$mv_command\n\n";
 	print FREEBAYES_SH "\techo \"End Freebayes\t\" `date` \"\t $chr $sample_ref_bam \t $sample_tumor_bam\t\" `uname -n` >> $log_dir/freebayes.log\n";
 	print FREEBAYES_SH "else\n";
@@ -534,6 +535,17 @@ sub runFreeBayes {
     }
     $file_test .= "]";
     $concat_command .= "> $sample_tumor_name.vcf";
+    
+    # Freebayes post process command
+    my $freebayes_post_process = "java -Xmx".$opt{FREEBAYES_MEM}."G -jar $opt{SNPEFF_PATH}/SnpSift.jar filter \"$opt{FREEBAYES_SOMATICFILTER}\" $freebayes_out_dir/$sample_tumor_name.vcf ";
+    $freebayes_post_process .= "| $opt{BCFTOOLS_PATH}/bcftools view -a - ";
+    $freebayes_post_process .= "| python $opt{IAP_PATH}/scripts/filterFreebayes.py ";
+    $freebayes_post_process .= "| $opt{VT_PATH}/vt decompose -s - ";
+    $freebayes_post_process .= "| $opt{VT_PATH}/vt decompose_blocksub - ";
+    $freebayes_post_process .= "| $opt{VT_PATH}/vt normalize -q -r $opt{GENOME} - ";
+    $freebayes_post_process .= "| $opt{VCFLIB_PATH}/vcffixup - ";
+    $freebayes_post_process .= "| $opt{VCFLIB_PATH}/vcfstreamsort ";
+    $freebayes_post_process .= "> $freebayes_out_dir/$sample_tumor_name\_somatic_filtered.vcf";
 
     # Create bash script
     open FREEBAYES_SH, ">$bash_file" or die "cannot open file $bash_file \n";
@@ -543,19 +555,9 @@ sub runFreeBayes {
     print FREEBAYES_SH "$file_test\n";
     print FREEBAYES_SH "then\n";
     print FREEBAYES_SH "\techo \"Start concat and postprocess Freebayes\t\" `date` \"\t $sample_ref_bam \t $sample_tumor_bam\t\" `uname -n` >> $log_dir/freebayes.log\n";
-    print FREEBAYES_SH "\t$concat_command\n\n";
+    print FREEBAYES_SH "\t$concat_command\n";
+    print FREEBAYES_SH "\t$freebayes_post_process\n";
 
-    # Uniqify freebayes output 
-    print FREEBAYES_SH "\tuniq $freebayes_out_dir/$sample_tumor_name.vcf > $freebayes_out_dir/$sample_tumor_name.uniq.vcf\n";
-    print FREEBAYES_SH "\tmv $freebayes_out_dir/$sample_tumor_name.uniq.vcf $freebayes_out_dir/$sample_tumor_name.vcf\n\n";
-    
-    # Filter freebayes vcf
-    print FREEBAYES_SH "python $opt{IAP_PATH}/scripts/filterFreebayes.py -v $freebayes_out_dir/$sample_tumor_name.vcf |";
-    print FREEBAYES_SH "java -Xmx".$opt{FREEBAYES_MEM}."G -jar $opt{SNPEFF_PATH}/SnpSift.jar filter \"$opt{FREEBAYES_SOMATICFILTER}\" > $freebayes_out_dir/$sample_tumor_name\_somatic_filtered.vcf \n";
-    
-    # Normalize freebayes vcf -> moved to chr steps
-    # print FREEBAYES_SH "$opt{VT_PATH}/vt normalize -r $opt{GENOME} $freebayes_out_dir/$sample_tumor_name\_somatic_filtered_unnormalized.vcf -o $freebayes_out_dir/$sample_tumor_name\_somatic_filtered.vcf \n";
-    
     #Check freebayes completed
     print FREEBAYES_SH "\tif [ -s $freebayes_out_dir/$sample_tumor_name\_somatic_filtered.vcf ]\n";
     print FREEBAYES_SH "\tthen\n";
