@@ -340,8 +340,8 @@ GENDERCHECK_MALE_MIN_F	0.7
 VCFUTILS_PHASE	yes
 PED_PATH	/path/to/folder/with/ped_files
 VCFUTILS_ROH	yes
-BCFTOOLS_PATH	/hpc/local/CentOS7/cog_bioinf/bcftools-1.3
-ROH_SETTINGS	--AF-dflt 0.4
+BCFTOOLS_PATH	/hpc/local/CentOS7/cog_bioinf/bcftools-1.4
+ROH_SETTINGS	--AF-dflt 0.4 --ignore-homref --skip-indels
 VCFUTILS_SINGLE_SAMPLE_VCF	no
 
 ####NIPT CLUSTER CONFIGURATION####
