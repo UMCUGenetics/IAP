@@ -189,6 +189,7 @@ sub runFingerprint {
 	    $command .= "-T UnifiedGenotyper ";
 	    $command .= "-R $opt{GENOME} ";
 	    $command .= "-L $opt{FINGERPRINT_TARGET} ";
+	    $command .= "-D $opt{FINGERPRINT_TARGET} ";
 	    $command .= "-I $sample_bam ";
 	    $command .= "-o $output_vcf ";
 	    $command .= "--output_mode EMIT_ALL_SITES ";
