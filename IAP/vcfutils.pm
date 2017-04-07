@@ -122,10 +122,11 @@ sub runVcfUtils {
 		print "WARNING: $opt{OUTPUT_DIR}/logs/ROH_$sample.done exists, skipping \n";
 	    } else {
 		print VCFUTILS_SH "cd $opt{OUTPUT_DIR}/tmp/\n";
-		print VCFUTILS_SH "$opt{BCFTOOLS_PATH}/bcftools roh -s $sample $opt{ROH_SETTINGS} $opt{OUTPUT_DIR}/$vcf > $sample\_ROH.txt\n";
-		print VCFUTILS_SH "python $opt{IAP_PATH}/scripts/get_roh_regions.py $sample\_ROH.txt > $sample\_ROH_regions.txt\n";
+		print VCFUTILS_SH "$opt{BCFTOOLS_PATH}/bcftools view -f PASS $opt{OUTPUT_DIR}/$vcf | $opt{BCFTOOLS_PATH}/bcftools roh -s $sample -O s $opt{ROH_SETTINGS} - > $sample\_ROH_sites.txt\n";
+		print VCFUTILS_SH "$opt{BCFTOOLS_PATH}/bcftools view -f PASS $opt{OUTPUT_DIR}/$vcf | $opt{BCFTOOLS_PATH}/bcftools roh -s $sample -O r $opt{ROH_SETTINGS} - > $sample\_ROH_regions.txt\n";
+		#print VCFUTILS_SH "python $opt{IAP_PATH}/scripts/get_roh_regions.py $sample\_ROH.txt > $sample\_ROH_regions.txt\n"; # Not needed anymore.
 		print VCFUTILS_SH "\tmv $sample\_ROH*.txt $output_dir/\n";
-		print VCFUTILS_SH "if [ -s $output_dir/$sample\_ROH.txt -a -s $output_dir/$sample\_ROH_regions.txt ]; then\n";
+		print VCFUTILS_SH "if [ -s $output_dir/$sample\_ROH_sites.txt -a -s $output_dir/$sample\_ROH_regions.txt ]; then\n";
 		print VCFUTILS_SH "\ttouch $opt{OUTPUT_DIR}/logs/ROH_$sample.done\n";
 		print VCFUTILS_SH "else\n";
 		print VCFUTILS_SH "\tfailed=true\n";

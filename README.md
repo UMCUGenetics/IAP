@@ -133,6 +133,8 @@ GENOME	/path/to/genome.fasta
 ####SOMATIC SAMPLE REGEX####
 ## Only required for somatic variant calling, copy number and structural variant analysis
 SOMATIC_REGEX	(CPCT\d{8})([TR][IVX]*$)
+SOMATIC_REGEX_REF_CODE	R #comma separated list of ref origin values
+SOMATIC_REGEX_TUMOR_CODE	T #comma separated list of tumor origin values
 ### SOMATIC_REGEX should follow this patern: (<sample_match>)(<origin_match>)
 # R = reference
 # T = tumor
@@ -440,8 +442,8 @@ VCFUTILS_PHASE	yes/no
 VCFUTILS_GENDERCHECK	yes/no
 PED	/path/to/ped_file_folder/
 VCFUTILS_ROH	yes/no
-BCFTOOLS_PATH	/path/to/bcftools-1.3
-ROH_SETTINGS	--AF-dflt 0.4
+BCFTOOLS_PATH	/path/to/bcftools-1.4
+ROH_SETTINGS	--AF-dflt 0.4 --ignore-homref --skip-indels
 VCFUTILS_SINGLE_SAMPLE_VCF	yes/no
 
 ####NIPT CLUSTER CONFIGURATION####

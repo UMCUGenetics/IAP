@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 from __future__ import print_function
+from __future__ import division
 
 """
 filterFreebayes.py
@@ -11,11 +12,11 @@ Applies BCBIO developed filters to the freebayes somatic output.
 """
 
 import argparse
-import re
 import sys
 
 CHROM_INDEX = 0
 POS_INDEX = 1
+ALT_PARTS_INDEX = 4
 FORMAT_PARTS_INDEX = 8
 NORMAL_PARTS_INDEX = 9
 TUMOR_PARTS_INDEX = 10
@@ -27,21 +28,22 @@ LOD_TUMOR_THRESHOLD = 3.5
 FREQ_NORMAL_THRESHOLD = 0.001
 FREQ_RATIO_THRESHOLD = 2.7
 
-# Code copied from BCBIO Freebayes pipeline.
+
 def customFilterFreebayes(vcf_file):
-    with open(vcf_file, "r") as f:
-        stripped_lines = (line.strip("\n") for line in f)
-        somatic_lines = (line for line in stripped_lines if _check_line(line))
-        print("\n".join(somatic_lines))
+    stripped_lines = (line.strip("\n") for line in vcf_file)
+    somatic_lines = (line for line in stripped_lines if check_line(line))
+    print("\n".join(somatic_lines))
 
-### Filtering
 
-def _check_line(line):
+def check_line(line):
     parts = line.split("\t")
-    return line.startswith("#") or (_check_lods(parts, LOD_TUMOR_THRESHOLD, LOD_NORMAL_THRESHOLD) and _check_freqs(parts, FREQ_NORMAL_THRESHOLD, FREQ_RATIO_THRESHOLD))
+    return line.startswith("#") \
+        or (parts[ALT_PARTS_INDEX] != "." \
+            and check_lods(parts, LOD_TUMOR_THRESHOLD, LOD_NORMAL_THRESHOLD) \
+            and check_freqs(parts, FREQ_NORMAL_THRESHOLD, FREQ_RATIO_THRESHOLD))
 
 
-def _check_lods(parts, tumor_threshold, normal_threshold):
+def check_lods(parts, tumor_threshold, normal_threshold):
     """
     Ensure likelihoods for tumor and normal pass thresholds.
 
@@ -62,6 +64,9 @@ def _check_lods(parts, tumor_threshold, normal_threshold):
     except IndexError as e:
         tumor_lod = -1.0
         print("assigning {} to tumor LOD for '{}' due to {}".format(tumor_lod, parts[TUMOR_PARTS_INDEX], e), file=sys.stderr)
+    except Exception as e:
+        print("{} for parts:\n{}".format(e, "\n".join(parts)), file=sys.stderr)
+        raise
     try:
         normal_gls = [float(x) for x in parts[NORMAL_PARTS_INDEX].split(":")[gl_index].split(",") if x != "."]
         if normal_gls:
@@ -72,62 +77,65 @@ def _check_lods(parts, tumor_threshold, normal_threshold):
     except IndexError as e:
         normal_lod = normal_threshold
         print("assigning {} to normal LOD for '{}' due to {}".format(normal_lod, parts[NORMAL_PARTS_INDEX], e), file=sys.stderr)
+    except Exception as e:
+        print("{} for parts:\n{}".format(e, "\n".join(parts)), file=sys.stderr)
+        raise
     result = normal_lod >= normal_threshold and tumor_lod >= tumor_threshold
     if args.debug and not result:
-        print('{} LOD filtered (normal: {}, tumor: {})'.format(_location(parts), normal_lod, tumor_lod), file=sys.stderr)
+        print('{} LOD filtered (normal: {}, tumor: {})'.format(location(parts), normal_lod, tumor_lod), file=sys.stderr)
     return result
 
 
-def _check_freqs(parts, normal_threshold, ratio_threshold):
+def calc_freq(item, ro_index, ao_index):
+    try:
+        if ao_index is not None and ro_index is not None:
+            ao = sum([int(x) for x in item.split(":")[ao_index].split(",")])
+            ro = int(item.split(":")[ro_index])
+            freq = ao / (ao + ro)
+        else:
+            freq = None
+            print("failing to calculate frequency for {} due to missing AO/RO".format(item), file=sys.stderr)
+    except (IndexError, ValueError, ZeroDivisionError) as e:
+        freq = None
+        print("assigning {} to frequency for '{}' due to {}".format(freq, item, e), file=sys.stderr)
+    return freq
+
+
+def check_freqs(parts, normal_threshold, ratio_threshold):
     """
     Ensure frequency of tumor to normal passes a reasonable threshold.
 
     Avoids calling low frequency tumors also present at low frequency in normals,
     which indicates a contamination or persistent error.
     """
-    try:  # FreeBayes
-        ao_index = parts[FORMAT_PARTS_INDEX].split(":").index("AO")
+    try:
         ro_index = parts[FORMAT_PARTS_INDEX].split(":").index("RO")
+        ao_index = parts[FORMAT_PARTS_INDEX].split(":").index("AO")
     except ValueError:
         ao_index, ro_index = None, None
-    try:  # VarDict
-        af_index = parts[FORMAT_PARTS_INDEX].split(":").index("AF")
-    except ValueError:
-        af_index = None
-    if af_index is None and ao_index is None:
+    if ao_index is None:
         raise NotImplementedError("Unexpected format annotations: %s" % parts[0])
-    def _calc_freq(item):
-        try:
-            if ao_index is not None and ro_index is not None:
-                ao = sum([int(x) for x in item.split(":")[ao_index].split(",")])
-                ro = int(item.split(":")[ro_index])
-                freq = ao / float(ao + ro)
-            elif af_index is not None:
-                freq = float(item.split(":")[af_index])
-            else:
-                print("failing to calculate frequency for {} due to missing AO/RO and AF".format(item), file=sys.stderr)
-        except (IndexError, ValueError, ZeroDivisionError) as e:
-            freq = 0.0
-            print("assigning {} to frequency for '{}' due to {}".format(freq, item, e), file=sys.stderr)
-        return freq
-    tumor_freq, normal_freq = _calc_freq(parts[TUMOR_PARTS_INDEX]), _calc_freq(parts[NORMAL_PARTS_INDEX])
-    result = normal_freq <= normal_threshold or normal_freq <= tumor_freq / ratio_threshold
+    tumor_freq = calc_freq(parts[TUMOR_PARTS_INDEX], ro_index, ao_index)
+    normal_freq = calc_freq(parts[NORMAL_PARTS_INDEX], ro_index, ao_index)
+    result = normal_freq is not None and tumor_freq is not None and (
+        normal_freq <= normal_threshold or
+        normal_freq <= tumor_freq / ratio_threshold)
     if args.debug and not result:
-        print('{} FREQ filtered (normal: {}, tumor: {})'.format(_location(parts), normal_freq, tumor_freq), file=sys.stderr)
+        print('{} FREQ filtered (normal: {}, tumor: {})'.format(location(parts), normal_freq, tumor_freq), file=sys.stderr)
     return result
 
 
-def _location(item):
+def location(item):
     return "CHROM {} POS {}".format(item[CHROM_INDEX], item[POS_INDEX])
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(formatter_class=lambda prog: argparse.HelpFormatter(prog,max_help_position=100, width=200))
+    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
     required_named = parser.add_argument_group("required named arguments")
-    required_named.add_argument("-v", "--vcf_file", help="path/to/file.vcf", required=True)
+    required_named.add_argument("-v", "--vcf_file", nargs="?", type=argparse.FileType('r'), default=sys.stdin, help="path/to/file.vcf")
     optional_named = parser.add_argument_group("optional named arguments")
-    optional_named.add_argument("-d", "--debug", action="store_true", help="debug logging")
+    optional_named.add_argument("-d", "--debug", action="store_true", help="extra debug logging")
 
     args = parser.parse_args()
     customFilterFreebayes(args.vcf_file)

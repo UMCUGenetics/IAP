@@ -5,17 +5,16 @@ myCols <- c("darkgray","steelblue3","red3","lightgray")
 names(myCols) <- c("neutral1","gain","loss","neutral2")
 
 
-# cat makeKaryotype.R | R --slave --args 2 24 4 500000 ".$sample_bam_name."_ratio.txt\n";
+# cat makeKaryotype.R | R --slave --args 2 4 500000 ".$sample_bam_name."_ratio.txt\n";
 args <- commandArgs()
 
 # Settings
 ploidy <- type.convert(args[4])
-nrChromsToplot <- type.convert(args[5])
-maxLevelToPlot <- type.convert(args[6])
-binsize <- type.convert(args[7])
+maxLevelToPlot <- type.convert(args[5])
+binsize <- type.convert(args[6])
 
 # File to convert
-ratiofile <- args[8]
+ratiofile <- args[7]
 
 
 make_plot <- function(filename) {
@@ -28,7 +27,7 @@ make_plot <- function(filename) {
 	ratio <- ratio[!is.na(ratio$Ratio),]
 
 	chromosomes <- mixedsort(as.character(unique((ratio$Chromosome))))
-	for (i in c(1:nrChromsToplot)) {
+	for (i in c(1:length(chromosomes))) {
 		chrom <- chromosomes[i]
 
 		# Select chromosome

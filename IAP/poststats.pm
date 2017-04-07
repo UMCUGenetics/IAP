@@ -68,6 +68,7 @@ sub runPostStats {
 	
 	my $bashFile = $opt{OUTPUT_DIR}."/jobs/".$jobID.".sh";
 	my $logDir = $opt{OUTPUT_DIR}."/logs";
+        my $outputDir = "Exoncov";
         
 	open PS_SH, ">$bashFile" or die "cannot open file $bashFile\n";
 	print PS_SH "#!/bin/bash\n\n";
@@ -78,7 +79,7 @@ sub runPostStats {
 	
 	## Setup ExonCallCov
 	if ( $opt{EXONCALLCOV} eq "yes" ){
-	    $command = "python $opt{EXONCALLCOV_PATH} --queue $opt{EXONCALLCOV_QUEUE} -a $opt{EXONCALLCOV_TIME} -c $opt{EXONCALLCOV_MEM} -b $opt{EXONCALLCOV_BED} -n $opt{EXONCALLCOV_ENS} -p $opt{EXONCALLCOV_PREF} -l $opt{EXONCALLCOV_PANEL} -s $opt{SAMBAMBA_PATH}/sambamba";
+	    $command = "python $opt{EXONCALLCOV_PATH} -o $outputDir --queue $opt{EXONCALLCOV_QUEUE} -a $opt{EXONCALLCOV_TIME} -c $opt{EXONCALLCOV_MEM} -b $opt{EXONCALLCOV_BED} -n $opt{EXONCALLCOV_ENS} -p $opt{EXONCALLCOV_PREF} -l $opt{EXONCALLCOV_PANEL} -s $opt{SAMBAMBA_PATH}/sambamba";
 	    print PS_SH "$command\n";
 	}
 	
@@ -99,7 +100,7 @@ sub runPostStats {
 	print PSCHECK_SH "if [ -s QCStats/*.bamMetrics.pdf -a ";
 	if ( $opt{EXONCALLCOV} eq "yes" ){
 	    foreach my $sample (@{$opt{SAMPLES}}){
-		print PSCHECK_SH "-s Exoncov_v3/$sample.html -a ";
+		print PSCHECK_SH "-s $outputDir/$sample.html -a ";
 	    }
 	}
 	print PSCHECK_SH "-s QCStats/*.bamMetrics.html ]\nthen\n";

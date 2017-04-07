@@ -145,7 +145,7 @@ sub runCopyNumberTools {
 		    next;
 		}
 
-		## Run CNV callers only Freec for wgs data
+		## Run CNV callers
 		if($opt{CNV_FREEC} eq "yes"){
 		    print "\n###SCHEDULING FREEC####\n";
 		    my $freec_job = runFreec($sample, $sample_out_dir, $sample_job_dir, $sample_log_dir, $sample_bam, "", \@running_jobs, \%opt);
@@ -274,6 +274,7 @@ sub runFreec {
     print FREEC_CONFIG "chrLenFile= $opt{FREEC_CHRLENFILE}\n";
     print FREEC_CONFIG "ploidy=2\n";
     print FREEC_CONFIG "samtools=$opt{SAMTOOLS_PATH}/samtools\n";
+    print FREEC_CONFIG "sambamba=$opt{SAMBAMBA_PATH}/sambamba\n";
     print FREEC_CONFIG "chrFiles= $opt{FREEC_CHRFILES}\n";
     print FREEC_CONFIG "window=$opt{FREEC_WINDOW}\n";
     print FREEC_CONFIG "maxThreads=$opt{FREEC_THREADS}\n";
@@ -325,7 +326,7 @@ sub runFreec {
     print FREEC_SH "\tcd $freec_out_dir\n";
     print FREEC_SH "\tcat $opt{FREEC_PATH}/assess_significance.R | R --slave --args ".$sample_bam_name."_CNVs ".$sample_bam_name."_ratio.txt\n";
     print FREEC_SH "\tcat $opt{FREEC_PATH}/makeGraph.R | R --slave --args 2 ".$sample_bam_name."_ratio.txt\n";
-    print FREEC_SH "\tcat $opt{IAP_PATH}/scripts/makeKaryotype.R | R --slave --args 2 24 4 500000 ".$sample_bam_name."_ratio.txt\n";
+    print FREEC_SH "\tcat $opt{IAP_PATH}/scripts/makeKaryotype.R | R --slave --args 2 4 500000 ".$sample_bam_name."_ratio.txt\n";
     print FREEC_SH "\ttouch $log_dir/freec.done\n";
     print FREEC_SH "\techo \"End FREEC\t\" `date` \"\t $sample_bam \t $control_bam\t\" `uname -n` >> $log_dir/freec.log\n\n";
     print FREEC_SH "else\n";

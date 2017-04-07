@@ -42,6 +42,8 @@ GENOME	/hpc/cog_bioinf/GENOMES/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GR
 
 ####SOMATIC SAMPLE REGEX####
 SOMATIC_REGEX	(CPCT\d{8})([TR][IVX]*$)
+SOMATIC_REGEX_REF_CODE	R
+SOMATIC_REGEX_TUMOR_CODE	T
 ### SOMATIC_REGEX should follow this patern: (<sample_match>)(<origin_match>)
 # R = reference
 # T = tumor
@@ -239,7 +241,7 @@ CNV_FREEC	yes
 FREEC_THREADS	8
 FREEC_QUEUE	all.q
 FREEC_TIME	8:0:0
-FREEC_PATH	/hpc/cog_bioinf/common_scripts/freec_v7.2
+FREEC_PATH	/hpc/cog_bioinf/common_scripts/freec_v10.4
 FREEC_CHRLENFILE	/hpc/cog_bioinf/GENOMES/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.len
 FREEC_CHRFILES	/hpc/cog_bioinf/GENOMES/Homo_sapiens.GRCh37.GATK.illumina/chr_files
 FREEC_PLOIDY	2
@@ -258,8 +260,8 @@ DELLY_MERGE_QUEUE	all.q
 #DELLY_MERGE_TIME	2:0:0
 DELLY_THREADS	4
 
-DELLY_SVTYPE	DEL	DUP	INV	TRA
-DELLY_SPLIT	no	no	no	yes
+DELLY_SVTYPE	INS	DEL	DUP	INV	TRA
+DELLY_SPLIT	no	no	no	no	yes
 DELLY_MAPQUAL	1
 DELLY_MAD	9
 DELLY_FLANK	13
@@ -338,8 +340,8 @@ GENDERCHECK_MALE_MIN_F	0.7
 VCFUTILS_PHASE	yes
 PED_PATH	/path/to/folder/with/ped_files
 VCFUTILS_ROH	yes
-BCFTOOLS_PATH	/hpc/local/CentOS7/cog_bioinf/bcftools-1.3
-ROH_SETTINGS	--AF-dflt 0.4
+BCFTOOLS_PATH	/hpc/local/CentOS7/cog_bioinf/bcftools-1.4
+ROH_SETTINGS	--AF-dflt 0.4 --ignore-homref --skip-indels
 VCFUTILS_SINGLE_SAMPLE_VCF	no
 
 ####NIPT CLUSTER CONFIGURATION####
