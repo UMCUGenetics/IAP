@@ -1,4 +1,4 @@
-## IAP
+## IAP [![DOI](https://zenodo.org/badge/19342535.svg)](https://zenodo.org/badge/latestdoi/19342535)
 Illumina analysis pipeline.
 
 ## Download
