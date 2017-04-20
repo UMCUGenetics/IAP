@@ -36,14 +36,17 @@ sub runPreStats {
 	    my $preStatsJobId = "PreStat_$coreName\_".get_job_id();
 	    open PS,">$opt{OUTPUT_DIR}/$sampleName/jobs/$preStatsJobId.sh";
 	    print PS "\#!/bin/sh\n\n";
-	    print PS "cd $opt{OUTPUT_DIR}/$sampleName\n\n";
-	    print PS "echo \"Start PreStats\t\" `date` \"\t$coreName\t\" `uname -n` >> $opt{OUTPUT_DIR}/$sampleName/logs/$sampleName.log\n";
-	    print PS "$opt{FASTQC_PATH}/fastqc -o QCStats --noextract -t $opt{PRESTATS_THREADS} $input\n";
-	    print PS "if [ -s $opt{OUTPUT_DIR}/$sampleName/QCStats/$coreName\_fastqc.zip -a -s $opt{OUTPUT_DIR}/$sampleName/QCStats/$coreName\_fastqc.html ]\n";
-	    print PS "then\n";
-	    print PS "\ttouch logs/PreStats_$coreName.done\n";
-	    print PS "fi\n";
-	    print PS "echo \"End PreStats\t\" `date` \"\t$coreName\t\" `uname -n` >> $opt{OUTPUT_DIR}/$sampleName/logs/$sampleName.log\n";
+	    print PS "guixr environment --ad-hoc --fallback $opt{FASTQC_PATH} -- <<EOF\n"; ## START GUIX ENV
+	    print PS "\tcd $opt{OUTPUT_DIR}/$sampleName\n\n";
+	    print PS "\techo \"Start PreStats\t\" `date` \"\t$coreName\t\" `uname -n` >> $opt{OUTPUT_DIR}/$sampleName/logs/$sampleName.log\n";
+	    print PS "\tfastqc -o QCStats --noextract -t $opt{PRESTATS_THREADS} $input\n";
+	    print PS "\tif [ -s $opt{OUTPUT_DIR}/$sampleName/QCStats/$coreName\_fastqc.zip -a -s $opt{OUTPUT_DIR}/$sampleName/QCStats/$coreName\_fastqc.html ]\n";
+	    print PS "\tthen\n";
+	    print PS "\t\ttouch logs/PreStats_$coreName.done\n";
+	    print PS "\tfi\n";
+	    print PS "\techo \"End PreStats\t\" `date` \"\t$coreName\t\" `uname -n` >> $opt{OUTPUT_DIR}/$sampleName/logs/$sampleName.log\n";
+	    print PS "\texit\n"; ## EXIT GUIX ENV
+	    print PS "EOF\n";
 	    close PS;
 
 	    my $qsub = &qsubTemplate(\%opt,"PRESTATS");
