@@ -844,6 +844,10 @@ sub checkConfig{
         if(! $opt{CHECKING_MEM}){ print "ERROR: No CHECKING_MEM found in .ini file\n"; $checkFailed = 1; }
         if(! $opt{CHECKING_TIME}){ print "ERROR: No CHECKING_TIME found in .ini file\n"; $checkFailed = 1; }
         if(! $opt{CHECKING_RM}){ print "ERROR: No CHECKING_RM found in .ini file\n"; $checkFailed = 1; }
+        if(! $opt{CHECKING_CLEANUP}){ print "ERROR: No CHECKING_CLEANUP found in .ini file\n"; $checkFailed = 1; }
+        if($opt{CHECKING_CLEANUP} eq "yes"){
+	    if(! $opt{CHECKING_CLEANUP_SCRIPT}){ print "ERROR: No CHECKING_CLEANUP_SCRIPT found in .ini file\n"; $checkFailed = 1; }
+        }
     }
 
     if ($checkFailed) { 

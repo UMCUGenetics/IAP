@@ -463,5 +463,7 @@ CHECKING_QUEUE	queue_name
 CHECKING_TIME	estimated runtime
 CHECKING_THREADS	number_of_threads
 CHECKING_RM	list,of,files,to,remove
+CHECKING_CLEANUP	yes/no
+CHECKING_CLEANUP_SCRIPT	/path/to/cleanup_script.py
 
 ```
