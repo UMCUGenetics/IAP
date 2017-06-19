@@ -125,6 +125,9 @@ class VariantCaller extends QScript {
 	    genotypeGVCFs.scatterCount = numScatters
 	    genotypeGVCFs.num_threads = numCPUThreads
 	    genotypeGVCFs.out = outputFilename + ".raw_variants.vcf"
+	    
+	    genotypeGVCFs.stand_emit_conf = standEmitConf
+	    genotypeGVCFs.stand_call_conf = standCallConf
 
 	    // Optional input
 	    if (dbsnpFile != null) {
@@ -205,7 +208,10 @@ class VariantCaller extends QScript {
 	    genotypeGVCFs.scatterCount = numScatters
 	    genotypeGVCFs.num_threads = numCPUThreads
 	    genotypeGVCFs.out = outputFilename + ".raw_variants.vcf"
-
+	    
+	    genotypeGVCFs.stand_emit_conf = standEmitConf
+	    genotypeGVCFs.stand_call_conf = standCallConf
+	    
 	    // Optional input
 	    if (dbsnpFile != null) {
 		genotypeGVCFs.D = dbsnpFile
