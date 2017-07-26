@@ -28,6 +28,9 @@ class Realigner extends QScript {
     @Input(doc ="Database of known polymorphic sites to skip over in the recalibration algorithm", shortName="knownSites", required=false)
     var knownFiles: List[File] = Nil
     
+    @Argument(doc="Generate QC tables and plots to analyse covariation remaining after recalibration.", shortName="generateQC", required=false)
+    var generateQC: Boolean = false
+    
     // This trait allows us set the variables below in one place,
     // and then reuse this trait on each CommandLineGATK function below.
     trait BR_Arguments extends CommandLineGATK {
@@ -43,38 +46,39 @@ class Realigner extends QScript {
 
 	// Analyze patterns of covariation in the sequence dataset
 	baseRecalibrator.input_file :+= bamFile
+	baseRecalibrator.out = swapExt(bamFile, ".bam", "_recal_data.table")
+	baseRecalibrator.scatterCount = numScatters
+	baseRecalibrator.nct = numCPUThreads
 	if(knownFiles != Nil){
 	    baseRecalibrator.knownSites = knownFiles
 	}
-	baseRecalibrator.out = swapExt(bamFile, ".bam", "_recal_data.table")
-	
-	baseRecalibrator.scatterCount = numScatters
-	baseRecalibrator.nct = numCPUThreads
-	
-	// Do a second pass to analyze covariation remaining after recalibration
-	baseRecalibratorSecond.input_file :+= bamFile
-	if(knownFiles != Nil){
-	    baseRecalibratorSecond.knownSites = knownFiles
-	}
-	baseRecalibratorSecond.BQSR = baseRecalibrator.out
-	baseRecalibratorSecond.out = swapExt(bamFile, ".bam", "_post_recal_data.table")
-	
-	baseRecalibratorSecond.scatterCount = numScatters
-	baseRecalibratorSecond.nct = numCPUThreads
-
-	// Generate before and after plots
-	analyzeCovariates.before = baseRecalibrator.out
-	analyzeCovariates.after = baseRecalibratorSecond.out
-	analyzeCovariates.plots = swapExt(baseRecalibrator.out, "recal_data.table", "baseRecalibration.pdf")
 
 	// Apply the recalibration to your sequence data
 	printReads.input_file :+= bamFile
 	printReads.BQSR = baseRecalibrator.out
 	printReads.out = swapExt(bamFile, "bam", "recalibrated.bam")
-
 	printReads.scatterCount = numScatters
 	printReads.nct = numCPUThreads
 
-	add(baseRecalibrator,baseRecalibratorSecond,analyzeCovariates,printReads)
+	add(baseRecalibrator,printReads)
+
+	if (generateQC == true) {
+	    // Do a second pass to analyze covariation remaining after recalibration
+	    baseRecalibratorSecond.input_file :+= bamFile
+	    baseRecalibratorSecond.BQSR = baseRecalibrator.out
+	    baseRecalibratorSecond.out = swapExt(bamFile, ".bam", "_post_recal_data.table")
+	    baseRecalibratorSecond.scatterCount = numScatters
+	    baseRecalibratorSecond.nct = numCPUThreads
+	    if(knownFiles != Nil){
+		baseRecalibratorSecond.knownSites = knownFiles
+	    }
+
+	    // Generate before and after plots
+	    analyzeCovariates.before = baseRecalibrator.out
+	    analyzeCovariates.after = baseRecalibratorSecond.out
+	    analyzeCovariates.plots = swapExt(baseRecalibrator.out, "recal_data.table", "baseRecalibration.pdf")
+
+	    add(baseRecalibratorSecond,analyzeCovariates)
+	}
     }
 }

@@ -212,6 +212,7 @@ BASERECALIBRATION_MEM	maximum_memory
 BASERECALIBRATION_SCALA	QScripts/BaseRecalibrator.scala
 BASERECALIBRATION_SCATTER	number_of_scatters
 BASERECALIBRATION_KNOWN	GATK_bundle/1000G_phase1.indels.b37.vcf	GATK_bundle/dbsnp_137.b37.vcf	GATK_bundle/Mills_and_1000G_gold_standard.indels.b37.vcf | common indel and snp files supplied by gatk
+BASERECALIBRATION_QC	no/yes | generate QC data to analyse covariation remaining after recalibration
 
 ####CALLING CLUSTER CONFIGURATION####
 CALLING_MASTERQUEUE	queue_name
