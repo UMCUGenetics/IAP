@@ -64,7 +64,6 @@ class VariantCaller extends QScript {
 	    this.memoryLimit = maxMem
 	    this.num_cpu_threads_per_data_thread = numCPUThreads
 
-	    this.stand_call_conf = standCallConf
 	}
 
 	// original HC
@@ -74,6 +73,7 @@ class VariantCaller extends QScript {
 	    // All required input
 	    haplotypeCaller.input_file = bamFiles
 	    haplotypeCaller.out = outputFilename + ".raw_variants.vcf"
+	    haplotypeCaller.stand_call_conf = standCallConf
 
 	    // Optional input
 	    if (dbsnpFile != null) {
@@ -128,7 +128,6 @@ class VariantCaller extends QScript {
 	    genotypeGVCFs.num_threads = numCPUThreads
 	    genotypeGVCFs.out = outputFilename + ".raw_variants.vcf"
 	    
-	    genotypeGVCFs.stand_emit_conf = standEmitConf
 	    genotypeGVCFs.stand_call_conf = standCallConf
 
 	    // Optional input
@@ -158,8 +157,6 @@ class VariantCaller extends QScript {
 		    this.scatterCount = numScatters
 		    this.memoryLimit = maxMem
 		    this.num_cpu_threads_per_data_thread = numCPUThreads
-
-		    this.stand_call_conf = standCallConf
 
 		    this.input_file :+= bamFile
 
@@ -211,7 +208,6 @@ class VariantCaller extends QScript {
 	    genotypeGVCFs.num_threads = numCPUThreads
 	    genotypeGVCFs.out = outputFilename + ".raw_variants.vcf"
 	    
-	    genotypeGVCFs.stand_emit_conf = standEmitConf
 	    genotypeGVCFs.stand_call_conf = standCallConf
 	    
 	    // Optional input
