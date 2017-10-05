@@ -120,9 +120,9 @@ sub runSomaticVariantCallers {
 
 		# Merge vcfs
 		my $invcf;
-		my $outvcf = "$sample_tumor_out_dir/$sample_tumor_name\_merged_somatics.vcf";
+		my $outvcf = "$sample_tumor_out_dir/$sample_tumor_name\_somatics.vcf";
 		print MERGE_SH "java -Xmx".$opt{SOMVARMERGE_MEM}."G -Djava.io.tmpdir=$sample_tumor_tmp_dir -jar $opt{GATK_PATH}/GenomeAnalysisTK.jar -T CombineVariants -R $opt{GENOME} -o $outvcf --genotypemergeoption uniquify ";
-		if($opt{SOMVAR_STRELKA} eq "yes"){ print MERGE_SH "-V:strelka $sample_tumor_out_dir/strelka/passed.somatic.merged.vcf "; }
+		if($opt{SOMVAR_STRELKA} eq "yes"){ print MERGE_SH "-V:strelka $sample_tumor_out_dir/strelka/passed.somatic.merged.processed.vcf "; }
 		if($opt{SOMVAR_VARSCAN} eq "yes"){ print MERGE_SH "-V:varscan $sample_tumor_out_dir/varscan/$sample_tumor_name.merged.Somatic.hc.vcf "; }
 		if($opt{SOMVAR_FREEBAYES} eq "yes"){ print MERGE_SH "-V:freebayes $sample_tumor_out_dir/freebayes/$sample_tumor_name\_somatic_filtered.vcf "; }
 		if($opt{SOMVAR_MUTECT} eq "yes"){ print MERGE_SH "-V:mutect $sample_tumor_out_dir/mutect/$sample_tumor_name\_mutect_passed.vcf ";}
@@ -131,7 +131,7 @@ sub runSomaticVariantCallers {
 		# Filter vcf on target
 		if($opt{SOMVAR_TARGETS}){
 		    $invcf = $outvcf;
-		    $outvcf = "$sample_tumor_out_dir/$sample_tumor_name\_filtered_merged_somatics.vcf";
+		    $outvcf = "$sample_tumor_out_dir/$sample_tumor_name\_filtered_somatics.vcf";
 		    print MERGE_SH "java -Xmx".$opt{SOMVARMERGE_MEM}."G -Djava.io.tmpdir=$sample_tumor_tmp_dir -jar $opt{GATK_PATH}/GenomeAnalysisTK.jar -T SelectVariants -R $opt{GENOME} -L $opt{SOMVAR_TARGETS} -V $invcf -o $outvcf\n";
 		    print MERGE_SH "rm $invcf*\n\n";
 		}
@@ -164,11 +164,16 @@ sub runSomaticVariantCallers {
 		}
 		
 		## Melt somatic vcf
-		$invcf = $outvcf;
-		my $suffix = "_melted.vcf";
-		$outvcf =~ s/.vcf/$suffix/;
-		print MERGE_SH "python $opt{IAP_PATH}/scripts/melt_somatic_vcf.py -t $sample_tumor -v $invcf > $outvcf\n\n";
-
+		if($opt{SOMVAR_MELT} eq "yes"){
+		    $invcf = $outvcf;
+		    my $suffix = "_melted.vcf";
+		    $outvcf =~ s/.vcf/$suffix/;
+		    print MERGE_SH "python $opt{IAP_PATH}/scripts/melt_somatic_vcf.py -t $sample_tumor -v $invcf > $outvcf\n\n";
+		}
+		
+		## Filter PON
+		# Add when PON file is released by hartwig
+		
 		## Check output files
 		print MERGE_SH "if [ \"\$(tail -n 1 $preAnnotateVCF | cut -f 1,2)\" = \"\$(tail -n 1 $outvcf | cut -f 1,2)\" -a -s $preAnnotateVCF -a -s $outvcf ]\n";
 		print MERGE_SH "then\n";
@@ -227,14 +232,23 @@ sub runStrelka {
     print STRELKA_SH "\tif [ -f $strelka_out_dir/task.complete ]\n";
     print STRELKA_SH "\tthen\n";
     print STRELKA_SH "\t\tjava -Xmx".$opt{STRELKA_MEM}."G -jar $opt{GATK_PATH}/GenomeAnalysisTK.jar -T CombineVariants -R $opt{GENOME} --genotypemergeoption unsorted -V:snp results/passed.somatic.snvs.vcf -V:indel results/passed.somatic.indels.vcf -o passed.somatic.merged.vcf\n";
-    #print STRELKA_SH "\t\tperl -p -e 's/\\t([A-Z][A-Z]:)/\\tGT:\$1/g' passed.somatic.merged.vcf | perl -p -e 's/(:T[UO]R?)\\t/\$1\\t0\\/0:/g' | perl -p -e 's/(:\\d+,\\d+)\\t/\$1\\t0\\/1:/g' | perl -p -e 's/(#CHROM.*)/##StrelkaGATKCompatibility=Added GT fields to strelka calls for gatk compatibility.\\n\$1/g' > tmp.vcf\n";
-    print STRELKA_SH "\t\tawk -F'\t' -v OFS='\t' '/^#CHROM/ { print \"##StrelkaGATKCompatibility=Added GT fields to strelka calls for gatk compatibility.\"; } /^[^#]/ { \$9 = \"GT:\" \$9; \$10 = \"0/0:\" \$10; \$11 = \"0/1:\" \$11; } { print }' passed.somatic.merged.vcf | python $opt{IAP_PATH}/scripts/filterStrelka.py > tmp.vcf\n";
     print STRELKA_SH "\t\tmv tmp.vcf passed.somatic.merged.vcf\n";
     print STRELKA_SH "\t\trm -r chromosomes/ \n";
-    print STRELKA_SH "\t\ttouch $log_dir/strelka.done\n";
+
+    # Strelka hmftools postprocess
+    print STRELKA_SH "\t\tguixr load-profile $opt{HMFTOOLS_PROFILE} -- << EOF\n";
+    print STRELKA_SH "\t\t\tjava -jar \\\$GUIX_JARPATH/$opt{HMFTOOLS_STRELKA_JAR} -v passed.somatic.merged.vcf -hc_bed $opt{GIAB_HIGH_CONFIDENCE_BED} -t $sample_tumor -o passed.somatic.merged.processed.vcf\n";
+    print STRELKA_SH "EOF\n";
+    #print STRELKA_SH "\t\tjava -jar $opt{HMFTOOLS_STRELKA_JAR} -v passed.somatic.merged.vcf -hc_bed $opt{GIAB_HIGH_CONFIDENCE_BED} -t $sample_tumor -o passed.somatic.merged.processed.vcf\n";
+    print STRELKA_SH "\t\tif [ -s passed.somatic.merged.vcf -a -s passed.somatic.merged.processed.vcf -a -s passed.somatic.merged.vcf.idx -a -s passed.somatic.merged.processed.vcf.idx ]\n";
+    print STRELKA_SH "\t\tthen\n";
+    print STRELKA_SH "\t\t\ttouch $log_dir/strelka.done\n";
+    print STRELKA_SH "\t\telse\n";
+    print STRELKA_SH "\t\t\techo \"ERROR: Strelka or hmftools postprocess failed.\" >&2\n";
+    print STRELKA_SH "\t\tfi\n";
     print STRELKA_SH "\tfi\n\n";
+
     print STRELKA_SH "\techo \"End Strelka\t\" `date` \"\t $sample_ref_bam \t $sample_tumor_bam\t\" `uname -n` >> $log_dir/strelka.log\n\n";
-    
     print STRELKA_SH "else\n";
     print STRELKA_SH "\techo \"ERROR: $sample_tumor_bam or $sample_ref_bam does not exist.\" >&2\n";
     print STRELKA_SH "fi\n";
