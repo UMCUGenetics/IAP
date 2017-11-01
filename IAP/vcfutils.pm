@@ -49,6 +49,7 @@ sub runVcfUtils {
     open VCFUTILS_SH, ">$bashFile" or die "cannot open file $bashFile \n";
     print VCFUTILS_SH "#!/bin/bash\n\n";
     print VCFUTILS_SH "bash $opt{CLUSTER_PATH}/settings.sh\n\n";
+    print VCFUTILS_SH "module load $opt{GATK_JAVA_MODULE}\n";
     print VCFUTILS_SH "cd $opt{OUTPUT_DIR}/\n";
     print VCFUTILS_SH "failed=false\n\n";
     print VCFUTILS_SH "echo \"Start VCF UTILS\t\" `date` \"\t$vcf\t\" `uname -n` >> $opt{OUTPUT_DIR}/logs/$runName.log\n\n";

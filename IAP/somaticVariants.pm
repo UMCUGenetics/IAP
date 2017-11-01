@@ -117,6 +117,7 @@ sub runSomaticVariantCallers {
 		open MERGE_SH, ">$bash_file" or die "cannot open file $bash_file \n";
 		print MERGE_SH "#!/bin/bash\n\n";
 		print MERGE_SH "echo \"Start Merge\t\" `date` `uname -n` >> $sample_tumor_log_dir/merge.log\n\n";
+		print MERGE_SH "module load $opt{GATK_JAVA_MODULE}\n";
 
 		# Merge vcfs
 		my $invcf;
@@ -231,6 +232,7 @@ sub runStrelka {
     # Check strelka completed
     print STRELKA_SH "\tif [ -f $strelka_out_dir/task.complete ]\n";
     print STRELKA_SH "\tthen\n";
+    print STRELKA_SH "\t\tmodule load $opt{GATK_JAVA_MODULE}\n";
     print STRELKA_SH "\t\tjava -Xmx".$opt{STRELKA_MEM}."G -jar $opt{GATK_PATH}/GenomeAnalysisTK.jar -T CombineVariants -R $opt{GENOME} --genotypemergeoption unsorted -V:snp results/passed.somatic.snvs.vcf -V:indel results/passed.somatic.indels.vcf -o passed.somatic.merged.vcf\n";
     print STRELKA_SH "\t\tmv tmp.vcf passed.somatic.merged.vcf\n";
     print STRELKA_SH "\t\trm -r chromosomes/ \n";
@@ -431,6 +433,7 @@ sub runVarscan {
     print VARSCAN_SH "\tjava -Xmx".$opt{VARSCAN_MEM}."G -jar $opt{VARSCAN_PATH} processSomatic $sample_tumor_name.snp.vcf $opt{VARSCAN_POSTSETTINGS}\n\n";
 
     # merge varscan hc snps and indels
+    print VARSCAN_SH "\tmodule load $opt{GATK_JAVA_MODULE}\n";
     print VARSCAN_SH "\tjava -Xmx".$opt{VARSCAN_MEM}."G -jar $opt{GATK_PATH}/GenomeAnalysisTK.jar -T CombineVariants -R $opt{GENOME} --genotypemergeoption unsorted -o $sample_tumor_name.merged.Somatic.hc.vcf -V:snp $sample_tumor_name.snp.Somatic.hc.vcf -V:indel $sample_tumor_name.indel.Somatic.hc.vcf\n";
     print VARSCAN_SH "\tsed -i 's/SSC/VS_SSC/' $sample_tumor_name.merged.Somatic.hc.vcf\n\n"; # to resolve merge conflict with FB vcfs
 
@@ -514,6 +517,7 @@ sub runFreeBayes {
 	print FREEBAYES_SH "then\n";
 	print FREEBAYES_SH "\techo \"Start Freebayes\t\" `date` \"\t $chr \t $sample_ref_bam \t $sample_tumor_bam\t\" `uname -n` >> $log_dir/freebayes.log\n\n";
 	print FREEBAYES_SH "\t$freebayes_command\n";
+	print FREEBAYES_SH "\tmodule load $opt{GATK_JAVA_MODULE}\n";
 	print FREEBAYES_SH "\t$sort_uniq_filter_command\n";
 	print FREEBAYES_SH "\t$mv_command\n\n";
 	print FREEBAYES_SH "\techo \"End Freebayes\t\" `date` \"\t $chr $sample_ref_bam \t $sample_tumor_bam\t\" `uname -n` >> $log_dir/freebayes.log\n";
