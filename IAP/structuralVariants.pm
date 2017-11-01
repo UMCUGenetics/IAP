@@ -139,7 +139,7 @@ sub runManta {
 		    print MANTA_SH "$run_manta\n\n";
 
 		    print MANTA_SH "guixr load-profile $opt{HMFTOOLS_PROFILE} -- << EOF\n";
-		    print MANTA_SH "\tjava -jar \\\$GUIX_JARPATH/$opt{HMFTOOLS_BPI_JAR} -ref $ref_bam -tumor $tumor_bam -vcf $manta_out_dir/results/variants/somaticSV.vcf.gz -ref_slice $manta_out_dir/$sample_ref.bpi_slice.bam -tumor_slice $manta_out_dir/$sample_tumor.bpi_slice.bam -output_vcf $manta_out_dir/$sample_tumor_name.bpi.vcf > $manta_out_dir/$sample_tumor_name.bpi_stats.tsv \n";
+		    print MANTA_SH "\tjava -Djava.io.tmpdir=$opt{OUTPUT_DIR}/tmp -Xmx$opt{MANTA_MEM}G -jar \\\$GUIX_JARPATH/break-point-inspector.jar -ref $ref_bam -tumor $tumor_bam -vcf $manta_out_dir/results/variants/somaticSV.vcf.gz -ref_slice $manta_out_dir/$sample_ref.bpi_slice.bam -tumor_slice $manta_out_dir/$sample_tumor.bpi_slice.bam -output_vcf $manta_out_dir/$sample_tumor_name.bpi.vcf > $manta_out_dir/$sample_tumor_name.bpi_stats.tsv \n";
 		    print MANTA_SH "EOF\n\n";
 		    #print MANTA_SH "java -Xmx$opt{MANTA_MEM}G -jar $opt{HMFTOOLS_BPI_JAR} -ref $ref_bam -tumor $tumor_bam -vcf $manta_out_dir/results/variants/somaticSV.vcf.gz -ref_slice $manta_out_dir/$sample_ref.bpi_slice.bam -tumor_slice $manta_out_dir/$sample_tumor.bpi_slice.bam -output_vcf $manta_out_dir/$sample_tumor_name.bpi.vcf > $manta_out_dir/$sample_tumor_name.bpi_stats.tsv \n";
 

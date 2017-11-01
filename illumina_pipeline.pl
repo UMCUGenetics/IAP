@@ -595,7 +595,6 @@ sub checkConfig{
 	    if(! $opt{STRELKA_MEM}){ print "ERROR: No STRELKA_MEM option found in config files.\n"; $checkFailed = 1; }
 	    if(! $opt{STRELKA_TIME}){ print "ERROR: No STRELKA_TIME option found in config files.\n"; $checkFailed = 1; }
 	    if(! $opt{HMFTOOLS_PROFILE}){ print "ERROR: No HMFTOOLS_PROFILE option found in config files.\n"; $checkFailed = 1; }
-	    if(! $opt{HMFTOOLS_STRELKA_JAR}){ print "ERROR: No HMFTOOLS_STRELKA_JAR option found in config files.\n"; $checkFailed = 1; }
 	    if(! $opt{GIAB_HIGH_CONFIDENCE_BED}){ print "ERROR: No GIAB_HIGH_CONFIDENCE_BED option found in config files.\n"; $checkFailed = 1; }
 	}
 	if(! $opt{SOMVAR_VARSCAN}){ print "ERROR: No SOMVAR_VARSCAN option found in config files.\n"; $checkFailed = 1; }
@@ -707,7 +706,6 @@ sub checkConfig{
 	    if(! $opt{MANTA_MEM}){ print "ERROR: No MANTA_MEM option found in config files.\n"; $checkFailed = 1; }
 	    if(! $opt{MANTA_TIME}){ print "ERROR: No MANTA_TIME option found in config files.\n"; $checkFailed = 1; }
 	    if(! $opt{HMFTOOLS_PROFILE}){ print "ERROR: No HMFTOOLS_PROFILE option found in config files.\n"; $checkFailed = 1; }
-	    if(! $opt{HMFTOOLS_BPI_JAR}){ print "ERROR: No HMFTOOLS_BPI_JAR option found in config files.\n"; $checkFailed = 1; }
 	}
 	if(! $opt{SV_DELLY}){ print "ERROR: No SV_DELLY option found in config files.\n"; $checkFailed = 1; }
 	if($opt{SV_DELLY} eq "yes"){

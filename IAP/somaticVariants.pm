@@ -237,7 +237,7 @@ sub runStrelka {
 
     # Strelka hmftools postprocess
     print STRELKA_SH "\t\tguixr load-profile $opt{HMFTOOLS_PROFILE} -- << EOF\n";
-    print STRELKA_SH "\t\t\tjava -jar \\\$GUIX_JARPATH/$opt{HMFTOOLS_STRELKA_JAR} -v passed.somatic.merged.vcf -hc_bed $opt{GIAB_HIGH_CONFIDENCE_BED} -t $sample_tumor -o passed.somatic.merged.processed.vcf\n";
+    print STRELKA_SH "\t\t\tjava -jar \\\$GUIX_JARPATH/strelka-post-process.jar -v passed.somatic.merged.vcf -hc_bed $opt{GIAB_HIGH_CONFIDENCE_BED} -t $sample_tumor -o passed.somatic.merged.processed.vcf\n";
     print STRELKA_SH "EOF\n";
     #print STRELKA_SH "\t\tjava -jar $opt{HMFTOOLS_STRELKA_JAR} -v passed.somatic.merged.vcf -hc_bed $opt{GIAB_HIGH_CONFIDENCE_BED} -t $sample_tumor -o passed.somatic.merged.processed.vcf\n";
     print STRELKA_SH "\t\tif [ -s passed.somatic.merged.vcf -a -s passed.somatic.merged.processed.vcf -a -s passed.somatic.merged.vcf.idx -a -s passed.somatic.merged.processed.vcf.idx ]\n";
