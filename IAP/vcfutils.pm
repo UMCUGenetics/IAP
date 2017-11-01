@@ -125,7 +125,7 @@ sub runVcfUtils {
 		print VCFUTILS_SH "$opt{BCFTOOLS_PATH}/bcftools view -f PASS $opt{OUTPUT_DIR}/$vcf | $opt{BCFTOOLS_PATH}/bcftools roh -s $sample -O s $opt{ROH_SETTINGS} - > $sample\_ROH_sites.txt\n";
 		print VCFUTILS_SH "$opt{BCFTOOLS_PATH}/bcftools view -f PASS $opt{OUTPUT_DIR}/$vcf | $opt{BCFTOOLS_PATH}/bcftools roh -s $sample -O r $opt{ROH_SETTINGS} - > $sample\_ROH_regions.txt\n";
 		#print VCFUTILS_SH "python $opt{IAP_PATH}/scripts/get_roh_regions.py $sample\_ROH.txt > $sample\_ROH_regions.txt\n"; # Not needed anymore.
-		print VCFUTILS_SH "\tmv $sample\_ROH*.txt $output_dir/\n";
+		print VCFUTILS_SH "mv $sample\_ROH*.txt $output_dir/\n";
 		print VCFUTILS_SH "if [ -s $output_dir/$sample\_ROH_sites.txt -a -s $output_dir/$sample\_ROH_regions.txt ]; then\n";
 		print VCFUTILS_SH "\ttouch $opt{OUTPUT_DIR}/logs/ROH_$sample.done\n";
 		print VCFUTILS_SH "else\n";
@@ -149,15 +149,24 @@ sub runVcfUtils {
 		print VCFUTILS_SH "cd $opt{OUTPUT_DIR}/tmp/\n";
 		my $output_vcf = $vcf;
 		$output_vcf =~ s/$runName/$sample/g;
-		print VCFUTILS_SH "java -Xmx".$opt{VCFUTILS_MEM}."G -jar $opt{GATK_PATH}/GenomeAnalysisTK.jar -T SelectVariants  -R $opt{GENOME} -V $opt{OUTPUT_DIR}/$vcf -o $output_vcf -sn $sample\n";
-		## Check output
-		print VCFUTILS_SH "if [ \"\$(tail -n 1 $opt{OUTPUT_DIR}/$vcf | cut -f 1,2)\" = \"\$(tail -n 1 $output_vcf | cut -f 1,2)\" ]\n";
+		my $input_vcf = "$opt{OUTPUT_DIR}/$vcf";
+		print VCFUTILS_SH "if [ -s $input_vcf ];\n";
 		print VCFUTILS_SH "then\n";
-		print VCFUTILS_SH "\tmv $output_vcf $output_dir/\n";
-		print VCFUTILS_SH "\ttouch $opt{OUTPUT_DIR}/logs/SINGLE_SAMPLE_VCF_$sample.done\n";
+		print VCFUTILS_SH "\tjava -Xmx".$opt{VCFUTILS_MEM}."G -jar $opt{GATK_PATH}/GenomeAnalysisTK.jar -T SelectVariants  -R $opt{GENOME} -V $input_vcf -o $output_vcf -sn $sample\n";
+
+		## Check output
+		print VCFUTILS_SH "\tif [ \"\$(tail -n 1 $input_vcf | cut -f 1,2)\" = \"\$(tail -n 1 $output_vcf | cut -f 1,2)\" ]\n";
+		print VCFUTILS_SH "\tthen\n";
+		print VCFUTILS_SH "\t\tmv $output_vcf $output_dir/\n";
+		print VCFUTILS_SH "\t\ttouch $opt{OUTPUT_DIR}/logs/SINGLE_SAMPLE_VCF_$sample.done\n";
+		print VCFUTILS_SH "\telse\n";
+		print VCFUTILS_SH "\t\tfailed=true\n";
+		print VCFUTILS_SH "\tfi\n";
+
 		print VCFUTILS_SH "else\n";
 		print VCFUTILS_SH "\tfailed=true\n";
 		print VCFUTILS_SH "fi\n\n";
+		
 	    }
 	}
     }

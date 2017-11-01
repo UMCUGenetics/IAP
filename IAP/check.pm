@@ -335,11 +335,18 @@ sub runCheck {
 	    }
 	}
     }
+    
+    print BASH "\n\tcd $opt{OUTPUT_DIR}\n";
+    
+    # Run cleanup script if set to yes
+    if($opt{CHECKING_CLEANUP} eq "yes"){
+	print BASH "\tpython $opt{CHECKING_CLEANUP_SCRIPT} > logs/checking_cleanup.log 2> logs/checking_cleanup.log \n";
+    }
+    
     # Send email.
     print BASH "\tmail -s \"IAP DONE $runName\" \"$opt{MAIL}\" < $logFile\n";
     
     # Create md5sum.txt
-    print BASH "\n\tcd $opt{OUTPUT_DIR}\n";
     print BASH "\tfind . -type f \\( ! -iname \"md5sum.txt\" \\) -exec md5sum \"{}\" \\; > md5sum.txt\n";
 
     print BASH "fi\n";
