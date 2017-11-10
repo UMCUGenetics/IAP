@@ -173,7 +173,13 @@ sub runSomaticVariantCallers {
 		}
 		
 		## Filter PON
-		# Add when PON file is released by hartwig
+		if($opt{SOMVAR_PONFILE}){
+		    $invcf = $outvcf;
+		    my $suffix = "_PON.vcf";
+		    $outvcf =~ s/.vcf/$suffix/;
+		    print MERGE_SH "python $opt{IAP_PATH}/scripts/annotatePON.py -p $opt{SOMVAR_PONFILE} -i $invcf -o - | $opt{BCFTOOLS_PATH}/bcftools filter -e 'PON_COUNT!=\".\" && MIN(PON_COUNT) > 5' -s PON -m+ -o $outvcf\n";
+		    print MERGE_SH "$opt{IGVTOOLS_PATH}/igvtools index $outvcf\n\n";
+		}
 		
 		## Check output files
 		print MERGE_SH "if [ \"\$(tail -n 1 $preAnnotateVCF | cut -f 1,2)\" = \"\$(tail -n 1 $outvcf | cut -f 1,2)\" -a -s $preAnnotateVCF -a -s $outvcf ]\n";
@@ -241,7 +247,6 @@ sub runStrelka {
     print STRELKA_SH "\t\tguixr load-profile $opt{HMFTOOLS_PROFILE} -- << EOF\n";
     print STRELKA_SH "\t\t\tjava -jar \\\$GUIX_JARPATH/strelka-post-process.jar -v passed.somatic.merged.vcf -hc_bed $opt{GIAB_HIGH_CONFIDENCE_BED} -t $sample_tumor -o passed.somatic.merged.processed.vcf\n";
     print STRELKA_SH "EOF\n";
-    #print STRELKA_SH "\t\tjava -jar $opt{HMFTOOLS_STRELKA_JAR} -v passed.somatic.merged.vcf -hc_bed $opt{GIAB_HIGH_CONFIDENCE_BED} -t $sample_tumor -o passed.somatic.merged.processed.vcf\n";
     print STRELKA_SH "\t\tif [ -s passed.somatic.merged.vcf -a -s passed.somatic.merged.processed.vcf -a -s passed.somatic.merged.vcf.idx -a -s passed.somatic.merged.processed.vcf.idx ]\n";
     print STRELKA_SH "\t\tthen\n";
     print STRELKA_SH "\t\t\ttouch $log_dir/strelka.done\n";

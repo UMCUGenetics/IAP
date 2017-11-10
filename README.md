@@ -258,6 +258,7 @@ FILTER_CLUSTERWINDOWSIZE	35 | Optional, The window size (in bases) in which to e
 
 ####SOMATIC VARIANT CONFIGURATION####
 SOMVAR_TARGETS	/path/to/target.bed | Optional, use for targeted data e.g. exome.
+SOMVAR_PONFILE	/path/to/PON.vcf | Optional, panel of normals (PON) vcf file to filter somatic variants.
 
 ## Strelka
 SOMVAR_STRELKA	yes/no
