@@ -189,7 +189,7 @@ FILTER_CLUSTERWINDOWSIZE	35
 ####SOMATIC VARIANT CONFIGURATION####
 SOMVAR_TARGETS	/hpc/cog_bioinf/GENOMES/Homo_sapiens.GRCh37.GATK.illumina/sorted_Homo_sapiens.GRCh37.74_nopseudo_noRNA_CDS_20bpflanks.bed
 SOMVAR_MELT	no
-SOMVAR_PONFILE	/hpc/cog_bioinf/common_dbs/HMF-pipeline/PON.vcf
+SOMVAR_PONFILE	/hpc/cog_bioinf/common_dbs/HMF_PON/PON_v2.0.vcf
 
 ## Strelka
 SOMVAR_STRELKA	yes
