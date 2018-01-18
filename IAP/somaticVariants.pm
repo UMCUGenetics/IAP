@@ -240,7 +240,6 @@ sub runStrelka {
     print STRELKA_SH "\tthen\n";
     print STRELKA_SH "\t\tmodule load $opt{GATK_JAVA_MODULE}\n";
     print STRELKA_SH "\t\tjava -Xmx".$opt{STRELKA_MEM}."G -jar $opt{GATK_PATH}/GenomeAnalysisTK.jar -T CombineVariants -R $opt{GENOME} --genotypemergeoption unsorted -V:snp results/passed.somatic.snvs.vcf -V:indel results/passed.somatic.indels.vcf -o passed.somatic.merged.vcf\n";
-    print STRELKA_SH "\t\tmv tmp.vcf passed.somatic.merged.vcf\n";
     print STRELKA_SH "\t\trm -r chromosomes/ \n";
 
     # Strelka hmftools postprocess
