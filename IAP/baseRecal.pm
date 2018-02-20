@@ -117,10 +117,11 @@ sub runBaseRecalibration {
 	print BASERECALFS_SH "\t\tmv $opt{OUTPUT_DIR}/$sample/tmp/$outBam $opt{OUTPUT_DIR}/$sample/mapping/\n";
 	print BASERECALFS_SH "\t\tmv $opt{OUTPUT_DIR}/$sample/tmp/$outBai $opt{OUTPUT_DIR}/$sample/mapping/\n";
 	print BASERECALFS_SH "\t\tcp $opt{OUTPUT_DIR}/$sample/mapping/$outBai $opt{OUTPUT_DIR}/$sample/mapping/$outBamBai\n";
+	print BASERECALFS_SH "\t\tmv $opt{OUTPUT_DIR}/$sample/tmp/*_recal_data.table $opt{OUTPUT_DIR}/$sample/mapping/\n";
+	
 	if($opt{BASERECALIBRATION_QC} eq 'yes'){
 	    print BASERECALFS_SH "\t\tmv $opt{OUTPUT_DIR}/$sample/tmp/*_baseRecalibration.pdf $opt{OUTPUT_DIR}/$sample/logs/\n";
 	    print BASERECALFS_SH "\t\tmv $opt{OUTPUT_DIR}/$sample/tmp/*_post_recal_data.table $opt{OUTPUT_DIR}/$sample/logs/\n";
-	    print BASERECALFS_SH "\t\tmv $opt{OUTPUT_DIR}/$sample/tmp/*_recal_data.table $opt{OUTPUT_DIR}/$sample/logs/\n";
 	}
 
 	print BASERECALFS_SH "\t\ttouch $opt{OUTPUT_DIR}/$sample/logs/BaseRecalibration_$sample.done\n";
