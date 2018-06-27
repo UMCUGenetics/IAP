@@ -42,14 +42,14 @@ sub qsubTemplate(@){
 
 sub qsubJava(@){
     my ($opt,$function)=@_;
-    my $h_vmem = (4 + $$opt{$function."_MEM"})."G";
+    my $h_vmem = (5 + $$opt{$function."_MEM"})."G";
     my $qsub = &generic($opt,$function)." -m a -M ".$$opt{MAIL}." -R ".$$opt{CLUSTER_RESERVATION}." -l h_vmem=".$h_vmem;
     return ($qsub)
 }
 
 sub jobNative(@){
     my ($opt,$function)=@_;
-    my $h_vmem = (4 + $$opt{$function."_MEM"})."G";
+    my $h_vmem = (5 + $$opt{$function."_MEM"})."G";
     my $qsub = &generic($opt,$function).",h_vmem=".$h_vmem;
     $qsub=~s/^qsub//;
     return ($qsub)
