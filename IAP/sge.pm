@@ -30,7 +30,7 @@ sub generic(@){
     my ($opt,$function)=@_;
     my $tmp="";
     $tmp = ",tmpspace=".$$opt{$function."_TMP"}."G" if ($$opt{$function."_TMP"});
-    my $qsub = "qsub -P ".$$opt{CLUSTER_PROJECT}." -pe threaded ".$$opt{$function."_THREADS"}." -q ".$$opt{$function."_QUEUE"}." -l h_rt=".$$opt{$function."_TIME"}.$tmp;
+    my $qsub = "qsub -V -P ".$$opt{CLUSTER_PROJECT}." -pe threaded ".$$opt{$function."_THREADS"}." -q ".$$opt{$function."_QUEUE"}." -l h_rt=".$$opt{$function."_TIME"}.$tmp;
     return ($qsub);
 }
 
