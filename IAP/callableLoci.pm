@@ -57,7 +57,7 @@ sub runCallableLoci {
 	    # Run CallableLoci
 	    ###
 	    ### Build gatk command
-	    $command = "java -Djava.io.tmpdir=$opt{OUTPUT_DIR}/tmp/ -Xmx".$opt{CALLABLE_LOCI_MEM}."G -jar $opt{QUEUE_PATH}/GenomeAnalysisTK.jar ";
+	    $command = "java -Djava.io.tmpdir=$opt{OUTPUT_DIR}/tmp/ -Xmx".$opt{CALLABLE_LOCI_MEM}."G -jar $opt{GATK_PATH}/GenomeAnalysisTK.jar ";
 	    $command .= "-T CallableLoci ";
 	    $command .= "-R $opt{GENOME} ";
 	    $command .= "-I $sample_bam ";
