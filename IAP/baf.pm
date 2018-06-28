@@ -62,7 +62,7 @@ sub runBAF {
 		print "WARNING: $log_dir/BAF_UG_$sample.done exists, skipping Unified Genotyper for $sample \n";
 	    } else {
 		### Build gatk command
-		$command = "java -Djava.io.tmpdir=$opt{OUTPUT_DIR}/tmp/ -Xmx".$opt{BAF_MEM}."G -jar $opt{QUEUE_PATH}/GenomeAnalysisTK.jar ";
+		$command = "java -Djava.io.tmpdir=$opt{OUTPUT_DIR}/tmp/ -Xmx".$opt{BAF_MEM}."G -jar $opt{GATK_PATH}/GenomeAnalysisTK.jar ";
 		$command .= "-T UnifiedGenotyper ";
 		$command .= "-R $opt{GENOME} ";
 		$command .= "-L $opt{BAF_SNPS} ";
