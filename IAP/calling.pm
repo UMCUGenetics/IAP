@@ -185,7 +185,7 @@ sub runFingerprint {
 	    }
 
 	    ### Build gatk command
-	    my $command = "java -Djava.io.tmpdir=$opt{OUTPUT_DIR}/tmp/ -Xmx".$opt{FINGERPRINT_MEM}."G -jar $opt{QUEUE_PATH}/GenomeAnalysisTK.jar ";
+	    my $command = "java -Djava.io.tmpdir=$opt{OUTPUT_DIR}/tmp/ -Xmx".$opt{FINGERPRINT_MEM}."G -jar $opt{GATK_PATH}/GenomeAnalysisTK.jar ";
 	    $command .= "-T UnifiedGenotyper ";
 	    $command .= "-R $opt{GENOME} ";
 	    $command .= "-L $opt{FINGERPRINT_TARGET} ";
