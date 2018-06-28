@@ -11,7 +11,8 @@
 package IAP::poststats;
 
 use strict;
-use POSIX qw(tmpnam);
+use File::Temp;
+use File::Basename;
 use FindBin;
 use IAP::sge;
 
@@ -120,8 +121,8 @@ sub runPostStats {
 
 ############
 sub get_job_id {
-   my $id = tmpnam(); 
-      $id=~s/\/tmp\/file//;
+   my $id = tmpnam();
+   $id=basename($id);
    return $id;
 }
 

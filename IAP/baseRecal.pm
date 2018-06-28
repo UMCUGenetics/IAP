@@ -10,8 +10,8 @@
 package IAP::baseRecal;
 
 use strict;
-use POSIX qw(tmpnam);
-use lib "$FindBin::Bin"; #locates pipeline directory
+use File::Temp;
+use File::Basename;
 use IAP::sge;
 
 sub runBaseRecalibration {
@@ -144,8 +144,8 @@ sub runBaseRecalibration {
 
 ############
 sub get_job_id {
-   my $id = tmpnam(); 
-      $id=~s/\/tmp\/file//;
+   my $id = tmpnam();
+      $id=basename($id);
    return $id;
 }
 ############ 

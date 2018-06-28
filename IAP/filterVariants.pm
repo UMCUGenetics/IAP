@@ -11,8 +11,8 @@
 package IAP::filterVariants;
 
 use strict;
-use POSIX qw(tmpnam);
-use lib "$FindBin::Bin"; #locates pipeline directory                                                                                                              
+use File::Temp;
+use File::Basename;
 use IAP::sge;
 
 sub runFilterVariants {
@@ -149,7 +149,7 @@ sub runFilterVariants {
 ############
 sub get_job_id {
     my $id = tmpnam();
-    $id=~s/\/tmp\/file//;
+    $id=basename($id);
     return $id;
 }
 ############

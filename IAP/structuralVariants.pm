@@ -10,9 +10,9 @@
 package IAP::structuralVariants;
 
 use strict;
-use POSIX qw(tmpnam);
+use File::Temp;
+use File::Basename;
 use File::Path qw(make_path);
-use lib "$FindBin::Bin"; #locates pipeline directory
 use IAP::sge;
 
 sub runStructuralVariantCallers {
@@ -514,7 +514,7 @@ sub get_chrs_from_dict {
 ############
 sub get_job_id {
     my $id = tmpnam();
-    $id=~s/\/tmp\/file//;
+    $id=basename($id);
     return $id;
 }
 ############
