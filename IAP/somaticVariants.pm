@@ -12,9 +12,9 @@
 package IAP::somaticVariants;
 
 use strict;
-use POSIX qw(tmpnam);
+use File::Temp;
+use File::Basename;
 use File::Path qw(make_path);
-use lib "$FindBin::Bin"; #locates pipeline directory
 use IAP::sge;
 
 ### Run and merge
@@ -729,7 +729,7 @@ sub runMutect {
 ############
 sub get_job_id {
     my $id = tmpnam();
-    $id=~s/\/tmp\/file//;
+    $id=basename($id);
     return $id;
 }
 

@@ -10,8 +10,8 @@
 package IAP::baf;
 
 use strict;
-use POSIX qw(tmpnam);
-use lib "$FindBin::Bin"; #locates pipeline directory
+use File::Temp;
+use File::Basename;
 use IAP::sge;
 
 sub runBAF {
@@ -168,7 +168,7 @@ sub runBAF {
 ############
 sub get_job_id {
     my $id = tmpnam();
-    $id=~s/\/tmp\/file//;
+    $id=basename($id);
     return $id;
 }
 ############

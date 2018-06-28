@@ -10,16 +10,16 @@
 
 ### Load common perl modules ####
 use strict;
-use POSIX qw(tmpnam strftime);
+use File::Temp;
+use POSIX qw(strftime);
 use Getopt::Long;
 use FindBin;
 use File::Path qw(make_path);
 use File::Copy qw(copy);
 use Cwd qw( abs_path );
-use File::Basename qw( dirname );
+use File::Basename qw( dirname basename );
 
 ### Load pipeline modules ####
-use lib "$FindBin::Bin"; #locates pipeline directory
 use IAP::prestats;
 use IAP::mapping;
 use IAP::poststats;

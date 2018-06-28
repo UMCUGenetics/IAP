@@ -11,9 +11,9 @@
 package IAP::nipt;
 
 use strict;
-use POSIX qw(tmpnam);
+use File::Temp;
+use File::Basename;
 use FindBin;
-use lib "$FindBin::Bin"; #locates pipeline directory
 use IAP::sge;
 
 
@@ -82,8 +82,8 @@ sub runNipt {
 
 ############
 sub get_job_id {
-   my $id = tmpnam(); 
-      $id=~s/\/tmp\/file//;
+   my $id = tmpnam();
+   $id=basename($id);
    return $id;
 }
 

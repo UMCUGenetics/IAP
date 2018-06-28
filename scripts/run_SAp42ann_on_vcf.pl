@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 use strict;
-use POSIX qw(tmpnam);
+use File::Temp;
 
 
 my $email = "i.nijman\@umcutrecht.nl";
