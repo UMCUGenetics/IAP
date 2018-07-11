@@ -20,6 +20,7 @@ use Cwd qw( abs_path );
 use File::Basename qw( dirname basename );
 
 ### Load pipeline modules ####
+use lib "$FindBin::Bin"; #locates pipeline directory
 use IAP::prestats;
 use IAP::mapping;
 use IAP::poststats;
