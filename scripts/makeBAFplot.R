@@ -64,7 +64,7 @@ for (i in c(1:length(chromosomes))) {
   tmp <- subset(rowdat, CHROM==chrom)
 
   for (j in seq(1, nrow(tmp), by=binsize/2)) {
-    maxy <- j+binsize
+    maxy <- j+binsize-1
 
     if (maxy>nrow(tmp)) {maxy<-nrow(tmp)}
 
