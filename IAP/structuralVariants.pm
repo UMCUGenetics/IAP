@@ -123,7 +123,7 @@ sub runManta {
 		    # Setup manta commands
 		    my $ref_bam = "$opt{OUTPUT_DIR}/$sample_ref/mapping/$opt{BAM_FILES}->{$sample_ref}";
 		    my $tumor_bam = "$opt{OUTPUT_DIR}/$sample_tumor/mapping/$opt{BAM_FILES}->{$sample_tumor}";
-		    my $config_manta = "$opt{MANTA_PATH}/configManta.py --referenceFasta $opt{GENOME} --runDir $manta_out_dir --normalBam $ref_bam --tumorBam $tumor_bam ";
+		    my $config_manta = "$opt{MANTA_PATH}/configManta.py --referenceFasta $opt{GENOME} --runDir $manta_out_dir --normalBam $ref_bam --tumorBam $tumor_bam --generateEvidenceBam";
 		    my $run_manta = "$manta_out_dir/runWorkflow.py -m local -j $opt{MANTA_THREADS} ";
 		
 		    # Create manta bash script
@@ -138,12 +138,17 @@ sub runManta {
 		    print MANTA_SH "$config_manta\n";
 		    print MANTA_SH "$run_manta\n\n";
 
-		    print MANTA_SH "if [ -s $manta_out_dir/results/variants/diploidSV.vcf.gz.tbi -a -s $manta_out_dir/results/variants/somaticSV.vcf.gz.tbi ]\n";
+		    print MANTA_SH "guixr load-profile $opt{HMFTOOLS_PROFILE} -- << EOF\n";
+		    print MANTA_SH "\tjava -Djava.io.tmpdir=$opt{OUTPUT_DIR}/tmp -Xmx$opt{MANTA_MEM}G -jar \\\$GUIX_JARPATH/break-point-inspector.jar -ref $ref_bam -tumor $tumor_bam -vcf $manta_out_dir/results/variants/somaticSV.vcf.gz -ref_slice $manta_out_dir/$sample_ref.bpi_slice.bam -tumor_slice $manta_out_dir/$sample_tumor.bpi_slice.bam -output_vcf $manta_out_dir/$sample_tumor_name.bpi.vcf > $manta_out_dir/$sample_tumor_name.bpi_stats.tsv \n";
+		    print MANTA_SH "EOF\n\n";
+		    #print MANTA_SH "java -Xmx$opt{MANTA_MEM}G -jar $opt{HMFTOOLS_BPI_JAR} -ref $ref_bam -tumor $tumor_bam -vcf $manta_out_dir/results/variants/somaticSV.vcf.gz -ref_slice $manta_out_dir/$sample_ref.bpi_slice.bam -tumor_slice $manta_out_dir/$sample_tumor.bpi_slice.bam -output_vcf $manta_out_dir/$sample_tumor_name.bpi.vcf > $manta_out_dir/$sample_tumor_name.bpi_stats.tsv \n";
+
+		    print MANTA_SH "if [ -s $manta_out_dir/results/variants/diploidSV.vcf.gz.tbi -a -s $manta_out_dir/results/variants/somaticSV.vcf.gz.tbi -a -s $manta_out_dir/$sample_tumor_name.bpi.vcf -a -s $manta_out_dir/$sample_tumor_name.bpi.vcf.idx ]\n";
 		    print MANTA_SH "then\n";
 		    print MANTA_SH "\ttouch $manta_log_dir/SV_MANTA_$sample_tumor_name.done\n";
 		    print MANTA_SH "fi\n";
     
-		    my $qsub = &qsubTemplate(\%opt,"MANTA");
+		    my $qsub = &qsubJava(\%opt,"MANTA");
 		    if (@running_jobs){
 			system "$qsub -o $manta_log_dir/$job_id.out -e $manta_log_dir/$job_id.err -N $job_id -hold_jid ".join(",",@running_jobs)." $bashFile";
 		    } else {

@@ -178,8 +178,8 @@ sub runRealignment {
 	    print REALIGN_SH "\#!/bin/bash\n\n";
 	    print REALIGN_SH ". $opt{CLUSTER_PATH}/settings.sh\n\n";
 	    print REALIGN_SH "cd $opt{OUTPUT_DIR}/$sample/tmp \n\n";
+	    print REALIGN_SH "module load $opt{GATK_JAVA_MODULE}\n";
 	    print REALIGN_SH "echo \"Start indel realignment\t\" `date` \"\t$bam\t\" `uname -n` >> $logDir/$sample.log\n\n";
-	    
 	    print REALIGN_SH "if [ -f $opt{OUTPUT_DIR}/$sample/mapping/$bam ]\n";
 	    print REALIGN_SH "then\n";
 	    print REALIGN_SH "\tjava -Xmx".$opt{REALIGNMENT_MASTER_MEM}."G -Djava.io.tmpdir=$opt{OUTPUT_DIR}/$sample/tmp -jar $opt{QUEUE_PATH}/Queue.jar -R $opt{GENOME} -S $opt{IAP_PATH}/$opt{REALIGNMENT_SCALA} -jobQueue $opt{REALIGNMENT_QUEUE} -nt $opt{REALIGNMENT_THREADS} -mem $opt{REALIGNMENT_MEM} -nsc $opt{REALIGNMENT_SCATTER} -mode $opt{REALIGNMENT_MODE} -jobNative \"$jobNative\" ";

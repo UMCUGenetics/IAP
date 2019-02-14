@@ -33,6 +33,7 @@ perl illumina_pipeline.pl /path/to/output_dir/settings.config>
 - Python/dev
 - R/dev
 - Java 1.7/jre/dev
+    - Java 1.8 for gatk >= 3.8
 
 #### Bio tools
 - [FastQC](http://www.bioinformatics.babraham.ac.uk/projects/fastqc/)
@@ -59,6 +60,7 @@ perl illumina_pipeline.pl /path/to/output_dir/settings.config>
 - [king](http://people.virginia.edu/~wc9c/KING/)
 - [bcftools](https://samtools.github.io/bcftools/)
 - [VT](http://genome.sph.umich.edu/wiki/Vt)
+- [hmftools](https://github.com/hartwigmedical/hmftools)
 
 #### Perl modules
 - strict
@@ -107,6 +109,8 @@ GATK_PATH	/path/to/gatk | gatk > 3.2-2
 SNPEFF_PATH /path/to/snpeff
 VCFTOOLS_PATH	/path/to/vcftools
 IGVTOOLS_PATH	/path/to/igvtools
+
+GATK_JAVA_MODULE	Temporay fix to allow for different java versions using modules. Probably will be replaced by GNU GUIX.
 
 #### MODES ####
 PRESTATS	yes/no
@@ -224,10 +228,10 @@ CALLING_MEM	maximum_memory
 CALLING_SCATTER	number_of_scatters
 CALLING_SCALA	QScripts/HaplotypeCaller.scala
 CALLING_GVCF	no/yes
+CALLING_GVCFGQBANDS	5,10,15,20,30,40,50,60 | Required if CALLING_GVCF == yes
 CALLING_SEXAWARE	no/yes | Enable sex aware calling, only in combination with gvcf mode and human data
 CALLING_DBSNP	GATK_bundle/dbsnp_137.b37.vcf | common snp file supplied by gatk
-CALLING_STANDCALLCONF	30 | The minimum phred-scaled confidence threshold at which variants should be called. Gatk default = 30
-CALLING_STANDEMITCONF	15 | The minimum phred-scaled confidence threshold at which variants should be emitted (and filtered with LowQual if less than the calling threshold) Gatk default = 15
+CALLING_STANDCALLCONF	10 | The minimum phred-scaled confidence threshold at which variants should be called. Gatk default = 10
 CALLING_PLOIDY	2 | Ploidy (number of chromosomes) per sample. For pooled data, set to (Number of samples in each pool * Sample Ploidy).
 CALLING_TARGETS	/path/to/target.interval_list | Optional, use for targeted data e.g. exome.
 CALLING_INTERVALPADDING	20 | Optional, only use in combination with calling_targets
@@ -254,6 +258,7 @@ FILTER_CLUSTERWINDOWSIZE	35 | Optional, The window size (in bases) in which to e
 
 ####SOMATIC VARIANT CONFIGURATION####
 SOMVAR_TARGETS	/path/to/target.bed | Optional, use for targeted data e.g. exome.
+SOMVAR_PONFILE	/path/to/PON.vcf | Optional, panel of normals (PON) vcf file to filter somatic variants.
 
 ## Strelka
 SOMVAR_STRELKA	yes/no

@@ -431,6 +431,7 @@ sub checkConfig{
     elsif(! -e $opt{GENOME}){ print"ERROR: $opt{GENOME} does Not exist\n"}
     if(! $opt{SAMBAMBA_PATH}){ print "ERROR: No SAMBAMBA_PATH option found in config files.\n"; $checkFailed = 1; }
     if(! $opt{QUEUE_PATH}){ print "ERROR: No QUEUE_PATH option found in config files.\n"; $checkFailed = 1; }
+    if(! $opt{GATK_JAVA_MODULE}){ print "ERROR: No GATK_JAVA_MODULE option found in config files.\n"; $checkFailed = 1; }
     ## PRESTATS
     if($opt{PRESTATS} eq "yes"){
 	if(! $opt{FASTQC_PATH}){ print "ERROR: No FASTQC_PATH option found in config files.\n"; $checkFailed = 1; }
@@ -540,13 +541,15 @@ sub checkConfig{
 	if(! $opt{CALLING_TIME}){ print "ERROR: No CALLING_TIME option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{CALLING_SCATTER}){ print "ERROR: No CALLING_SCATTER option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{CALLING_GVCF}){ print "ERROR: No CALLING_GVCF option found in config files.\n"; $checkFailed = 1; }
+	elsif( $opt{CALLING_GVCF} eq "yes" ){
+	    if(! $opt{CALLING_GVCFGQBANDS}){ print "ERROR: No CALLING_GVCFGQBANDS option found in config files.\n"; $checkFailed = 1; }
+	}
 	if(! $opt{CALLING_SEXAWARE}){ print "ERROR: No CALLING_SEXAWARE option found in config files.\n"; $checkFailed = 1; }
 	if(! $opt{CALLING_SCALA}){ print "ERROR: No CALLING_SCALA option found in config files.\n"; $checkFailed = 1; }
 	if($opt{CALLING_UGMODE}){ 
 	    if($opt{CALLING_UGMODE} ne "SNP" and $opt{CALLING_UGMODE} ne "INDEL" and $opt{CALLING_UGMODE} ne "BOTH"){ print "ERROR: UGMODE: $opt{CALLING_UGMODE} does Not exist use SNP, INDEL or BOTH\n"; $checkFailed = 1; }
 	}
 	if(! $opt{CALLING_STANDCALLCONF}){ print "ERROR: No CALLING_STANDCALLCONF option found in config files.\n"; $checkFailed = 1; }
-	if(! $opt{CALLING_STANDEMITCONF}){ print "ERROR: No CALLING_STANDEMITCONF option found in config files.\n"; $checkFailed = 1; }
 	if( $opt{CALLING_TARGETS} && ! -e $opt{CALLING_TARGETS}) { print"ERROR: $opt{CALLING_TARGETS} does Not exist\n"; $checkFailed = 1; }
 	if( $opt{CALLING_TARGETS} && $opt{CALLING_SEXAWARE} eq "yes") { print"ERROR: Sex aware variant calling does not work for targeted sequencing data. Disable CALLING_TARGETS or CALLING_SEXAWARE.\n"; $checkFailed = 1; }
 	if( $opt{CALLING_SEXAWARE} eq "yes" && $opt{CALLING_GVCF} eq "no") { print"ERROR: Sex aware variant calling does only work in gvcf mode. Set CALLING_GVCF to yes or CALLING_SEXAWARE to no.\n"; $checkFailed = 1; }
@@ -594,6 +597,8 @@ sub checkConfig{
 	    if(! $opt{STRELKA_THREADS}){ print "ERROR: No STRELKA_THREADS option found in config files.\n"; $checkFailed = 1; }
 	    if(! $opt{STRELKA_MEM}){ print "ERROR: No STRELKA_MEM option found in config files.\n"; $checkFailed = 1; }
 	    if(! $opt{STRELKA_TIME}){ print "ERROR: No STRELKA_TIME option found in config files.\n"; $checkFailed = 1; }
+	    if(! $opt{HMFTOOLS_PROFILE}){ print "ERROR: No HMFTOOLS_PROFILE option found in config files.\n"; $checkFailed = 1; }
+	    if(! $opt{GIAB_HIGH_CONFIDENCE_BED}){ print "ERROR: No GIAB_HIGH_CONFIDENCE_BED option found in config files.\n"; $checkFailed = 1; }
 	}
 	if(! $opt{SOMVAR_VARSCAN}){ print "ERROR: No SOMVAR_VARSCAN option found in config files.\n"; $checkFailed = 1; }
 	if($opt{SOMVAR_VARSCAN} eq "yes"){
@@ -645,6 +650,7 @@ sub checkConfig{
 	    if(! $opt{ANNOTATE_IDDB}){ print "ERROR: No ANNOTATE_IDDB option found in config files.\n"; $checkFailed = 1; }
 	    if(! $opt{CALLING_DBSNP}){ print "ERROR: No CALLING_DBSNP option found in config files.\n"; $checkFailed = 1; }
 	}
+	if(! $opt{SOMVAR_MELT}){ print "ERROR: No SOMVAR_MELT option found in config files.\n"; $checkFailed = 1; }
     }
     ## COPY_NUMBER
     if($opt{COPY_NUMBER} eq "yes"){
@@ -702,7 +708,7 @@ sub checkConfig{
 	    if(! $opt{MANTA_THREADS}){ print "ERROR: No MANTA_THREADS option found in config files.\n"; $checkFailed = 1; }
 	    if(! $opt{MANTA_MEM}){ print "ERROR: No MANTA_MEM option found in config files.\n"; $checkFailed = 1; }
 	    if(! $opt{MANTA_TIME}){ print "ERROR: No MANTA_TIME option found in config files.\n"; $checkFailed = 1; }
-	    #if( $opt{SOMATIC_REGEX}){  print "ERROR: No SOMATIC_REGEX option found in config files.\n"; $checkFailed = 1; }
+	    if(! $opt{HMFTOOLS_PROFILE}){ print "ERROR: No HMFTOOLS_PROFILE option found in config files.\n"; $checkFailed = 1; }
 	}
 	if(! $opt{SV_DELLY}){ print "ERROR: No SV_DELLY option found in config files.\n"; $checkFailed = 1; }
 	if($opt{SV_DELLY} eq "yes"){

@@ -117,12 +117,13 @@ sub runSomaticVariantCallers {
 		open MERGE_SH, ">$bash_file" or die "cannot open file $bash_file \n";
 		print MERGE_SH "#!/bin/bash\n\n";
 		print MERGE_SH "echo \"Start Merge\t\" `date` `uname -n` >> $sample_tumor_log_dir/merge.log\n\n";
+		print MERGE_SH "module load $opt{GATK_JAVA_MODULE}\n";
 
 		# Merge vcfs
 		my $invcf;
-		my $outvcf = "$sample_tumor_out_dir/$sample_tumor_name\_merged_somatics.vcf";
+		my $outvcf = "$sample_tumor_out_dir/$sample_tumor_name\_somatics.vcf";
 		print MERGE_SH "java -Xmx".$opt{SOMVARMERGE_MEM}."G -Djava.io.tmpdir=$sample_tumor_tmp_dir -jar $opt{GATK_PATH}/GenomeAnalysisTK.jar -T CombineVariants -R $opt{GENOME} -o $outvcf --genotypemergeoption uniquify ";
-		if($opt{SOMVAR_STRELKA} eq "yes"){ print MERGE_SH "-V:strelka $sample_tumor_out_dir/strelka/passed.somatic.merged.vcf "; }
+		if($opt{SOMVAR_STRELKA} eq "yes"){ print MERGE_SH "-V:strelka $sample_tumor_out_dir/strelka/passed.somatic.merged.processed.vcf "; }
 		if($opt{SOMVAR_VARSCAN} eq "yes"){ print MERGE_SH "-V:varscan $sample_tumor_out_dir/varscan/$sample_tumor_name.merged.Somatic.hc.vcf "; }
 		if($opt{SOMVAR_FREEBAYES} eq "yes"){ print MERGE_SH "-V:freebayes $sample_tumor_out_dir/freebayes/$sample_tumor_name\_somatic_filtered.vcf "; }
 		if($opt{SOMVAR_MUTECT} eq "yes"){ print MERGE_SH "-V:mutect $sample_tumor_out_dir/mutect/$sample_tumor_name\_mutect_passed.vcf ";}
@@ -131,7 +132,7 @@ sub runSomaticVariantCallers {
 		# Filter vcf on target
 		if($opt{SOMVAR_TARGETS}){
 		    $invcf = $outvcf;
-		    $outvcf = "$sample_tumor_out_dir/$sample_tumor_name\_filtered_merged_somatics.vcf";
+		    $outvcf = "$sample_tumor_out_dir/$sample_tumor_name\_filtered_somatics.vcf";
 		    print MERGE_SH "java -Xmx".$opt{SOMVARMERGE_MEM}."G -Djava.io.tmpdir=$sample_tumor_tmp_dir -jar $opt{GATK_PATH}/GenomeAnalysisTK.jar -T SelectVariants -R $opt{GENOME} -L $opt{SOMVAR_TARGETS} -V $invcf -o $outvcf\n";
 		    print MERGE_SH "rm $invcf*\n\n";
 		}
@@ -164,11 +165,22 @@ sub runSomaticVariantCallers {
 		}
 		
 		## Melt somatic vcf
-		$invcf = $outvcf;
-		my $suffix = "_melted.vcf";
-		$outvcf =~ s/.vcf/$suffix/;
-		print MERGE_SH "python $opt{IAP_PATH}/scripts/melt_somatic_vcf.py -t $sample_tumor -v $invcf > $outvcf\n\n";
-
+		if($opt{SOMVAR_MELT} eq "yes"){
+		    $invcf = $outvcf;
+		    my $suffix = "_melted.vcf";
+		    $outvcf =~ s/.vcf/$suffix/;
+		    print MERGE_SH "python $opt{IAP_PATH}/scripts/melt_somatic_vcf.py -t $sample_tumor -v $invcf > $outvcf\n\n";
+		}
+		
+		## Filter PON
+		if($opt{SOMVAR_PONFILE}){
+		    $invcf = $outvcf;
+		    my $suffix = "_PON.vcf";
+		    $outvcf =~ s/.vcf/$suffix/;
+		    print MERGE_SH "python $opt{IAP_PATH}/scripts/annotatePON.py -p $opt{SOMVAR_PONFILE} -i $invcf -o - | $opt{BCFTOOLS_PATH}/bcftools filter -e 'PON_COUNT!=\".\" && MIN(PON_COUNT) > 5' -s PON -m+ -o $outvcf\n";
+		    print MERGE_SH "$opt{IGVTOOLS_PATH}/igvtools index $outvcf\n\n";
+		}
+		
 		## Check output files
 		print MERGE_SH "if [ \"\$(tail -n 1 $preAnnotateVCF | cut -f 1,2)\" = \"\$(tail -n 1 $outvcf | cut -f 1,2)\" -a -s $preAnnotateVCF -a -s $outvcf ]\n";
 		print MERGE_SH "then\n";
@@ -226,15 +238,23 @@ sub runStrelka {
     # Check strelka completed
     print STRELKA_SH "\tif [ -f $strelka_out_dir/task.complete ]\n";
     print STRELKA_SH "\tthen\n";
+    print STRELKA_SH "\t\tmodule load $opt{GATK_JAVA_MODULE}\n";
     print STRELKA_SH "\t\tjava -Xmx".$opt{STRELKA_MEM}."G -jar $opt{GATK_PATH}/GenomeAnalysisTK.jar -T CombineVariants -R $opt{GENOME} --genotypemergeoption unsorted -V:snp results/passed.somatic.snvs.vcf -V:indel results/passed.somatic.indels.vcf -o passed.somatic.merged.vcf\n";
-    #print STRELKA_SH "\t\tperl -p -e 's/\\t([A-Z][A-Z]:)/\\tGT:\$1/g' passed.somatic.merged.vcf | perl -p -e 's/(:T[UO]R?)\\t/\$1\\t0\\/0:/g' | perl -p -e 's/(:\\d+,\\d+)\\t/\$1\\t0\\/1:/g' | perl -p -e 's/(#CHROM.*)/##StrelkaGATKCompatibility=Added GT fields to strelka calls for gatk compatibility.\\n\$1/g' > tmp.vcf\n";
-    print STRELKA_SH "\t\tawk -F'\t' -v OFS='\t' '/^#CHROM/ { print \"##StrelkaGATKCompatibility=Added GT fields to strelka calls for gatk compatibility.\"; } /^[^#]/ { \$9 = \"GT:\" \$9; \$10 = \"0/0:\" \$10; \$11 = \"0/1:\" \$11; } { print }' passed.somatic.merged.vcf | python $opt{IAP_PATH}/scripts/filterStrelka.py > tmp.vcf\n";
-    print STRELKA_SH "\t\tmv tmp.vcf passed.somatic.merged.vcf\n";
     print STRELKA_SH "\t\trm -r chromosomes/ \n";
-    print STRELKA_SH "\t\ttouch $log_dir/strelka.done\n";
+
+    # Strelka hmftools postprocess
+    print STRELKA_SH "\t\tguixr load-profile $opt{HMFTOOLS_PROFILE} -- << EOF\n";
+    print STRELKA_SH "java -jar \\\$GUIX_JARPATH/strelka-post-process.jar -v passed.somatic.merged.vcf -hc_bed $opt{GIAB_HIGH_CONFIDENCE_BED} -t $sample_tumor -o passed.somatic.merged.processed.vcf\n";
+    print STRELKA_SH "EOF\n";
+    print STRELKA_SH "\t\tif [ -s passed.somatic.merged.vcf -a -s passed.somatic.merged.processed.vcf -a -s passed.somatic.merged.vcf.idx -a -s passed.somatic.merged.processed.vcf.idx ]\n";
+    print STRELKA_SH "\t\tthen\n";
+    print STRELKA_SH "\t\t\ttouch $log_dir/strelka.done\n";
+    print STRELKA_SH "\t\telse\n";
+    print STRELKA_SH "\t\t\techo \"ERROR: Strelka or hmftools postprocess failed.\" >&2\n";
+    print STRELKA_SH "\t\tfi\n";
     print STRELKA_SH "\tfi\n\n";
+
     print STRELKA_SH "\techo \"End Strelka\t\" `date` \"\t $sample_ref_bam \t $sample_tumor_bam\t\" `uname -n` >> $log_dir/strelka.log\n\n";
-    
     print STRELKA_SH "else\n";
     print STRELKA_SH "\techo \"ERROR: $sample_tumor_bam or $sample_ref_bam does not exist.\" >&2\n";
     print STRELKA_SH "fi\n";
@@ -417,6 +437,7 @@ sub runVarscan {
     print VARSCAN_SH "\tjava -Xmx".$opt{VARSCAN_MEM}."G -jar $opt{VARSCAN_PATH} processSomatic $sample_tumor_name.snp.vcf $opt{VARSCAN_POSTSETTINGS}\n\n";
 
     # merge varscan hc snps and indels
+    print VARSCAN_SH "\tmodule load $opt{GATK_JAVA_MODULE}\n";
     print VARSCAN_SH "\tjava -Xmx".$opt{VARSCAN_MEM}."G -jar $opt{GATK_PATH}/GenomeAnalysisTK.jar -T CombineVariants -R $opt{GENOME} --genotypemergeoption unsorted -o $sample_tumor_name.merged.Somatic.hc.vcf -V:snp $sample_tumor_name.snp.Somatic.hc.vcf -V:indel $sample_tumor_name.indel.Somatic.hc.vcf\n";
     print VARSCAN_SH "\tsed -i 's/SSC/VS_SSC/' $sample_tumor_name.merged.Somatic.hc.vcf\n\n"; # to resolve merge conflict with FB vcfs
 
@@ -500,6 +521,7 @@ sub runFreeBayes {
 	print FREEBAYES_SH "then\n";
 	print FREEBAYES_SH "\techo \"Start Freebayes\t\" `date` \"\t $chr \t $sample_ref_bam \t $sample_tumor_bam\t\" `uname -n` >> $log_dir/freebayes.log\n\n";
 	print FREEBAYES_SH "\t$freebayes_command\n";
+	print FREEBAYES_SH "\tmodule load $opt{GATK_JAVA_MODULE}\n";
 	print FREEBAYES_SH "\t$sort_uniq_filter_command\n";
 	print FREEBAYES_SH "\t$mv_command\n\n";
 	print FREEBAYES_SH "\techo \"End Freebayes\t\" `date` \"\t $chr $sample_ref_bam \t $sample_tumor_bam\t\" `uname -n` >> $log_dir/freebayes.log\n";

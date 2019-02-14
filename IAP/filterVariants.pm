@@ -95,6 +95,7 @@ sub runFilterVariants {
     open FILTER_SH, ">$bashFile" or die "cannot open file $bashFile \n";
     print FILTER_SH "#!/bin/bash\n\n";
     print FILTER_SH "bash $opt{CLUSTER_PATH}/settings.sh\n\n";
+    print FILTER_SH "module load $opt{GATK_JAVA_MODULE}\n";
     print FILTER_SH "cd $opt{OUTPUT_DIR}/tmp/\n";
     print FILTER_SH "echo \"Start variant filter\t\" `date` \"\t$runName.raw_variants.vcf\t\" `uname -n` >> $opt{OUTPUT_DIR}/logs/$runName.log\n\n";
     

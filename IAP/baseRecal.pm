@@ -77,6 +77,7 @@ sub runBaseRecalibration {
 	open BASERECAL_SH, ">$bashFile" or die "cannot open file $bashFile \n";
 	print BASERECAL_SH "#!/bin/bash\n\n";
 	print BASERECAL_SH "bash $opt{CLUSTER_PATH}/settings.sh\n\n";
+	print BASERECAL_SH "module load $opt{GATK_JAVA_MODULE}\n";
 	print BASERECAL_SH "cd $opt{OUTPUT_DIR}/$sample/tmp/\n";
 	print BASERECAL_SH "echo \"Start base recalibration\t\" `date` \"\t$inBam\t\" `uname -n` >> ../logs/$sample.log\n\n";
 	
@@ -116,10 +117,11 @@ sub runBaseRecalibration {
 	print BASERECALFS_SH "\t\tmv $opt{OUTPUT_DIR}/$sample/tmp/$outBam $opt{OUTPUT_DIR}/$sample/mapping/\n";
 	print BASERECALFS_SH "\t\tmv $opt{OUTPUT_DIR}/$sample/tmp/$outBai $opt{OUTPUT_DIR}/$sample/mapping/\n";
 	print BASERECALFS_SH "\t\tcp $opt{OUTPUT_DIR}/$sample/mapping/$outBai $opt{OUTPUT_DIR}/$sample/mapping/$outBamBai\n";
+	print BASERECALFS_SH "\t\tmv $opt{OUTPUT_DIR}/$sample/tmp/*_recal_data.table $opt{OUTPUT_DIR}/$sample/mapping/\n";
+	
 	if($opt{BASERECALIBRATION_QC} eq 'yes'){
 	    print BASERECALFS_SH "\t\tmv $opt{OUTPUT_DIR}/$sample/tmp/*_baseRecalibration.pdf $opt{OUTPUT_DIR}/$sample/logs/\n";
 	    print BASERECALFS_SH "\t\tmv $opt{OUTPUT_DIR}/$sample/tmp/*_post_recal_data.table $opt{OUTPUT_DIR}/$sample/logs/\n";
-	    print BASERECALFS_SH "\t\tmv $opt{OUTPUT_DIR}/$sample/tmp/*_recal_data.table $opt{OUTPUT_DIR}/$sample/logs/\n";
 	}
 
 	print BASERECALFS_SH "\t\ttouch $opt{OUTPUT_DIR}/$sample/logs/BaseRecalibration_$sample.done\n";
