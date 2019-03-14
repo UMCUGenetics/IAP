@@ -81,6 +81,14 @@ sub runPostStats {
 	if ( $opt{EXONCALLCOV} eq "yes" ){
 	    $command = "python $opt{EXONCALLCOV_PATH} -o $outputDir --queue $opt{EXONCALLCOV_QUEUE} -a $opt{EXONCALLCOV_TIME} -c $opt{EXONCALLCOV_MEM} -b $opt{EXONCALLCOV_BED} -n $opt{EXONCALLCOV_ENS} -p $opt{EXONCALLCOV_PREF} -l $opt{EXONCALLCOV_PANEL} -s $opt{SAMBAMBA_PATH}/sambamba";
 	    print PS_SH "$command\n";
+	    
+	    if ( $opt{EXONCOVV3_PATH}){
+		print PS_SH ". $opt{EXONCOVV3_PATH}/venv/bin/activate\n";
+		foreach my $sample (@{$opt{SAMPLES}}){
+		    my $sampleBam = "$opt{OUTPUT_DIR}/$sample/mapping/$opt{BAM_FILES}->{$sample}";
+		    print PS_SH "python $opt{EXONCOVV3_PATH}/ExonCov.py import_bam $runName $sampleBam > $logDir/ExonCovV3_$sample.log 2> $logDir/ExonCovV3_$sample.log\n";
+		}
+	    }
 	}
 	
 	close PS_SH;
@@ -101,6 +109,9 @@ sub runPostStats {
 	if ( $opt{EXONCALLCOV} eq "yes" ){
 	    foreach my $sample (@{$opt{SAMPLES}}){
 		print PSCHECK_SH "-s $outputDir/$sample.html -a ";
+		if ( $opt{EXONCOVV3_PATH}){
+		    print PSCHECK_SH "\"\$(wc -l < $logDir/ExonCovV3_$sample.log)\" = 25 -a ";
+		}
 	    }
 	}
 	print PSCHECK_SH "-s QCStats/*.bamMetrics.html ]\nthen\n";
