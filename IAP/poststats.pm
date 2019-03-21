@@ -86,7 +86,7 @@ sub runPostStats {
 		print PS_SH ". $opt{EXONCOVV3_PATH}/venv/bin/activate\n";
 		foreach my $sample (@{$opt{SAMPLES}}){
 		    my $sampleBam = "$opt{OUTPUT_DIR}/$sample/mapping/$opt{BAM_FILES}->{$sample}";
-		    print PS_SH "python $opt{EXONCOVV3_PATH}/ExonCov.py import_bam --exon_bed $opt{EXONCALLCOV_BED} --threads $opt{POSTSTATS_THREADS} $runName $sampleBam > $logDir/ExonCovV3_$sample.log 2> $logDir/ExonCovV3_$sample.log\n";
+		    print PS_SH "python $opt{EXONCOVV3_PATH}/ExonCov.py import_bam --overwrite --exon_bed $opt{EXONCALLCOV_BED} --threads $opt{POSTSTATS_THREADS} $runName $sampleBam > $logDir/ExonCovV3_$sample.log 2> $logDir/ExonCovV3_$sample.log\n";
 		}
 	    }
 	}
