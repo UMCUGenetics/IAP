@@ -110,7 +110,7 @@ sub runPostStats {
 	    foreach my $sample (@{$opt{SAMPLES}}){
 		print PSCHECK_SH "-s $outputDir/$sample.html -a ";
 		if ( $opt{EXONCOVV3_PATH}){
-		    print PSCHECK_SH "\"\$(wc -l < $logDir/ExonCovV3_$sample.log)\" = 25 -a ";
+		    print PSCHECK_SH "\"\$(cat $logDir/ExonCovV3_$sample.log | wc -l)\" -eq \"\$(cut -f1 $opt{EXONCALLCOV_BED} | sort | uniq | wc -l)\" -a ";
 		}
 	    }
 	}
