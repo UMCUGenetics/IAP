@@ -284,8 +284,7 @@ sub runExomedepth {
     $command .= "--ib=$sample_bam ";
     $command .= "-o $exomedepth_out_dir ";
 
-
-    ## Create qDNAseq bash script
+    ## Create EXOMEDEPTH bash script
     my $job_id = "EXOMEDEPTH_".$sample_name."_".get_job_id();
     my $bash_file = $job_dir."/".$job_id.".sh";
 
@@ -296,7 +295,7 @@ sub runExomedepth {
     print EXOMEDEPTH_SH "\techo \"Start EXOMEDEPTH\t\" `date` \"\t $sample_bam\t\" `uname -n` >> $log_dir/exomedepth.log\n";
     print EXOMEDEPTH_SH "\tcd $exomedepth_out_dir\n";
     print EXOMEDEPTH_SH "\t$command\n";
-    print EXOMEDEPTH_SH "\tif [ $opt{OUTPUT_DIR}/ExomeDepth/logs/$sample_name*.done ]\n"; 
+    print EXOMEDEPTH_SH "\tif [$exomedepth_out_dir/logs/$sample_name*.done ]\n"; 
     print EXOMEDEPTH_SH "\tthen\n";
     print EXOMEDEPTH_SH "\t\ttouch $log_dir/exomedepth.done\n";
     print EXOMEDEPTH_SH "\tfi\n";
