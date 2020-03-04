@@ -295,7 +295,7 @@ sub runExomedepth {
     print EXOMEDEPTH_SH "\techo \"Start EXOMEDEPTH\t\" `date` \"\t $sample_bam\t\" `uname -n` >> $log_dir/exomedepth.log\n";
     print EXOMEDEPTH_SH "\tcd $exomedepth_out_dir\n";
     print EXOMEDEPTH_SH "\t$command\n";
-    print EXOMEDEPTH_SH "\tif [$exomedepth_out_dir/logs/$sample_name*.done ]\n"; 
+    print EXOMEDEPTH_SH "\tif [ -f $exomedepth_out_dir/logs/$sample_name*.done ]\n"; 
     print EXOMEDEPTH_SH "\tthen\n";
     print EXOMEDEPTH_SH "\t\ttouch $log_dir/exomedepth.done\n";
     print EXOMEDEPTH_SH "\tfi\n";
