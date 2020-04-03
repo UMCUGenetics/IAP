@@ -698,15 +698,14 @@ sub checkConfig{
 	    if(! $opt{QDNASEQ_MEM}){ print "ERROR: No QDNASEQ_MEM option found in config files.\n"; $checkFailed = 1; }
 	    if(! $opt{QDNASEQ_TIME}){ print "ERROR: No QDNASEQ_TIME option found in config files.\n"; $checkFailed = 1; }
 	}
-        if(! $opt{CNV_EXOMEDEPTH}){ print "ERROR: No CNV_EXOMEDEPTH  in config files.\n"; $checkFailed = 1; }
-        if($opt{CNV_EXOMEDEPTH} eq "yes"){
-            if(! $opt{EXOMEDEPTH_PATH}){ print "ERROR: No EXOMEDEPTH_PATH option found in config files.\n"; $checkFailed = 1; }
-            if(! $opt{EXOMEDEPTH_QUEUE}){ print "ERROR: No EXOMEDEPTH_QUEUE option found in config files.\n"; $checkFailed = 1; }
-            if(! $opt{EXOMEDEPTH_THREADS}){ print "ERROR: No EXOMEDEPTH_THREADS option found in config files.\n"; $checkFailed = 1; }
-            if(! $opt{EXOMEDEPTH_MEM}){ print "ERROR: No EXOMEDEPTH_MEM option found in config files.\n"; $checkFailed = 1; }
-            if(! $opt{EXOMEDEPTH_TIME}){ print "ERROR: No EXOMEDEPTH_TIME option found in config files.\n"; $checkFailed = 1; }
-        }
-
+	if(! $opt{CNV_EXOMEDEPTH}){ print "ERROR: No CNV_EXOMEDEPTH  in config files.\n"; $checkFailed = 1; }
+	if($opt{CNV_EXOMEDEPTH} eq "yes"){
+	    if(! $opt{EXOMEDEPTH_PATH}){ print "ERROR: No EXOMEDEPTH_PATH option found in config files.\n"; $checkFailed = 1; }
+	    if(! $opt{EXOMEDEPTH_QUEUE}){ print "ERROR: No EXOMEDEPTH_QUEUE option found in config files.\n"; $checkFailed = 1; }
+	    if(! $opt{EXOMEDEPTH_THREADS}){ print "ERROR: No EXOMEDEPTH_THREADS option found in config files.\n"; $checkFailed = 1; }
+	    if(! $opt{EXOMEDEPTH_MEM}){ print "ERROR: No EXOMEDEPTH_MEM option found in config files.\n"; $checkFailed = 1; }
+	    if(! $opt{EXOMEDEPTH_TIME}){ print "ERROR: No EXOMEDEPTH_TIME option found in config files.\n"; $checkFailed = 1; }
+	}
     }
     ## SV_CALLING
     if($opt{SV_CALLING} eq "yes"){

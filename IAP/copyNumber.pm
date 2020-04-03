@@ -156,12 +156,12 @@ sub runCopyNumberTools {
 		    my $qdnaseq_job = runqDNAseq($sample, $sample_out_dir, $sample_job_dir, $sample_log_dir, $sample_bam, \@running_jobs, \%opt);
 		    if($qdnaseq_job){push(@cnv_jobs, $qdnaseq_job)};
 		}
-                if($opt{CNV_EXOMEDEPTH} eq "yes"){
-                    print "\n###SCHEDULING EXOMEDEPTH####\n";
-                    my $exomedepth_job = runExomedepth($sample, $sample_out_dir, $sample_job_dir, $sample_log_dir, $sample_bam, \@running_jobs, \%opt);
-                    if($exomedepth_job){push(@cnv_jobs, $exomedepth_job)};
-                }	
- 	
+		if($opt{CNV_EXOMEDEPTH} eq "yes"){
+		    print "\n###SCHEDULING EXOMEDEPTH####\n";
+		    my $exomedepth_job = runExomedepth($sample, $sample_out_dir, $sample_job_dir, $sample_log_dir, $sample_bam, \@running_jobs, \%opt);
+		    if($exomedepth_job){push(@cnv_jobs, $exomedepth_job)};
+		}
+
 		
 	    ## Check copy number analysis
 	    my $job_id = "CHECK_".$sample."_".get_job_id();
@@ -170,21 +170,21 @@ sub runCopyNumberTools {
 	    open CHECK_SH, ">$bash_file" or die "cannot open file $bash_file \n";
 	    print CHECK_SH "#!/bin/bash\n\n";
 	    print CHECK_SH "echo \"Start Check\t\" `date` `uname -n` >> $sample_log_dir/check.log\n\n";
-            if($opt{CNV_FREEC} eq "yes" && $opt{CNV_QDNASEQ} eq "yes" && $opt{CNV_EXOMEDEPTH} eq "yes"){
-                print CHECK_SH "if [ -f $sample_log_dir/freec.done -a -f $sample_log_dir/qdnaseq.done -a -f $sample_log_dir/exomedepth.done ]\n";
-            } elsif($opt{CNV_FREEC} eq "yes" && $opt{CNV_QDNASEQ} eq "yes" && $opt{CNV_EXOMEDEPTH} eq "no"){
-                print CHECK_SH "if [ -f $sample_log_dir/freec.done -a -f $sample_log_dir/qdnaseq.done ]\n";
-            } elsif($opt{CNV_FREEC} eq "yes" && $opt{CNV_QDNASEQ} eq "no" && $opt{CNV_EXOMEDEPTH} eq "yes"){
-                print CHECK_SH "if [ -f $sample_log_dir/freec.done -a -f $sample_log_dir/exomedepth.done ]\n";
-            } elsif($opt{CNV_FREEC} eq "no" && $opt{CNV_QDNASEQ} eq "yes" && $opt{CNV_EXOMEDEPTH} eq "yes"){
-                print CHECK_SH "if [ -f $sample_log_dir/qdnaseq.done -a -f $sample_log_dir/exomedepth.done ]\n";
-            } elsif($opt{CNV_FREEC} eq "yes" && $opt{CNV_QDNASEQ} eq "no" && $opt{CNV_EXOMEDEPTH} eq "no"){
-                print CHECK_SH "if [ -f $sample_log_dir/freec.done ]\n";
-            } elsif($opt{CNV_FREEC} eq "no" && $opt{CNV_QDNASEQ} eq "yes" && $opt{CNV_EXOMEDEPTH} eq "no"){
-                print CHECK_SH "if [ -f $sample_log_dir/qdnaseq.done ]\n";
-            } elsif($opt{CNV_FREEC} eq "no" && $opt{CNV_QDNASEQ} eq "no" && $opt{CNV_EXOMEDEPTH} eq "yes"){
-                print CHECK_SH "if [ -f $sample_log_dir/exomedepth.done ]\n";
-            }
+	    if($opt{CNV_FREEC} eq "yes" && $opt{CNV_QDNASEQ} eq "yes" && $opt{CNV_EXOMEDEPTH} eq "yes"){
+		print CHECK_SH "if [ -f $sample_log_dir/freec.done -a -f $sample_log_dir/qdnaseq.done -a -f $sample_log_dir/exomedepth.done ]\n";
+	    } elsif($opt{CNV_FREEC} eq "yes" && $opt{CNV_QDNASEQ} eq "yes" && $opt{CNV_EXOMEDEPTH} eq "no"){
+		print CHECK_SH "if [ -f $sample_log_dir/freec.done -a -f $sample_log_dir/qdnaseq.done ]\n";
+	    } elsif($opt{CNV_FREEC} eq "yes" && $opt{CNV_QDNASEQ} eq "no" && $opt{CNV_EXOMEDEPTH} eq "yes"){
+		print CHECK_SH "if [ -f $sample_log_dir/freec.done -a -f $sample_log_dir/exomedepth.done ]\n";
+	    } elsif($opt{CNV_FREEC} eq "no" && $opt{CNV_QDNASEQ} eq "yes" && $opt{CNV_EXOMEDEPTH} eq "yes"){
+		print CHECK_SH "if [ -f $sample_log_dir/qdnaseq.done -a -f $sample_log_dir/exomedepth.done ]\n";
+	    } elsif($opt{CNV_FREEC} eq "yes" && $opt{CNV_QDNASEQ} eq "no" && $opt{CNV_EXOMEDEPTH} eq "no"){
+		print CHECK_SH "if [ -f $sample_log_dir/freec.done ]\n";
+	    } elsif($opt{CNV_FREEC} eq "no" && $opt{CNV_QDNASEQ} eq "yes" && $opt{CNV_EXOMEDEPTH} eq "no"){
+		print CHECK_SH "if [ -f $sample_log_dir/qdnaseq.done ]\n";
+	    } elsif($opt{CNV_FREEC} eq "no" && $opt{CNV_QDNASEQ} eq "no" && $opt{CNV_EXOMEDEPTH} eq "yes"){
+		print CHECK_SH "if [ -f $sample_log_dir/exomedepth.done ]\n";
+	    }
 	    print CHECK_SH "then\n";
 	    print CHECK_SH "\ttouch $sample_log_dir/$sample.done\n";
 	    print CHECK_SH "fi\n\n";
@@ -203,7 +203,6 @@ sub runCopyNumberTools {
 }
 
 ### Copy number analysis tools
-
 sub runqDNAseq {
     ###
     # Run qDNAseq
