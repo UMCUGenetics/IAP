@@ -156,7 +156,12 @@ sub runCopyNumberTools {
 		    my $qdnaseq_job = runqDNAseq($sample, $sample_out_dir, $sample_job_dir, $sample_log_dir, $sample_bam, \@running_jobs, \%opt);
 		    if($qdnaseq_job){push(@cnv_jobs, $qdnaseq_job)};
 		}
-		
+		if($opt{CNV_EXOMEDEPTH} eq "yes"){
+		    print "\n###SCHEDULING EXOMEDEPTH####\n";
+		    my $exomedepth_job = runExomedepth($sample, $sample_out_dir, $sample_job_dir, $sample_log_dir, $sample_bam, \@running_jobs, \%opt);
+		    if($exomedepth_job){push(@cnv_jobs, $exomedepth_job)};
+		}
+
 		
 	    ## Check copy number analysis
 	    my $job_id = "CHECK_".$sample."_".get_job_id();
@@ -165,12 +170,20 @@ sub runCopyNumberTools {
 	    open CHECK_SH, ">$bash_file" or die "cannot open file $bash_file \n";
 	    print CHECK_SH "#!/bin/bash\n\n";
 	    print CHECK_SH "echo \"Start Check\t\" `date` `uname -n` >> $sample_log_dir/check.log\n\n";
-	    if($opt{CNV_QDNASEQ} eq "yes" && $opt{CNV_FREEC} eq "yes"){
+	    if($opt{CNV_FREEC} eq "yes" && $opt{CNV_QDNASEQ} eq "yes" && $opt{CNV_EXOMEDEPTH} eq "yes"){
+		print CHECK_SH "if [ -f $sample_log_dir/freec.done -a -f $sample_log_dir/qdnaseq.done -a -f $sample_log_dir/exomedepth.done ]\n";
+	    } elsif($opt{CNV_FREEC} eq "yes" && $opt{CNV_QDNASEQ} eq "yes" && $opt{CNV_EXOMEDEPTH} eq "no"){
 		print CHECK_SH "if [ -f $sample_log_dir/freec.done -a -f $sample_log_dir/qdnaseq.done ]\n";
-	    } elsif ($opt{CNV_QDNASEQ} eq "yes" && $opt{CNV_FREEC} eq "no") {
-		print CHECK_SH "if [ -f $sample_log_dir/qdnaseq.done ]\n";
-	    } elsif ($opt{CNV_QDNASEQ} eq "no" && $opt{CNV_FREEC} eq "yes") {
+	    } elsif($opt{CNV_FREEC} eq "yes" && $opt{CNV_QDNASEQ} eq "no" && $opt{CNV_EXOMEDEPTH} eq "yes"){
+		print CHECK_SH "if [ -f $sample_log_dir/freec.done -a -f $sample_log_dir/exomedepth.done ]\n";
+	    } elsif($opt{CNV_FREEC} eq "no" && $opt{CNV_QDNASEQ} eq "yes" && $opt{CNV_EXOMEDEPTH} eq "yes"){
+		print CHECK_SH "if [ -f $sample_log_dir/qdnaseq.done -a -f $sample_log_dir/exomedepth.done ]\n";
+	    } elsif($opt{CNV_FREEC} eq "yes" && $opt{CNV_QDNASEQ} eq "no" && $opt{CNV_EXOMEDEPTH} eq "no"){
 		print CHECK_SH "if [ -f $sample_log_dir/freec.done ]\n";
+	    } elsif($opt{CNV_FREEC} eq "no" && $opt{CNV_QDNASEQ} eq "yes" && $opt{CNV_EXOMEDEPTH} eq "no"){
+		print CHECK_SH "if [ -f $sample_log_dir/qdnaseq.done ]\n";
+	    } elsif($opt{CNV_FREEC} eq "no" && $opt{CNV_QDNASEQ} eq "no" && $opt{CNV_EXOMEDEPTH} eq "yes"){
+		print CHECK_SH "if [ -f $sample_log_dir/exomedepth.done ]\n";
 	    }
 	    print CHECK_SH "then\n";
 	    print CHECK_SH "\ttouch $sample_log_dir/$sample.done\n";
@@ -237,6 +250,62 @@ sub runqDNAseq {
 
     ## Run job
     my $qsub = &qsubTemplate(\%opt,"QDNASEQ");
+    if ( @running_jobs ){
+	system "$qsub -o $log_dir -e $log_dir -N $job_id -hold_jid ".join(",",@running_jobs)." $bash_file";
+    } else {
+	system "$qsub -o $log_dir -e $log_dir -N $job_id $bash_file";
+    }
+    return $job_id;
+}
+
+sub runExomedepth {
+    ###
+    # Run exomedepth
+    ###
+    my ($sample_name, $out_dir, $job_dir, $log_dir, $sample_bam, $running_jobs, $opt) = (@_);
+    my @running_jobs = @{$running_jobs};
+    my %opt = %{$opt};
+    
+    # Skip Exomedepth if done file exists
+    if (-e "$log_dir/exomedepth.done"){
+	print "WARNING: $log_dir/exomedepth.done exists, skipping \n";
+	return;
+    }
+    
+    ## Create ExomeDepth output directory
+    my $exomedepth_out_dir = "$opt{OUTPUT_DIR}/ExomeDepth/"; 
+
+    if(! -e $exomedepth_out_dir){
+	make_path($exomedepth_out_dir) or die "Couldn't create directory: $exomedepth_out_dir\n";
+    }
+    
+    my $command = "python $opt{EXOMEDEPTH_PATH} -c -m $opt{MAIL} ";
+    $command .= "--ib=$sample_bam ";
+    $command .= "-o $exomedepth_out_dir ";
+
+    ## Create EXOMEDEPTH bash script
+    my $job_id = "EXOMEDEPTH_".$sample_name."_".get_job_id();
+    my $bash_file = $job_dir."/".$job_id.".sh";
+
+    open EXOMEDEPTH_SH, ">$bash_file" or die "cannot open file $bash_file \n";
+    print EXOMEDEPTH_SH "#!/bin/bash\n\n";
+    print EXOMEDEPTH_SH "if [ -s $sample_bam ]\n";
+    print EXOMEDEPTH_SH "then\n";
+    print EXOMEDEPTH_SH "\techo \"Start EXOMEDEPTH\t\" `date` \"\t $sample_bam\t\" `uname -n` >> $log_dir/exomedepth.log\n";
+    print EXOMEDEPTH_SH "\tcd $exomedepth_out_dir\n";
+    print EXOMEDEPTH_SH "\t$command\n";
+    print EXOMEDEPTH_SH "\tif [ -f $exomedepth_out_dir/logs/$sample_name*.done ]\n"; 
+    print EXOMEDEPTH_SH "\tthen\n";
+    print EXOMEDEPTH_SH "\t\ttouch $log_dir/exomedepth.done\n";
+    print EXOMEDEPTH_SH "\tfi\n";
+    print EXOMEDEPTH_SH "\techo \"End EXOMEDEPTH\t\" `date` \"\t $sample_bam\t\" `uname -n` >> $log_dir/exomedepth.log\n";
+    print EXOMEDEPTH_SH "else\n";
+    print EXOMEDEPTH_SH "\techo \"ERROR:  Input bam files do not exist.\" >> $log_dir/exomedepth.log\n";
+    print EXOMEDEPTH_SH "fi\n";
+    close EXOMEDEPTH_SH;
+
+    ## Run job
+    my $qsub = &qsubTemplate(\%opt,"EXOMEDEPTH");
     if ( @running_jobs ){
 	system "$qsub -o $log_dir -e $log_dir -N $job_id -hold_jid ".join(",",@running_jobs)." $bash_file";
     } else {
